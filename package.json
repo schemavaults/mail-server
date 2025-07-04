@@ -1,0 +1,32 @@
+{
+  "name": "@schemavaults/mail-server",
+  "version": "0.0.1",
+  "description": "Manages the SchemaVaults mailing list, sending to the list, mail templates, and sending transactional emails.",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "react-email": "4.0.17",
+    "@react-email/components": "0.1.1",
+    "@react-email/render": "1.1.3",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "next": "15.3.5",
+    "@schemavaults/theme": "0.22.7",
+    "@schemavaults/ui": "0.11.80",
+    "@schemavaults/auth-react-provider": "0.4.23",
+    "@schemavaults/app-definitions": "0.4.8",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "@types/react-dom": "19.0.0",
+    "@types/bun": "1.2.17",
+    "typescript": "5.8.3"
+  },
+  "scripts": {
+    "dev:mail": "email dev --dir ./src/emails --port 5347",
+    "dev:app": "PORT=5346 SCHEMAVAULTS_APP_ENVIRONMENT=development NEXT_PUBLIC_SCHEMAVAULTS_APP_ENVIRONMENT=development next dev",
+    "build": "SCHEMAVAULTS_APP_ENVIRONMENT=production NEXT_PUBLIC_SCHEMAVAULTS_APP_ENVIRONMENT=production next build"
+  },
+  "packageManager": "bun@1.2.17"
+}
