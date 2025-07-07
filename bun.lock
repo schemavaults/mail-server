@@ -7,7 +7,7 @@
         "@react-email/components": "0.1.1",
         "@react-email/render": "1.1.3",
         "@schemavaults/app-definitions": "0.4.8",
-        "@schemavaults/auth-react-provider": "0.4.24",
+        "@schemavaults/auth-react-provider": "0.4.25",
         "@schemavaults/auth-server-sdk": "0.16.4",
         "@schemavaults/dbh": "0.4.5",
         "@schemavaults/theme": "0.22.7",
@@ -348,7 +348,7 @@
 
     "@schemavaults/auth-client-sdk": ["@schemavaults/auth-client-sdk@0.3.11", "https://npm.pkg.github.com/download/@schemavaults/auth-client-sdk/0.3.11/dacbca73ceb0ff7818d08ed3c7b1529ab674436f", { "dependencies": { "@schemavaults/app-definitions": "0.4.8", "@schemavaults/auth": "0.7.5", "zod": "3.23.8" } }, "sha512-F2ZmWvy+2rJtvJZD6w8BZdxML0ZiWKoEHklNs5YtdKSNX/Ueqi8JKY/OR+bGxfZH/9z/4hlrYI/WDoSi3XkItQ=="],
 
-    "@schemavaults/auth-react-provider": ["@schemavaults/auth-react-provider@0.4.24", "https://npm.pkg.github.com/download/@schemavaults/auth-react-provider/0.4.24/f7c3bfa02adce981cf05d88c0a52beb745afc88c", { "dependencies": { "@schemavaults/app-definitions": "0.4.8", "@schemavaults/auth-client-sdk": "0.3.11", "cookies-next": "4.1.1", "swr": "2.3.0", "uuid": "11.0.3", "zod": "3.23.8" }, "peerDependencies": { "next": "15.3.3", "react": "19.0.0", "react-dom": "19.0.0" } }, "sha512-paahjmpU95YEQY0QuvmAe8AB1NWk32I5D+SmFLiq35g/llgeI8UyCJX7CyTsMWLlhSuWn/Sonx+H65p35U4vCA=="],
+    "@schemavaults/auth-react-provider": ["@schemavaults/auth-react-provider@0.4.25", "https://npm.pkg.github.com/download/@schemavaults/auth-react-provider/0.4.25/4cd6cbf3ab3efa454762ebd4275b20dd70442b4d", { "dependencies": { "@schemavaults/app-definitions": "0.4.8", "@schemavaults/auth-client-sdk": "0.3.11", "cookies-next": "4.1.1", "swr": "2.3.0", "uuid": "11.0.3", "zod": "3.23.8" }, "peerDependencies": { "next": "15.3.3", "react": "19.0.0", "react-dom": "19.0.0" } }, "sha512-XbW+Qh3Cmf+7wHPsUA+nmYxQ3cKD2wbBjxfo3Y8b07XXd1oPUbLenM7HaAhgVBvikAzDWiA/J1K2+l2+6/Jhng=="],
 
     "@schemavaults/auth-server-sdk": ["@schemavaults/auth-server-sdk@0.16.4", "https://npm.pkg.github.com/download/@schemavaults/auth-server-sdk/0.16.4/80ff7bf1453a2313b9eba4a2399c1b7bc5a5f599", { "dependencies": { "@schemavaults/app-definitions": "0.4.8", "@schemavaults/auth": "0.7.5", "@schemavaults/jwt": "0.5.5", "zod": "3.23.8" } }, "sha512-exi/Ls+K/vmQ6v0PVq4F2UxhgjEPBsJgicc0/NN08EjmGrZj+HSUFCZL/opZeo/MKbel6q3iUg64ZpU+sSFM/Q=="],
 

@@ -4,6 +4,10 @@ import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import { ClientAppLogicProviders } from "./client-app-logic-providers";
 import { ClientAppVisualsProvider } from "./client-app-visuals-provider";
+import {
+  getAppEnvironment,
+  type SchemaVaultsAppEnvironment,
+} from "@schemavaults/app-definitions";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,6 +15,8 @@ export const metadata: Metadata = {
   title: "SchemaVaults Mail",
   description: "App for managing the sending of SchemaVaults' mail",
 };
+
+const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
 
 /** GLOBAL LAYOUT */
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -23,7 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={`${inter.className} w-full flex flex-col grow min-h-full h-full`}
       >
-        <ClientAppLogicProviders>
+        <ClientAppLogicProviders environment={environment}>
           <ClientAppVisualsProvider>{children}</ClientAppVisualsProvider>
         </ClientAppLogicProviders>
       </body>
