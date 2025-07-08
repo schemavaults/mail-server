@@ -33,7 +33,14 @@ export default function MailServerHomepageClientView({
   return (
     <div className="w-full min-h-screen h-full flex justify-center items-stretch bg-background">
       <main className="flex flex-col justify-start items-stretch w-full h-full min-h-screen flex-nowrap">
-        <header className="h-24 flex items-center justify-start gap-2 p-2 md:p-4">
+        <header
+          className={cn(
+            "h-24",
+            "flex items-center justify-start gap-2",
+            "p-2 md:p-4",
+            "shadow-md",
+          )}
+        >
           <a href={getSchemaVaultsCoreWebAppUrl(environment)}>
             <h1 className="text-2xl">
               <Wordmark />
@@ -45,7 +52,10 @@ export default function MailServerHomepageClientView({
         </header>
         <Separator decorative orientation="horizontal" className="w-full" />
         <section
-          className={cn("w-full grow", "py-4 px-4 md:px-8 lg:px-16 xl:px-24")}
+          className={cn(
+            "flex w-full grow",
+            "py-4 px-4 md:px-8 lg:px-16 xl:px-24",
+          )}
         >
           {isSomeDataReady ? (
             <AvailableMailingLists mailing_lists={data} />
