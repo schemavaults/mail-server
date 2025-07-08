@@ -29,18 +29,14 @@ export default function MailServerHomepageClientView({
   return (
     <div className="w-full min-h-screen h-full flex justify-center items-stretch bg-background py-4 px-4 md:px-8 lg:px-16 xl:px-24">
       <main className="flex flex-col justify-start items-stretch w-full h-full min-h-screen flex-nowrap">
-        <header className="h-24 flex items-center justify-start">
-          <h1 className="text-2xl flex flex-row flex-nowrap gap-2">
+        <header className="h-18 flex items-center justify-start">
+          <h1 className="text-2xl">
             <Wordmark />
-            <Separator decorative orientation="vertical" className="h-20" />
-            <span>Mail Management</span>
           </h1>
+          <Separator decorative orientation="vertical" className="h-14" />
+          <h2 className="text-2xl">Mailing Lists</h2>
         </header>
-        <Separator
-          decorative
-          orientation="horizontal"
-          className="w-full mx-2 md:mx-4 lg:mx-8"
-        />
+        <Separator decorative orientation="horizontal" className="w-full" />
         {isSomeDataReady ? (
           <AvailableMailingLists mailing_lists={data} />
         ) : isLoading ? (
