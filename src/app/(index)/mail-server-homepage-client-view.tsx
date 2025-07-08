@@ -36,7 +36,7 @@ export default function MailServerHomepageClientView({
         <header
           className={cn(
             "h-24",
-            "flex items-center justify-start gap-2",
+            "flex items-center justify-start gap-2 md:gap-4",
             "p-2 md:p-4",
             "shadow-md",
           )}
