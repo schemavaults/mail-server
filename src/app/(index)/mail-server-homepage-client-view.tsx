@@ -34,7 +34,13 @@ export default function MailServerHomepageClientView({
   const headerFontSizeClassName: string = "text-xl md:text-2xl";
 
   return (
-    <div className="w-full min-h-screen h-full flex justify-center items-stretch bg-background">
+    <div
+      className={cn(
+        "w-full min-h-screen h-full",
+        "flex flex-col justify-center items-stretch",
+        "bg-background",
+      )}
+    >
       <header
         className={cn(
           "h-24",
