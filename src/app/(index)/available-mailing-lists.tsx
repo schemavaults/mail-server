@@ -7,6 +7,7 @@ import NewMailingListDialog from "@/components/NewMailingListDialog";
 import JoinMailingListDialog from "./JoinMailingListDialog";
 import { useAdmin } from "@schemavaults/auth-react-provider";
 import { OpenJoinMailingListDialogButton } from "./OpenJoinMailingListDialogButton";
+import { SelectedMailingListToJoinContext } from "./SelectedMailingListToJoinContext";
 
 export interface AvailableMailingListsViewProps {
   mailing_lists: readonly MailingListDefinition[];
