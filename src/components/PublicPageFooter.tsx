@@ -60,6 +60,9 @@ export interface PublicPageFooterProps {
 export function PublicPageFooter({
   containerClassName,
 }: PublicPageFooterProps): ReactElement {
+  const linkItemFontClassName: string =
+    "text-gray-500 dark:text-gray-400 font-medium";
+
   const githubHref: string = "https://github.com/schemavaults";
   const twitterHref: string = "https://x.com/schemavaults";
   const linkedInHref: string = "https://linkedin.com/company/schemavaults";
@@ -85,7 +88,12 @@ export function PublicPageFooter({
               <h2 className="mb-6 text-sm font-semibold text-card-foreground uppercase">
                 Resources
               </h2>
-              <ul className="text-accent font-medium flex flex-col gap-2">
+              <ul
+                className={cn(
+                  linkItemFontClassName,
+                  "font-medium flex flex-col gap-2",
+                )}
+              >
                 <ResourcesSectionLink
                   title="SchemaVaults Web"
                   href="https://schemavaults.com"
@@ -100,7 +108,7 @@ export function PublicPageFooter({
               <h2 className="mb-6 text-sm font-semibold text-card-foreground uppercase">
                 Follow us
               </h2>
-              <ul className="text-accent font-medium">
+              <ul className={cn(linkItemFontClassName)}>
                 <FollowUsSectionLink title="GitHub" href={githubHref} />
               </ul>
             </div>
@@ -108,7 +116,7 @@ export function PublicPageFooter({
               <h2 className="mb-6 text-sm font-semibold uppercase text-card-foreground">
                 Legal
               </h2>
-              <ul className="text-gray-500 dark:text-gray-400 font-medium">
+              <ul className={cn(linkItemFontClassName)}>
                 <li className="mb-4">
                   <a href="#" className="hover:underline">
                     Privacy Policy
@@ -132,7 +140,7 @@ export function PublicPageFooter({
             </a>
             . All Rights Reserved.
           </span>
-          <div className="flex mt-4 sm:justify-center sm:mt-0">
+          <div className="flex gap-2 md:gap-4 mt-4 sm:justify-center sm:mt-0">
             <SocialMediaIconLink Icon={Github} alt="GitHub" href={githubHref} />
             <SocialMediaIconLink
               Icon={Twitter}
