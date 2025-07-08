@@ -21,7 +21,7 @@ export function OpenJoinMailingListDialogButton({
         setSelected(mailing_list);
       }}
     >
-      <CalendarPlus className="h-4 w-4" />
+      <CalendarPlus className="h-w w-6" />
       Join
     </Button>
   );

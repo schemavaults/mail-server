@@ -85,7 +85,7 @@ export default function JoinMailingListDialog({}: JoinMailingListDialogProps) {
     }
   }
 
-  const mailingListTitle: string = selectedMailingList?.name ?? "Mailing List;";
+  const mailingListTitle: string | undefined = selectedMailingList?.name;
 
   return (
     <Dialog
@@ -96,36 +96,42 @@ export default function JoinMailingListDialog({}: JoinMailingListDialogProps) {
         }
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{`Join ${mailingListTitle}`}</DialogTitle>
-          <DialogDescription>
-            Enter your email to join the {`${mailingListTitle}`} mailing list.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="you@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="submit">
-                <CalendarSync className="h-4 w-4 pr-2" /> Subscribe
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
+      {mailingListTitle && (
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{`Join the ${mailingListTitle} mailing list`}</DialogTitle>
+            <DialogDescription>
+              Enter your email to subscribe to new e-mails from the{" "}
+              {`${mailingListTitle}`} mailing list.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input placeholder="you@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button
+                  type="submit"
+                  className="flex flex-row gap-2 flex-nowrap"
+                >
+                  <CalendarSync className="h-6 w-6" /> Subscribe
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      )}
     </Dialog>
   );
 }
