@@ -13,7 +13,7 @@ function AvailableMailingLists({
 }: AvailableMailingListsViewProps): ReactElement {
   if (!Array.isArray(mailing_lists) || mailing_lists.length === 0) {
     return (
-      <div className="flex items-center justify-center w-full h-full">
+      <div className="flex items-center justify-center w-full grow">
         <p className="text-foreground">No mailing lists found!</p>
       </div>
     );
