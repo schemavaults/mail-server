@@ -5,6 +5,12 @@ import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry } from "@/lib/mail-db";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
 import MailServerHomepageClientView from "./mail-server-homepage-client-view";
+import {
+  getAppEnvironment,
+  type SchemaVaultsAppEnvironment,
+} from "@schemavaults/app-definitions";
+
+const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
 
 async function IndexPage(): Promise<ReactElement> {
   let isAdmin: boolean = false;
@@ -26,7 +32,12 @@ async function IndexPage(): Promise<ReactElement> {
     mailingLists = [];
   }
 
-  return <MailServerHomepageClientView mailing_lists={mailingLists} />;
+  return (
+    <MailServerHomepageClientView
+      mailing_lists={mailingLists}
+      environment={environment}
+    />
+  );
 }
 
 export default IndexPage;
