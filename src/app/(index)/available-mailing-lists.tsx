@@ -8,6 +8,7 @@ import JoinMailingListDialog from "./JoinMailingListDialog";
 import { useAdmin } from "@schemavaults/auth-react-provider";
 import { OpenJoinMailingListDialogButton } from "./OpenJoinMailingListDialogButton";
 import { SelectedMailingListToJoinContext } from "./SelectedMailingListToJoinContext";
+import AvailableMailingListItem from "./available-mailing-list-item";
 
 export interface AvailableMailingListsViewProps {
   mailing_lists: readonly MailingListDefinition[];
@@ -37,31 +38,11 @@ function AvailableMailingLists({
       <ul className="w-full grow">
         {mailing_lists.map(
           (mailing_list: MailingListDefinition): ReactElement => {
-            const mailing_list_id: string = mailing_list.mailing_list_id;
             return (
-              <li
-                key={mailing_list_id}
-                className={cn(
-                  "w-full p-2 md:p-4",
-                  "flex flex-col md:flex-row gap-2",
-                  "border rounded-md",
-                  "bg-card shadow-md",
-                )}
-              >
-                <div className={cn("flex flex-col gap-2", "grow")}>
-                  <p className="text-md font-bold text-foreground">
-                    {mailing_list.name}
-                  </p>
-                  <p className="text-sm text-foreground">
-                    {mailing_list.description}
-                  </p>
-                </div>
-                <div className={cn("flex flex-row gap-2")}>
-                  <OpenJoinMailingListDialogButton
-                    mailing_list={mailing_list}
-                  />
-                </div>
-              </li>
+              <AvailableMailingListItem
+                key={mailing_list.mailing_list_id}
+                mailing_list={mailing_list}
+              />
             );
           },
         )}
