@@ -6,7 +6,7 @@ export async function createMailDatabaseTables(
 ): Promise<void> {
   const createMailingListsTablePromise: Promise<unknown> =
     sql`CREATE TABLE IF NOT EXISTS MAILING_LISTS (
-    mailing_list_id: UUID PRIMARY KEY,
+    mailing_list_id UUID PRIMARY KEY,
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     public BOOL NOT NULL,
@@ -17,7 +17,7 @@ export async function createMailDatabaseTables(
 
   const createMailingListSubscribersTablePromise =
     sql`CREATE TABLE IF NOT EXISTS SUBSCRIBERS (
-    mailing_list_id: UUID TEXT NOT NULL,
+    mailing_list_id UUID TEXT NOT NULL,
     subscribe_time BIGINT NOT NULL,
     email TEXT NOT NULL,
     CONSTRAINT fk_mail_list FOREIGN KEY (mailing_list_id) REFERENCES MAILING_LISTS(mailing_list_id) ON DELETE CASCADE
@@ -25,7 +25,7 @@ export async function createMailDatabaseTables(
 
   const createMailingListUnsubscribeRecordsTablePromise =
     sql`CREATE TABLE IF NOT EXISTS UNSUBSCRIBE_RECORDS (
-    mailing_list_id: UUID TEXT NOT NULL,
+    mailing_list_id UUID TEXT NOT NULL,
     unsubscribe_time BIGINT NOT NULL,
     email TEXT NOT NULL,
     CONSTRAINT fk_mail_list FOREIGN KEY (mailing_list_id) REFERENCES MAILING_LISTS(mailing_list_id) ON DELETE CASCADE
