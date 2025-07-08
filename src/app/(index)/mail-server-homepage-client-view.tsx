@@ -30,6 +30,8 @@ export default function MailServerHomepageClientView({
 
   const isSomeDataReady = data;
 
+  const headerFontSizeClassName: string = "text-xl md:text-2xl";
+
   return (
     <div className="w-full min-h-screen h-full flex justify-center items-stretch bg-background">
       <main className="flex flex-col justify-start items-stretch w-full h-full min-h-screen flex-nowrap">
@@ -42,13 +44,13 @@ export default function MailServerHomepageClientView({
           )}
         >
           <a href={getSchemaVaultsCoreWebAppUrl(environment)}>
-            <h1 className="text-2xl">
+            <h1 className={cn(headerFontSizeClassName)}>
               <Wordmark />
             </h1>
           </a>
 
           <Separator decorative orientation="vertical" className="h-14" />
-          <h2 className="text-2xl">Mailing Lists</h2>
+          <h2 className={cn(headerFontSizeClassName)}>Mailing Lists</h2>
         </header>
         <Separator decorative orientation="horizontal" className="w-full" />
         <section

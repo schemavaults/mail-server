@@ -36,8 +36,9 @@ export function ClientAppLogicProviders({
   return (
     <AuthProvider
       app_id={SCHEMAVAULTS_MAIL_APP_ID}
-      authed_on_unauthed_redirect_uri="/account"
+      authed_on_unauthed_redirect_uri="/"
       unauthed_on_authed_redirect_uri="/auth/login"
+      successful_authentication_redirect_uri="/"
       router={router}
       path={path}
       default_audiences={[SCHEMAVAULTS_MAIL_APP_ID] as const satisfies AppId[]}
