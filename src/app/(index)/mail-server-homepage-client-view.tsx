@@ -27,12 +27,12 @@ export default function MailServerHomepageClientView({
   const isSomeDataReady = data;
 
   return (
-    <div className="w-full min-h-screen h-full flex justify-center items-center bg-background">
-      <main className="flex flex-col items-start">
+    <div className="w-full min-h-screen h-full flex justify-center items-stretch bg-background py-4 px-4 md:px-8 lg:px-16 xl:px-24">
+      <main className="flex flex-col justify-start items-stretch w-full h-full min-h-screen flex-nowrap">
         <header>
-          <h1 className="text-2xl">
+          <h1 className="text-2xl flex flex-row flex-nowrap gap-2">
             <Wordmark />
-            Mail Management App
+            <span>Mail Management</span>
           </h1>
         </header>
         {isSomeDataReady ? (
