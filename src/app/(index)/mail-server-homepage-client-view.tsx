@@ -8,6 +8,7 @@ import useSWR from "swr";
 import AvailableMailingLists from "./available-mailing-lists";
 import type { SchemaVaultsAppEnvironment } from "@schemavaults/app-definitions";
 import getSchemaVaultsCoreWebAppUrl from "@/lib/getSchemaVaultsCoreWebAppUrl";
+import PublicPageFooter from "@/components/PublicPageFooter";
 
 export interface MailServerHomepageClientViewProps {
   mailing_lists: readonly MailingListDefinition[];
@@ -34,28 +35,28 @@ export default function MailServerHomepageClientView({
 
   return (
     <div className="w-full min-h-screen h-full flex justify-center items-stretch bg-background">
-      <main className="flex flex-col justify-start items-stretch w-full h-full min-h-screen flex-nowrap">
-        <header
-          className={cn(
-            "h-24",
-            "flex items-center justify-start gap-2 md:gap-4",
-            "p-2 md:p-4",
-            "shadow-md",
-          )}
-        >
-          <a href={getSchemaVaultsCoreWebAppUrl(environment)}>
-            <h1 className={cn(headerFontSizeClassName)}>
-              <Wordmark />
-            </h1>
-          </a>
+      <header
+        className={cn(
+          "h-24",
+          "flex items-center justify-start gap-2 md:gap-4",
+          "p-2 md:p-4",
+          "shadow-md",
+        )}
+      >
+        <a href={getSchemaVaultsCoreWebAppUrl(environment)}>
+          <h1 className={cn(headerFontSizeClassName)}>
+            <Wordmark />
+          </h1>
+        </a>
 
-          <Separator decorative orientation="vertical" className="h-14" />
-          <h2 className={cn(headerFontSizeClassName)}>Mailing Lists</h2>
-        </header>
-        <Separator decorative orientation="horizontal" className="w-full" />
+        <Separator decorative orientation="vertical" className="h-14" />
+        <h2 className={cn(headerFontSizeClassName)}>Mailing Lists</h2>
+      </header>
+      <Separator decorative orientation="horizontal" className="w-full" />
+      <main className="flex flex-col justify-start items-stretch w-full grow flex-nowrap">
         <section
           className={cn(
-            "flex w-full grow",
+            "flex w-full grow justify-start items-stretch",
             "py-4 px-4 md:px-8 lg:px-16 xl:px-24",
           )}
         >
@@ -68,6 +69,8 @@ export default function MailServerHomepageClientView({
           )}
         </section>
       </main>
+      <Separator decorative orientation="horizontal" className="w-full" />
+      <PublicPageFooter containerClassName="w-full" />
     </div>
   );
 }

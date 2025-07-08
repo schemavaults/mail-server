@@ -17,8 +17,13 @@ function AvailableMailingLists({
 
   if (!Array.isArray(mailing_lists) || mailing_lists.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center w-full grow">
-        <p className="text-foreground">No mailing lists found!</p>
+      <div
+        className={cn(
+          "flex flex-col items-center justify-center w-full grow",
+          "gap-2 md:gap-4",
+        )}
+      >
+        <p className="text-foreground select-none">No mailing lists found!</p>
         {admin && <NewMailingListDialog />}
       </div>
     );

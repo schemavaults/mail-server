@@ -6,11 +6,15 @@ export async function createMailingList(
   mailing_list: Omit<MailingListDefinition, "mailing_list_id" | "created_at">,
   auth: ISchemaVaultsAuthClient,
 ): Promise<string> {
-  const response = await fetch(`/api/mailing-lists/create`, {
+  const mailServerBackendAccessToken = await auth.acquireAccessToken({
+    audience: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+    token_id: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+  });
+  const response = await fetch(`/api/mailing-lists`, {
     method: "POST",
     body: JSON.stringify(mailing_list),
     headers: {
-      Authorization: `Bearer ${await auth.acquireAccessToken({ audience: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id, token_id: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id })}`,
+      Authorization: `Bearer ${mailServerBackendAccessToken}`,
     },
   });
   if (!response.ok || response.status !== 200) {

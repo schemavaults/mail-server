@@ -29,7 +29,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       await RouteGuardFactory.getInstance().createGuardFromAuthHeader(
         "admin",
         req.headers.get("Authorization") ??
-          req.headers.get("mailorization") ??
+          req.headers.get("authorization") ??
           null,
         SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
       );
