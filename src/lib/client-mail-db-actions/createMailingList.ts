@@ -14,7 +14,7 @@ export async function createMailingList(
     method: "POST",
     body: JSON.stringify(mailing_list),
     headers: {
-      Authorization: `Bearer ${mailServerBackendAccessToken}`,
+      Authorization: `Bearer ${mailServerBackendAccessToken.token}`,
     },
   });
   if (!response.ok || response.status !== 200) {
