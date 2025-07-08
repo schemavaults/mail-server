@@ -2,7 +2,7 @@
 
 import listMailingLists from "@/lib/client-mail-db-actions/listMailingLists";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
-import { LoadingPage, Separator, Wordmark } from "@schemavaults/ui";
+import { cn, LoadingPage, Separator, Wordmark } from "@schemavaults/ui";
 import type { ReactElement } from "react";
 import useSWR from "swr";
 import AvailableMailingLists from "./available-mailing-lists";
@@ -31,9 +31,9 @@ export default function MailServerHomepageClientView({
   const isSomeDataReady = data;
 
   return (
-    <div className="w-full min-h-screen h-full flex justify-center items-stretch bg-background py-4 px-4 md:px-8 lg:px-16 xl:px-24">
+    <div className="w-full min-h-screen h-full flex justify-center items-stretch bg-background">
       <main className="flex flex-col justify-start items-stretch w-full h-full min-h-screen flex-nowrap">
-        <header className="h-18 flex items-center justify-start">
+        <header className="h-24 flex items-center justify-start gap-2 p-2 md:p-4">
           <a href={getSchemaVaultsCoreWebAppUrl(environment)}>
             <h1 className="text-2xl">
               <Wordmark />
@@ -44,13 +44,17 @@ export default function MailServerHomepageClientView({
           <h2 className="text-2xl">Mailing Lists</h2>
         </header>
         <Separator decorative orientation="horizontal" className="w-full" />
-        {isSomeDataReady ? (
-          <AvailableMailingLists mailing_lists={data} />
-        ) : isLoading ? (
-          <LoadingPage message="Loading mailing lists..." />
-        ) : (
-          <AvailableMailingLists mailing_lists={[]} />
-        )}
+        <section
+          className={cn("w-full grow", "py-4 px-4 md:px-8 lg:px-16 xl:px-24")}
+        >
+          {isSomeDataReady ? (
+            <AvailableMailingLists mailing_lists={data} />
+          ) : isLoading ? (
+            <LoadingPage message="Loading mailing lists..." />
+          ) : (
+            <AvailableMailingLists mailing_lists={[]} />
+          )}
+        </section>
       </main>
     </div>
   );
