@@ -79,7 +79,7 @@ export function PublicPageFooter({
               className="flex items-center flex-row flex-nowrap gap-2 md:gap-4"
             >
               <Image
-                src="https://schemavaults.com/media/android-chrome-512x512.png"
+                src="/media/logo.png"
                 alt="SchemaVaults Logo"
                 width={48}
                 height={48}
