@@ -7,11 +7,11 @@
         "@react-email/components": "0.1.1",
         "@react-email/render": "1.1.4",
         "@schemavaults/app-definitions": "0.4.10",
-        "@schemavaults/auth-react-provider": "0.4.28",
+        "@schemavaults/auth-react-provider": "0.4.38",
         "@schemavaults/auth-server-sdk": "0.16.7",
         "@schemavaults/dbh": "0.4.5",
         "@schemavaults/theme": "0.22.7",
-        "@schemavaults/ui": "0.11.82",
+        "@schemavaults/ui": "0.11.86",
         "lucide-react": "0.508.0",
         "next": "15.4.4",
         "react": "19.0.0",
@@ -350,9 +350,9 @@
 
     "@schemavaults/auth": ["@schemavaults/auth@0.7.7", "https://npm.pkg.github.com/download/@schemavaults/auth/0.7.7/1dd59169a43e38f862b5fff4ad5e0a0a3a47fa94", { "dependencies": { "@schemavaults/app-definitions": "0.4.10", "@schemavaults/storage-regions": "0.4.3", "crypto-js": "4.2.0", "zod": "3.23.8" } }, "sha512-ia8yUTpBoXPc0s9OrE9UdgjxvG7drgpVP4nXp5TAjM521j6NO+jZCQ/FdCj3K8IJPElIbep/TtDJGyJxqvp2ww=="],
 
-    "@schemavaults/auth-client-sdk": ["@schemavaults/auth-client-sdk@0.3.13", "https://npm.pkg.github.com/download/@schemavaults/auth-client-sdk/0.3.13/345bb092ff0aa31a1e791f67f0875c3df0cb436c", { "dependencies": { "@schemavaults/app-definitions": "0.4.10", "@schemavaults/auth": "0.7.7", "zod": "3.23.8" } }, "sha512-dfbiC7BBO15zCo6PeRmPEks39tINqPOkGUJuXv8MX1wF1YRWjA6Gu9DfCrlBW4Z1xGKARNRLr5WnrsfEoEOhcA=="],
+    "@schemavaults/auth-client-sdk": ["@schemavaults/auth-client-sdk@0.3.20", "https://npm.pkg.github.com/download/@schemavaults/auth-client-sdk/0.3.20/4b90c64edb3bb4c8f3060a0ed7df0feb5c529aa8", { "dependencies": { "@schemavaults/app-definitions": "0.4.10", "@schemavaults/auth": "0.7.7", "zod": "3.23.8" } }, "sha512-IhEf+tR0xyaGci7twerdiYjg75uPnN5PCDKPoRNSc4kJu0pYrS26JVZ+LYO1Ji896qTphmxhAjBMIrESyGfdmA=="],
 
-    "@schemavaults/auth-react-provider": ["@schemavaults/auth-react-provider@0.4.28", "https://npm.pkg.github.com/download/@schemavaults/auth-react-provider/0.4.28/23cd419a305048f327427bea92e9c46109ea3ddf", { "dependencies": { "@schemavaults/app-definitions": "0.4.10", "@schemavaults/auth-client-sdk": "0.3.13", "cookies-next": "4.1.1", "swr": "2.3.4", "uuid": "11.0.3", "zod": "3.23.8" }, "peerDependencies": { "next": "15.3.5", "react": "19.0.0", "react-dom": "19.0.0" } }, "sha512-7AuDubRnn0tDjCbCZWAoQHZaGm/EUNflouh/3WMH10I6bVDbPbU4gsiA8LNE0+MNdN5jlgnNYzv5T+B8M5m8rw=="],
+    "@schemavaults/auth-react-provider": ["@schemavaults/auth-react-provider@0.4.38", "https://npm.pkg.github.com/download/@schemavaults/auth-react-provider/0.4.38/1564566fd17c2efd4a7e1250986d05c5fa96d257", { "dependencies": { "@schemavaults/app-definitions": "0.4.10", "@schemavaults/auth-client-sdk": "0.3.20", "cookies-next": "4.1.1", "swr": "2.3.4", "uuid": "11.0.3", "zod": "3.23.8" }, "peerDependencies": { "next": "15.3.5", "react": "19.0.0", "react-dom": "19.0.0" } }, "sha512-dQCwyz6Q+COJiJ2hS7Be1gC+tVFW16CnoR90UWzQfIv66jKTDXBoMKcbz3h66stbeFVBr/hcUuYpz2alZXGCdg=="],
 
     "@schemavaults/auth-server-sdk": ["@schemavaults/auth-server-sdk@0.16.7", "https://npm.pkg.github.com/download/@schemavaults/auth-server-sdk/0.16.7/ab8d6b81f44b259cc771e05f5057aac4029611c7", { "dependencies": { "@schemavaults/app-definitions": "0.4.10", "@schemavaults/auth": "0.7.7", "@schemavaults/jwt": "0.5.6", "zod": "3.23.8" } }, "sha512-u+FxbW4HbGZRaPRaTKZyAOj10dvIih/Fom+2/afpAcg/JRiJNWxYeqOY75URC+CpPZl5bZY91Bb24okfdZQY5Q=="],
 
@@ -364,7 +364,7 @@
 
     "@schemavaults/theme": ["@schemavaults/theme@0.22.7", "https://npm.pkg.github.com/download/@schemavaults/theme/0.22.7/2132fdd0780083e22ecc41ac9f78a4ab1cd1d12f", { "dependencies": { "tailwindcss-animate": "1.0.7" }, "peerDependencies": { "react": "19.0.0", "react-dom": "19.0.0" } }, "sha512-7yAriZ0ZYld04E203S4oKOa858gJXqMMIUg+Ju8yG1FDR8bmIRk7M6ZBicggL3Y3dg/EQXcKZUiXjyv2bjuYdg=="],
 
-    "@schemavaults/ui": ["@schemavaults/ui@0.11.82", "https://npm.pkg.github.com/download/@schemavaults/ui/0.11.82/d7e38b5e33bbc152c47f31a31799357f6d14d250", { "dependencies": { "@hookform/resolvers": "3.9.0", "@radix-ui/react-checkbox": "1.3.2", "@radix-ui/react-context-menu": "2.2.15", "@radix-ui/react-dialog": "1.1.14", "@radix-ui/react-dropdown-menu": "2.1.15", "@radix-ui/react-hover-card": "1.1.14", "@radix-ui/react-label": "2.1.7", "@radix-ui/react-navigation-menu": "1.2.13", "@radix-ui/react-popover": "1.1.14", "@radix-ui/react-radio-group": "1.3.7", "@radix-ui/react-separator": "1.1.7", "@radix-ui/react-slot": "^1.0.2", "@radix-ui/react-toast": "1.2.14", "@radix-ui/react-tooltip": "1.2.7", "@schemavaults/theme": "0.22.7", "@tanstack/react-table": "8.20.1", "class-variance-authority": "0.7.1", "clsx": "2.1.1", "cmdk": "1.1.1", "eslint": "9.17.0", "framer-motion": "12.16.0", "lucide-react": "0.508.0", "next-themes": "0.4.6", "react": "19.0.0", "react-dom": "19.0.0", "react-hook-form": "7.58.1", "tailwind-merge": "3.0.2", "zod": "3.23.8" } }, "sha512-eRbWelwyRgnRqUrjf88LhGVN0D5pIJPGs6dVWZ+ekyldMiaxCD4GpR4kDeReX7mjaKjDVxrjOe9K602j4DKq+g=="],
+    "@schemavaults/ui": ["@schemavaults/ui@0.11.86", "https://npm.pkg.github.com/download/@schemavaults/ui/0.11.86/7e64861359dc6b5ec24e4a700fa94aca40da8852", { "dependencies": { "@hookform/resolvers": "3.9.0", "@radix-ui/react-checkbox": "1.3.2", "@radix-ui/react-context-menu": "2.2.15", "@radix-ui/react-dialog": "1.1.14", "@radix-ui/react-dropdown-menu": "2.1.15", "@radix-ui/react-hover-card": "1.1.14", "@radix-ui/react-label": "2.1.7", "@radix-ui/react-navigation-menu": "1.2.13", "@radix-ui/react-popover": "1.1.14", "@radix-ui/react-radio-group": "1.3.7", "@radix-ui/react-separator": "1.1.7", "@radix-ui/react-slot": "^1.0.2", "@radix-ui/react-toast": "1.2.14", "@radix-ui/react-tooltip": "1.2.7", "@schemavaults/theme": "0.22.7", "@tanstack/react-table": "8.20.1", "class-variance-authority": "0.7.1", "clsx": "2.1.1", "cmdk": "1.1.1", "eslint": "9.17.0", "framer-motion": "12.16.0", "lucide-react": "0.508.0", "next-themes": "0.4.6", "react": "19.0.0", "react-dom": "19.0.0", "react-hook-form": "7.58.1", "tailwind-merge": "3.0.2", "zod": "3.23.8" } }, "sha512-fNN0G9Qv2AmRuL19+4CSLu3/1TMtUFUff9XJZlibsZT2AEBckGwE52Rmz3X9EgomkcKZc5mKAXPxcCF8EUJ5Ng=="],
 
     "@selderee/plugin-htmlparser2": ["@selderee/plugin-htmlparser2@0.11.0", "", { "dependencies": { "domhandler": "^5.0.3", "selderee": "^0.11.0" } }, "sha512-P33hHGdldxGabLFjPPpaTxVolMrzrcegejx+0GxjrIb9Zv48D8yAIA/QTDR2dFl7Uz7urX8aX6+5bCZslr+gWQ=="],
 
