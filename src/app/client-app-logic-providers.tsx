@@ -1,15 +1,13 @@
 "use client";
 
 import type { PropsWithChildren, ReactElement } from "react";
-import AuthProvider, {
-  type SchemaVaultsAppEnvironment,
-} from "@schemavaults/auth-react-provider";
+import AuthProvider from "./auth/auth-provider";
 import { usePathname, useRouter } from "next/navigation";
 import { getAppId } from "@/lib/getAppId";
-import useDebug from "@/hooks/useDebug";
 import {
   schemaVaultsAppEnvironmentSchema,
   type AppId,
+  type SchemaVaultsAppEnvironment,
 } from "@schemavaults/app-definitions";
 import { getDebugState } from "@/lib/getDebugState";
 

@@ -1,91 +1,61 @@
-import { SCHEMAVAULTS_MAIL_APP_DEFINITION } from "@schemavaults/app-definitions";
-import type { UserData } from "@schemavaults/auth";
 import {
-  RouteGuardFactory,
-  type IRouteGuard,
+  SCHEMAVAULTS_MAIL_SERVER,
+  type ApiServerId,
+} from "@schemavaults/app-definitions";
+import {
+  withAdminApiRouteGuard as _withAdminApiRouteGuard,
+  withAdminServerComponentRouteGuard as _withAdminServerComponentRouteGuard,
+  type TProtectedAdminApiRoute,
+  type IBaseProtectedAdminApiRouteInputs,
+  type TProtectedAdminPageServerComponent,
+  type IBaseProtectedAdminServerComponentPageProps,
 } from "@schemavaults/auth-server-sdk";
 import { type NextRequest, NextResponse } from "next/server";
+import { ServerlessDatabase } from "./ServerlessDatabase";
+import type { ReactElement } from "react";
 
-export async function withAdminRouteGuard(
-  req: NextRequest,
-  handler: (req: NextRequest) => Promise<NextResponse>,
-) {
-  // Load user data and make sure they're authorized to do things!
-  let userData: UserData;
-  try {
-    const route_guard: IRouteGuard =
-      await RouteGuardFactory.getInstance().createGuardFromAuthHeader(
-        "admin",
-        req.headers.get("Authorization") ??
-          req.headers.get("authorization") ??
-          null,
-        SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
-      );
-    const user: UserData | null = route_guard.user;
-    if (!route_guard.isAccessAllowed()) {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "Your access token does not grant you access to this resource",
-        },
-        {
-          status: 403,
-        },
-      );
-    }
-    if (!user) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Failed to load user from authorization token",
-        },
-        {
-          status: 401,
-        },
-      );
-    }
-    userData = user;
-  } catch (e: unknown) {
-    console.error(e);
-    return NextResponse.json(
-      {
-        success: false,
-        message:
-          "You must pass a valid access token in the Authorization header to use this resource",
-      },
-      {
-        status: 401,
-      },
-    );
-  }
+type THandler = (req: NextRequest) => Promise<NextResponse>;
 
-  if (!userData.admin) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "You must be an admin to use this resource!",
-      },
-      {
-        status: 403,
-      },
-    );
-  }
-
-  try {
-    return await handler(req);
-  } catch (e: unknown) {
-    console.error("Uncaught error in admin API route: ", e);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Uncaught error in admin API route!",
-      },
-      {
-        status: 500,
-      },
-    );
-  }
+interface IAdminApiRouteProps extends IBaseProtectedAdminApiRouteInputs {
+  dbh: ServerlessDatabase;
 }
 
-export default withAdminRouteGuard;
+export async function withAdminApiRouteGuard(
+  api_route_handler: TProtectedAdminApiRoute<IAdminApiRouteProps>,
+): Promise<THandler> {
+  await using dbh: ServerlessDatabase = ServerlessDatabase.getAsyncResource();
+
+  const protected_route: THandler =
+    _withAdminApiRouteGuard<IAdminApiRouteProps>(
+      api_route_handler,
+      {
+        dbh,
+      },
+      async (opts) => (opts.user.admin ? true : false),
+      undefined,
+      (): ApiServerId => SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+    );
+
+  return protected_route satisfies THandler;
+}
+
+interface IAdminServerComponentProps
+  extends IBaseProtectedAdminServerComponentPageProps {
+  dbh: ServerlessDatabase;
+}
+
+export async function withAdminServerComponentRouteGuard(
+  server_component: TProtectedAdminPageServerComponent<IAdminServerComponentProps>,
+): Promise<ReactElement> {
+  await using dbh: ServerlessDatabase = ServerlessDatabase.getAsyncResource();
+
+  return await _withAdminServerComponentRouteGuard<IAdminServerComponentProps>(
+    server_component,
+    {
+      dbh,
+    },
+    async (opts) => (opts.user.admin ? true : false),
+    undefined,
+    (): ApiServerId => SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+  );
+}

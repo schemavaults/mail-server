@@ -8,7 +8,6 @@ export async function createMailingList(
 ): Promise<string> {
   const mailServerBackendAccessToken = await auth.acquireAccessToken({
     audience: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
-    token_id: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
   });
   const response = await fetch(`/api/mailing-lists`, {
     method: "POST",

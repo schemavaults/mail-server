@@ -6,14 +6,8 @@ import {
   type MailingListDefinition,
 } from "@/lib/mailing-list-definition";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
-import { SCHEMAVAULTS_MAIL_APP_DEFINITION } from "@schemavaults/app-definitions";
-import type { UserData } from "@schemavaults/auth";
-import {
-  RouteGuardFactory,
-  type IRouteGuard,
-} from "@schemavaults/auth-server-sdk";
 import { type NextRequest, NextResponse } from "next/server";
-import withAdminRouteGuard from "@/lib/withAdminRouteGuard";
+import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
 
 type ResourceCreationResponse =
   | {
@@ -26,71 +20,72 @@ type ResourceCreationResponse =
       message: string;
     };
 
-async function POST_handler(req: NextRequest): Promise<NextResponse> {
-  const newMailingListId: string = crypto.randomUUID();
+export async function POST(req: NextRequest): Promise<NextResponse> {
+  const protected_route = await withAdminApiRouteGuard(
+    async function POST_handler({ req }): Promise<NextResponse> {
+      const newMailingListId: string = crypto.randomUUID();
 
-  let newMailingList: MailingListDefinition;
-  try {
-    const body = await req.json();
-    if (!body || typeof body !== "object") {
-      throw new Error("Expected JSON object request body!");
-    }
-    const parsed = await mailingListDefinition.safeParseAsync({
-      ...body,
-      mailing_list_id: newMailingListId,
-      created_at: Date.now(),
-    });
-    if (!parsed.success) {
-      throw parsed.error;
-    }
-    newMailingList = parsed.data;
-  } catch (e: unknown) {
-    console.error(
-      "Failed to parse new mailing list to insert into database from request: ",
-      e,
-    );
-    return NextResponse.json(
-      {
-        success: false,
-        message:
-          "Failed to parse new mailing list to insert into database from your request!",
-      } satisfies ResourceCreationResponse,
-      {
-        status: 400,
-      },
-    );
-  }
+      let newMailingList: MailingListDefinition;
+      try {
+        const body = await req.json();
+        if (!body || typeof body !== "object") {
+          throw new Error("Expected JSON object request body!");
+        }
+        const parsed = await mailingListDefinition.safeParseAsync({
+          ...body,
+          mailing_list_id: newMailingListId,
+          created_at: Date.now(),
+        });
+        if (!parsed.success) {
+          throw parsed.error;
+        }
+        newMailingList = parsed.data;
+      } catch (e: unknown) {
+        console.error(
+          "Failed to parse new mailing list to insert into database from request: ",
+          e,
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "Failed to parse new mailing list to insert into database from your request!",
+          } satisfies ResourceCreationResponse,
+          {
+            status: 400,
+          },
+        );
+      }
 
-  try {
-    await using dbh = ServerlessDatabase.getAsyncResource();
+      try {
+        await using dbh = ServerlessDatabase.getAsyncResource();
 
-    const mailRegistry = new MailingListRegistry(dbh);
-    await mailRegistry.createMailingList(newMailingList);
-  } catch (e: unknown) {
-    console.error("Failed to insert new mailing list into database: ", e);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to insert new mailing list into database",
-      } satisfies ResourceCreationResponse,
-      {
-        status: 500,
-      },
-    );
-  }
+        const mailRegistry = new MailingListRegistry(dbh);
+        await mailRegistry.createMailingList(newMailingList);
+      } catch (e: unknown) {
+        console.error("Failed to insert new mailing list into database: ", e);
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Failed to insert new mailing list into database",
+          } satisfies ResourceCreationResponse,
+          {
+            status: 500,
+          },
+        );
+      }
 
-  return NextResponse.json(
-    {
-      success: true,
-      message: `Successfully created new mailing list with ID: '${newMailingListId}'!`,
-      resource_id: newMailingListId,
-    } satisfies ResourceCreationResponse,
-    {
-      status: 200,
+      return NextResponse.json(
+        {
+          success: true,
+          message: `Successfully created new mailing list with ID: '${newMailingListId}'!`,
+          resource_id: newMailingListId,
+        } satisfies ResourceCreationResponse,
+        {
+          status: 200,
+        },
+      );
     },
   );
-}
-
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  return await withAdminRouteGuard(req, POST_handler);
+  return await protected_route(req);
 }
