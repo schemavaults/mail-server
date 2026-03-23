@@ -1,11 +1,15 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ESNext",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "allowJs": false,
     // Bundler mode
     "moduleResolution": "bundler",
@@ -29,9 +33,17 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
-  "include": ["src", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "src",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }
