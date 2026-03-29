@@ -1,14 +1,31 @@
+"use client";
+
 import {
   mailingListDefinition,
   type MailingListDefinition,
 } from "@/lib/mailing-list-definition";
 
-export async function listMailingLists(): Promise<
-  readonly MailingListDefinition[]
-> {
+export async function listMailingLists(
+  query_type: "public" | "all",
+  token: string | undefined,
+): Promise<readonly MailingListDefinition[]> {
+  const headers = new Headers();
+  if (query_type === "public") {
+    // no need to set auth header
+  } else {
+    // we need to set auth header
+    if (!token) {
+      throw new TypeError(
+        "Did not receive a token to send request listing all mailing lists!",
+      );
+    }
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
   try {
     const response = await fetch("/api/mailing-lists", {
       method: "GET",
+      headers,
     });
     if (!response.ok || response.status !== 200) {
       throw new Error("Received error response trying to fetch mailing lists!");

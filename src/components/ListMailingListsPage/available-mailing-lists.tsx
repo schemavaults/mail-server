@@ -4,7 +4,7 @@ import type { MailingListDefinition } from "@/lib/mailing-list-definition";
 import { cn } from "@schemavaults/ui";
 import type { ReactElement } from "react";
 import NewMailingListDialog from "@/components/NewMailingListDialog";
-import JoinMailingListDialog from "./JoinMailingListDialog";
+import JoinMailingListDialog from "@/components/JoinMailingListDialog";
 import { useAdmin } from "@schemavaults/auth-react-provider";
 import AvailableMailingListItem from "./available-mailing-list-item";
 

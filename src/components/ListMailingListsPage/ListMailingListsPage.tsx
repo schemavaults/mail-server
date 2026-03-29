@@ -2,31 +2,70 @@
 
 import listMailingLists from "@/lib/client-mail-db-actions/listMailingLists";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
-import { cn, LoadingPage, Separator, Wordmark } from "@schemavaults/ui";
+import { Button, cn, LoadingPage, Separator, Wordmark } from "@schemavaults/ui";
 import { useState, type ReactElement } from "react";
 import useSWR from "swr";
 import AvailableMailingLists from "./available-mailing-lists";
-import type { SchemaVaultsAppEnvironment } from "@schemavaults/app-definitions";
+import {
+  SCHEMAVAULTS_MAIL_SERVER,
+  type SchemaVaultsAppEnvironment,
+} from "@schemavaults/app-definitions";
 import getSchemaVaultsCoreWebAppUrl from "@/lib/getSchemaVaultsCoreWebAppUrl";
 import PublicPageFooter from "@/components/PublicPageFooter";
 import {
   SelectedMailingListToJoinContext,
   SelectMailingListToJoinDispatchContext,
-} from "./SelectedMailingListToJoinContext";
+} from "@/contexts/SelectedMailingListToJoinContext";
+import {
+  useAdmin,
+  useAuth,
+  type ISchemaVaultsAuthClient,
+} from "@schemavaults/auth-react-provider";
+import Link from "next/link";
+import { ShieldAlert } from "lucide-react";
 
-export interface MailServerHomepageClientViewProps {
+export interface ListMailingListsPageProps {
   mailing_lists: readonly MailingListDefinition[];
   environment: SchemaVaultsAppEnvironment;
+  isAdminPage?: boolean;
 }
 
-export default function MailServerHomepageClientView({
+export function ListMailingListsPage({
   environment,
   mailing_lists,
-}: MailServerHomepageClientViewProps): ReactElement {
+  isAdminPage,
+}: ListMailingListsPageProps): ReactElement {
+  const authContext = useAuth();
+  const admin: boolean = useAdmin();
+
+  const query_type = isAdminPage ? "all" : "public";
   const { data, error, isLoading } = useSWR(
-    `/api/mailing_lists`,
+    query_type !== "public"
+      ? authContext.ready
+        ? `/api/mailing_lists`
+        : null
+      : `/api/mailing_lists`,
     async (): Promise<readonly MailingListDefinition[]> => {
-      return await listMailingLists();
+      async function getToken(): Promise<string> {
+        if (
+          authContext.ready &&
+          authContext.client &&
+          authContext.client.current
+        ) {
+          const auth: ISchemaVaultsAuthClient = authContext.client.current;
+          const token = await auth.acquireAccessToken({
+            audience: SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+          });
+          return token.token;
+        }
+        throw new Error(
+          "Auth context is not ready! Not attempting to refresh yet",
+        );
+      }
+      return await listMailingLists(
+        query_type,
+        query_type === "public" ? undefined : await getToken(),
+      );
     },
     {
       fallbackData: mailing_lists,
@@ -83,6 +122,16 @@ export default function MailServerHomepageClientView({
               ) : (
                 <AvailableMailingLists mailing_lists={[]} />
               )}
+              {admin && !isAdminPage && (
+                <div className="flex flex-row items-center justify-center w-full">
+                  <Link href="/admin">
+                    <Button className="flex flex-row flex-nowrap gap-2">
+                      <ShieldAlert className="h-4 w-4" />
+                      View all (including non-public)
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </section>
           </main>
           <Separator decorative orientation="horizontal" className="w-full" />
@@ -92,3 +141,5 @@ export default function MailServerHomepageClientView({
     </SelectMailingListToJoinDispatchContext.Provider>
   );
 }
+
+export default ListMailingListsPage;

@@ -30,7 +30,8 @@ import type { MailingListDefinition } from "@/lib/mailing-list-definition";
 import {
   SelectedMailingListToJoinContext,
   SelectMailingListToJoinDispatchContext,
-} from "./SelectedMailingListToJoinContext";
+} from "@/contexts/SelectedMailingListToJoinContext";
+
 import { CalendarSync } from "lucide-react";
 
 const formSchema = z.object({

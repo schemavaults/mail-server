@@ -4,7 +4,7 @@ import type { MailingListDefinition } from "@/lib/mailing-list-definition";
 import { Button } from "@schemavaults/ui";
 import { CalendarPlus } from "lucide-react";
 import { useContext } from "react";
-import { SelectMailingListToJoinDispatchContext } from "./SelectedMailingListToJoinContext";
+import { SelectMailingListToJoinDispatchContext } from "@/contexts/SelectedMailingListToJoinContext";
 
 export function OpenJoinMailingListDialogButton({
   mailing_list,
