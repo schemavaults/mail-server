@@ -14,25 +14,7 @@ import {
   type MailingListUnsubscribeRecord,
   type MailingListUnsubscribeTable,
 } from "./mailing-list-unsubscribe-record-table";
-
-export interface IMailingListRegistry {
-  listMailingLists: (
-    query_type: "public" | "all",
-  ) => Promise<readonly MailingListDefinition[]>;
-  createMailingList: (newMailingList: MailingListDefinition) => Promise<void>;
-  joinMailingList: (
-    mailingListId: MailingListDefinition["mailing_list_id"],
-    email: string,
-  ) => Promise<void>;
-  leaveMailingList: (
-    mailingListId: MailingListDefinition["mailing_list_id"],
-    email: string,
-  ) => Promise<void>;
-  listSubscribers: (
-    mailingListId: MailingListDefinition["mailing_list_id"],
-    trx?: Transaction<MailDatabase>,
-  ) => Promise<readonly MailingListSubscriber[]>;
-}
+import type { IMailingListRegistry } from "./IMailingListRegistry";
 
 export class MailingListRegistry implements IMailingListRegistry {
   private readonly dbh: ServerlessDatabase;
@@ -73,7 +55,10 @@ export class MailingListRegistry implements IMailingListRegistry {
   public async listMailingLists(
     query_type: "public" | "all",
   ): Promise<readonly MailingListDefinition[]> {
-    const listQuery = this.db.selectFrom("mailing_lists").selectAll();
+    let listQuery = this.db.selectFrom("mailing_lists").selectAll();
+    if (query_type === "public") {
+      listQuery = listQuery.where("public", "=", true);
+    }
     const result = await listQuery.execute();
     const parsed = result.map(this.parseMailingListDefiniton);
     if (!parsed.every(this.isValidMailingListDefinition)) {
@@ -174,10 +159,8 @@ export class MailingListRegistry implements IMailingListRegistry {
 
   public async listSubscribers(
     mailing_list_id: MailingListDefinition["mailing_list_id"],
-    trx?: Transaction<MailDatabase>,
   ): Promise<readonly MailingListSubscriber[]> {
-    const executor = trx ?? this.db;
-    const result = await executor
+    const result = await this.db
       .selectFrom("subscribers")
       .selectAll()
       .where("mailing_list_id", "=", mailing_list_id)
@@ -188,5 +171,22 @@ export class MailingListRegistry implements IMailingListRegistry {
     }
 
     return result satisfies readonly MailingListSubscriber[];
+  }
+
+  public async getMailingList(
+    mailing_list_id: MailingListDefinition["mailing_list_id"],
+  ): Promise<MailingListDefinition> {
+    const result = await this.db
+      .selectFrom("mailing_lists")
+      .selectAll()
+      .where("mailing_list_id", "=", mailing_list_id)
+      .executeTakeFirstOrThrow();
+    const parsed = await mailingListDefinition.safeParseAsync(
+      this.parseMailingListDefiniton(result) satisfies MailingListDefinition,
+    );
+    if (!parsed.success) {
+      throw parsed.error;
+    }
+    return parsed.data;
   }
 }

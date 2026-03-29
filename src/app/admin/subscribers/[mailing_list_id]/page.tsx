@@ -24,17 +24,18 @@ export default async function SubscribersPage({
 
       try {
         subscribers = await mailRegistry.listSubscribers(mailing_list_id);
+      } catch (e: unknown) {
+        console.error("Failed to load subscribers: ", e);
+      }
 
-        const mailingLists: readonly MailingListDefinition[] =
-          await mailRegistry.listMailingLists();
-        const match = mailingLists.find(
-          (ml) => ml.mailing_list_id === mailing_list_id,
-        );
+      try {
+        const match: MailingListDefinition =
+          await mailRegistry.getMailingList(mailing_list_id);
         if (match) {
           mailingListName = match.name;
         }
       } catch (e: unknown) {
-        console.error("Failed to load subscribers: ", e);
+        console.error("Failed to load mailing list name: ", e);
       }
 
       return (
