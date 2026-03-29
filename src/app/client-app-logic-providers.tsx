@@ -43,6 +43,11 @@ export function ClientAppLogicProviders({
       successful_authentication_redirect_uri="/"
       autoreacquire_access_tokens
       authorize_uri="/auth/authorize"
+      authMiddlewareRules={(defaultAuthMiddlewareRules) => ({
+        ...defaultAuthMiddlewareRules,
+        api: [...defaultAuthMiddlewareRules["api"], ["api"]],
+        admin: [...defaultAuthMiddlewareRules["admin"], ["admin"]],
+      })}
     >
       {children}
     </AuthProvider>
