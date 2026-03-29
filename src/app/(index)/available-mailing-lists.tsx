@@ -6,8 +6,6 @@ import type { ReactElement } from "react";
 import NewMailingListDialog from "@/components/NewMailingListDialog";
 import JoinMailingListDialog from "./JoinMailingListDialog";
 import { useAdmin } from "@schemavaults/auth-react-provider";
-import { OpenJoinMailingListDialogButton } from "./OpenJoinMailingListDialogButton";
-import { SelectedMailingListToJoinContext } from "./SelectedMailingListToJoinContext";
 import AvailableMailingListItem from "./available-mailing-list-item";
 
 export interface AvailableMailingListsViewProps {

@@ -16,7 +16,9 @@ import {
 } from "./mailing-list-unsubscribe-record-table";
 
 export interface IMailingListRegistry {
-  listMailingLists: () => Promise<readonly MailingListDefinition[]>;
+  listMailingLists: (
+    query_type: "public" | "all",
+  ) => Promise<readonly MailingListDefinition[]>;
   createMailingList: (newMailingList: MailingListDefinition) => Promise<void>;
   joinMailingList: (
     mailingListId: MailingListDefinition["mailing_list_id"],
@@ -68,7 +70,9 @@ export class MailingListRegistry implements IMailingListRegistry {
     };
   }
 
-  public async listMailingLists(): Promise<readonly MailingListDefinition[]> {
+  public async listMailingLists(
+    query_type: "public" | "all",
+  ): Promise<readonly MailingListDefinition[]> {
     const listQuery = this.db.selectFrom("mailing_lists").selectAll();
     const result = await listQuery.execute();
     const parsed = result.map(this.parseMailingListDefiniton);
@@ -76,6 +80,11 @@ export class MailingListRegistry implements IMailingListRegistry {
       throw new Error(
         "Failed to parse mailing list definitions from database!",
       );
+    }
+    if (query_type === "public") {
+      return parsed.filter(
+        (ml) => ml.public,
+      ) satisfies readonly MailingListDefinition[];
     }
     return parsed satisfies readonly MailingListDefinition[];
   }
@@ -175,9 +184,7 @@ export class MailingListRegistry implements IMailingListRegistry {
       .execute();
 
     if (!result.every(this.isValidMailingListSubscriberDefinition)) {
-      throw new Error(
-        "Failed to parse subscriber definitions from database!",
-      );
+      throw new Error("Failed to parse subscriber definitions from database!");
     }
 
     return result satisfies readonly MailingListSubscriber[];
