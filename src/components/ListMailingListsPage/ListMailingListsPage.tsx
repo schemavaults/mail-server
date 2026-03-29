@@ -122,17 +122,17 @@ export function ListMailingListsPage({
               ) : (
                 <AvailableMailingLists mailing_lists={[]} />
               )}
-              {admin && !isAdminPage && (
-                <div className="flex flex-row items-center justify-center w-full">
-                  <Link href="/admin">
-                    <Button className="flex flex-row flex-nowrap gap-2">
-                      <ShieldAlert className="h-4 w-4" />
-                      View all (including non-public)
-                    </Button>
-                  </Link>
-                </div>
-              )}
             </section>
+            {admin && !isAdminPage && (
+              <section className="flex flex-row items-center justify-center w-full">
+                <Link href="/admin">
+                  <Button className="flex flex-row flex-nowrap gap-2">
+                    <ShieldAlert className="h-4 w-4" />
+                    View all (including non-public)
+                  </Button>
+                </Link>
+              </section>
+            )}
           </main>
           <Separator decorative orientation="horizontal" className="w-full" />
           <PublicPageFooter containerClassName="w-full" />
