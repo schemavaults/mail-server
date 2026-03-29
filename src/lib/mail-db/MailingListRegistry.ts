@@ -1,5 +1,5 @@
 import type { ServerlessDatabase } from "@/lib/ServerlessDatabase";
-import type { Kysely } from "@schemavaults/dbh";
+import type { Kysely, Transaction } from "@schemavaults/dbh";
 import type { MailDatabase } from "./mail-database-type";
 import {
   mailingListDefinition,
@@ -26,6 +26,10 @@ export interface IMailingListRegistry {
     mailingListId: MailingListDefinition["mailing_list_id"],
     email: string,
   ) => Promise<void>;
+  listSubscribers: (
+    mailingListId: MailingListDefinition["mailing_list_id"],
+    trx?: Transaction<MailDatabase>,
+  ) => Promise<readonly MailingListSubscriber[]>;
 }
 
 export class MailingListRegistry implements IMailingListRegistry {
@@ -157,5 +161,25 @@ export class MailingListRegistry implements IMailingListRegistry {
       .insertInto("unsubscribe_records")
       .values(newUnsubscribeRecord)
       .execute();
+  }
+
+  public async listSubscribers(
+    mailing_list_id: MailingListDefinition["mailing_list_id"],
+    trx?: Transaction<MailDatabase>,
+  ): Promise<readonly MailingListSubscriber[]> {
+    const executor = trx ?? this.db;
+    const result = await executor
+      .selectFrom("subscribers")
+      .selectAll()
+      .where("mailing_list_id", "=", mailing_list_id)
+      .execute();
+
+    if (!result.every(this.isValidMailingListSubscriberDefinition)) {
+      throw new Error(
+        "Failed to parse subscriber definitions from database!",
+      );
+    }
+
+    return result satisfies readonly MailingListSubscriber[];
   }
 }

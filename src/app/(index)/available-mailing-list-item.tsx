@@ -16,7 +16,8 @@ import {
   useToast,
 } from "@schemavaults/ui";
 import { useAdmin } from "@schemavaults/auth-react-provider";
-import { ClipboardCopy, EllipsisVertical } from "lucide-react";
+import { ClipboardCopy, EllipsisVertical, Users } from "lucide-react";
+import Link from "next/link";
 import copyToClipboard from "@/lib/copyToClipboard";
 
 function AdditionalMailingListItemActions({
@@ -64,7 +65,16 @@ function AdditionalMailingListItemActions({
             <ClipboardCopy className="h-4 w-4 mr-2" /> Copy Mailing List ID
           </DropdownMenuItem>
         </DropdownMenuGroup>
-        {/* {<DropdownMenuSeparator />} */}
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem asChild>
+            <Link
+              href={`/admin/subscribers/${mailing_list.mailing_list_id}`}
+            >
+              <Users className="h-4 w-4 mr-2" /> View Subscribers
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
         {/* <DropdownMenuGroup>
               <DropdownMenuItem>Team</DropdownMenuItem>
               <DropdownMenuSub>
