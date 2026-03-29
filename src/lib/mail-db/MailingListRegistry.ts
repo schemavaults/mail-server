@@ -177,6 +177,7 @@ export class MailingListRegistry implements IMailingListRegistry {
       .selectFrom("subscribers")
       .selectAll()
       .where("mailing_list_id", "=", mailing_list_id)
+      .orderBy("subscribe_time", "desc")
       .execute();
 
     const parsed = result.map(this.parseMailingListSubscriberDefinition);
