@@ -1,9 +1,9 @@
-import { sql, type Kysely } from "@schemavaults/dbh";
-import type { MailDatabase } from "./mail-database-type";
+// 00001-initial-mail-database-tables.ts
 
-export async function createMailDatabaseTables(
-  db: Kysely<MailDatabase>,
-): Promise<void> {
+import { sql } from "@/sql";
+import type { Kysely } from "@schemavaults/dbh";
+
+async function createMailDatabaseTables(db: Kysely<any>): Promise<void> {
   const createMailingListsTablePromise: Promise<unknown> =
     sql`CREATE TABLE IF NOT EXISTS MAILING_LISTS (
     mailing_list_id UUID PRIMARY KEY,
@@ -37,4 +37,12 @@ export async function createMailDatabaseTables(
   ]);
 }
 
-export default createMailDatabaseTables;
+export async function up(db: Kysely<any>): Promise<void> {
+  await createMailDatabaseTables(db);
+}
+
+export async function down(db: Kysely<any>): Promise<void> {
+  await db.schema.dropTable("mailing_lists").execute();
+  await db.schema.dropTable("subscribers").execute();
+  await db.schema.dropTable("unsubscribe_records").execute();
+}
