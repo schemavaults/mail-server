@@ -94,8 +94,21 @@ export class MailingListRegistry implements IMailingListRegistry {
     if (!parsed.success) {
       return false;
     } else {
+      console.error("Received bad mailing list row!");
       return true;
     }
+  }
+
+  private parseMailingListSubscriberDefinition(
+    mailing_list_subscriber_row: MailingListSubscriber,
+  ): MailingListSubscriber {
+    return {
+      ...mailing_list_subscriber_row,
+      subscribe_time:
+        typeof mailing_list_subscriber_row["subscribe_time"] === "number"
+          ? mailing_list_subscriber_row["subscribe_time"]
+          : Number.parseInt(mailing_list_subscriber_row["subscribe_time"]),
+    };
   }
 
   private isValidMailingListUnsubscribeRecordDefinition(
@@ -166,11 +179,13 @@ export class MailingListRegistry implements IMailingListRegistry {
       .where("mailing_list_id", "=", mailing_list_id)
       .execute();
 
-    if (!result.every(this.isValidMailingListSubscriberDefinition)) {
+    const parsed = result.map(this.parseMailingListSubscriberDefinition);
+
+    if (!parsed.every(this.isValidMailingListSubscriberDefinition)) {
       throw new Error("Failed to parse subscriber definitions from database!");
     }
 
-    return result satisfies readonly MailingListSubscriber[];
+    return parsed satisfies readonly MailingListSubscriber[];
   }
 
   public async getMailingList(
