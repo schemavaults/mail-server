@@ -1,12 +1,17 @@
 import "server-only";
 
 import { type NextRequest, NextResponse } from "next/server";
-import { sendEmailRequestBody } from "./send-email-request-body-schema";
+import { sendEmailRequestBodySchema } from "@schemavaults/send-email-api-options";
 import sendEmailFromTemplate from "@/lib/send-email-from-template";
 import DefaultMailSenderAddress from "@/lib/DefaultMailSenderAddress";
 import sendEmail from "@/lib/send-email";
 import type { CreateEmailResponse } from "resend";
 import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
+import {
+  emailTemplateIdSchema,
+  type EmailTemplateId,
+} from "@/lib/EmailTemplatesCatalog";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 
 function badRequest(message: string = "Invalid request"): NextResponse {
   return NextResponse.json(
@@ -49,13 +54,9 @@ function emailSentSuccessfullyResponse(): NextResponse {
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const protected_route = await withAdminApiRouteGuard(
     async function POST_handler({ req }): Promise<NextResponse> {
-      const raw_json_body = await req.json();
-      if (typeof raw_json_body !== "object" || !raw_json_body) {
-        return badRequest("Expected request to have JSON body.");
-      }
-
-      const parsed_data =
-        await sendEmailRequestBody.safeParseAsync(raw_json_body);
+      const parsed_data = await sendEmailRequestBodySchema.safeParseAsync(
+        await req.json(),
+      );
       if (!parsed_data.success) {
         console.error(
           "Failed to parse request body to send email from this @schemavaults/mail-server instance: ",
@@ -84,9 +85,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       let result: CreateEmailResponse;
       try {
         if ("template_id" in sendEmailOpts.message) {
+          const parsed_template_id = await emailTemplateIdSchema.safeParseAsync(
+            sendEmailOpts.message.template_id,
+          );
+          if (!parsed_template_id.success) {
+            return badRequest("Invalid template ID!");
+          }
+          const template_id: EmailTemplateId = parsed_template_id.data;
+
           result = await sendEmailFromTemplate({
             ...baseEmailOpts,
-            template_id: sendEmailOpts.message.template_id,
+            template_id,
             template_props: sendEmailOpts.message.template_props as any,
           });
         } else {
@@ -106,6 +115,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         }
       } catch (e: unknown) {
         console.error("Error sending email: ", e);
+
+        if (e instanceof BadEmailTemplatePropsError) {
+          return badRequest("Invalid options supplied for email template!");
+        }
 
         return internalServerError(
           typeof e === "object" &&
