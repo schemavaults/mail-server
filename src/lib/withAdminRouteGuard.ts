@@ -9,6 +9,7 @@ import {
   type IBaseProtectedAdminApiRouteInputs,
   type TProtectedAdminPageServerComponent,
   type IBaseProtectedAdminServerComponentPageProps,
+  SCHEMAVAULTS_ORGANIZATION_ID,
 } from "@schemavaults/auth-server-sdk";
 import { type NextRequest, NextResponse } from "next/server";
 import { ServerlessDatabase } from "./ServerlessDatabase";
@@ -31,16 +32,19 @@ export async function withAdminApiRouteGuard(
       {
         dbh,
       },
-      async (opts) => (opts.user.admin ? true : false),
-      undefined,
-      (): ApiServerId => SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+      {
+        route_guard_type: "admin",
+        custom_is_authorized_check: async (opts) =>
+          opts.user.admin ? true : false,
+        api_server_id: SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+        required_organization: SCHEMAVAULTS_ORGANIZATION_ID,
+      },
     );
 
   return protected_route satisfies THandler;
 }
 
-interface IAdminServerComponentProps
-  extends IBaseProtectedAdminServerComponentPageProps {
+interface IAdminServerComponentProps extends IBaseProtectedAdminServerComponentPageProps {
   dbh: ServerlessDatabase;
 }
 
@@ -54,8 +58,12 @@ export async function withAdminServerComponentRouteGuard(
     {
       dbh,
     },
-    async (opts) => (opts.user.admin ? true : false),
-    undefined,
-    (): ApiServerId => SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+    {
+      route_guard_type: "admin",
+      custom_is_authorized_check: async (opts) =>
+        opts.user.admin ? true : false,
+      api_server_id: SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+      required_organization: SCHEMAVAULTS_ORGANIZATION_ID,
+    },
   );
 }

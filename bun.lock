@@ -7,9 +7,9 @@
       "dependencies": {
         "@react-email/components": "0.1.1",
         "@react-email/render": "1.1.4",
-        "@schemavaults/app-definitions": "0.6.21",
-        "@schemavaults/auth-react-provider": "0.10.17",
-        "@schemavaults/auth-server-sdk": "0.21.18",
+        "@schemavaults/app-definitions": "0.6.22",
+        "@schemavaults/auth-react-provider": "0.10.22",
+        "@schemavaults/auth-server-sdk": "0.22.7",
         "@schemavaults/dbh": "0.8.7",
         "@schemavaults/send-email-api-options": "0.0.4",
         "@schemavaults/theme": "0.25.5",
@@ -346,19 +346,19 @@
 
     "@react-email/text": ["@react-email/text@0.1.5", "", { "peerDependencies": { "react": "^18.0 || ^19.0 || ^19.0.0-rc" } }, "sha512-o5PNHFSE085VMXayxH+SJ1LSOtGsTv+RpNKnTiJDrJUwoBu77G3PlKOsZZQHCNyD28WsQpl9v2WcJLbQudqwPg=="],
 
-    "@schemavaults/app-definitions": ["@schemavaults/app-definitions@0.6.21", "", { "dependencies": { "zod": "3.25.8" } }, "sha512-N03f7F089ogbA4je5++gmSxq5CoI/w+R4FLU8wIiVwG589OeSDYdURRn64HTJjEiOAMUWRiVzCzZTwCU5amGrw=="],
+    "@schemavaults/app-definitions": ["@schemavaults/app-definitions@0.6.22", "", { "dependencies": { "zod": "3.25.8" } }, "sha512-HAzgDLyf3xiRFGwZou56jj+Z+sHr1BI1juQ6cwxrWvlKIFICtBQfFPzTI3i+ajeXfV/2lMacb5R9vn0k6mtEFw=="],
 
-    "@schemavaults/auth-client-sdk": ["@schemavaults/auth-client-sdk@0.9.28", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.21", "@schemavaults/auth-common": "0.9.8", "zod": "3.25.8" } }, "sha512-DwErZrt9tkNnqRMYuRtAsoByjqKekMiIl20pQbqWCK2T0iKS5E0iuz0Gv5pD1unDxIuJopiqnP644njN5a9dtw=="],
+    "@schemavaults/auth-client-sdk": ["@schemavaults/auth-client-sdk@0.9.33", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.22", "@schemavaults/auth-common": "0.10.5", "zod": "3.25.8" } }, "sha512-zbUiBDmtw4H45ZFw+8Y4DCuMkhizHkJCv64k6kSZkFVR5Z5QM2/nvMsHZTgoighXQ2pPzEQiOeZM6Gy10L9/2w=="],
 
-    "@schemavaults/auth-common": ["@schemavaults/auth-common@0.9.8", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.21", "crypto-js": "4.2.0", "zod": "3.25.8" } }, "sha512-MDR3PUHS4rqvt1wQQ3H7INLJm38jHy51JmEu3H7NHp4KldGysLpXgHIjGyAGGDQq12bRhZK/j6O4LVi0/I8dAg=="],
+    "@schemavaults/auth-common": ["@schemavaults/auth-common@0.10.5", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.22", "crypto-js": "4.2.0", "zod": "3.25.8" } }, "sha512-6D7RCjsNDyP9dyPs/cHo3Hih2bU97mmGDXT5cQqViYAKwe1w7bpOUD8z3V8jEVSsAy9maVgwsjduLZJvM2QePA=="],
 
-    "@schemavaults/auth-react-provider": ["@schemavaults/auth-react-provider@0.10.17", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.21", "@schemavaults/auth-client-sdk": "0.9.28", "@schemavaults/auth-common": "0.9.8", "cookies-next": "6.1.1", "swr": "2.3.4", "uuid": "11.0.3", "zod": "3.25.8" }, "peerDependencies": { "next": "16.1.6", "react": "19.0.0", "react-dom": "19.0.0" } }, "sha512-SxbEUS8qKQdVLydJOHbqMhmBLrtQLechJil+9ea6vvOgxPSO4J1ieqHANtNRASCQGaK6CrYPxCilIqN2hgb3Ww=="],
+    "@schemavaults/auth-react-provider": ["@schemavaults/auth-react-provider@0.10.22", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.22", "@schemavaults/auth-client-sdk": "0.9.33", "@schemavaults/auth-common": "0.10.5", "cookies-next": "6.1.1", "swr": "2.3.4", "uuid": "11.0.3", "zod": "3.25.8" }, "peerDependencies": { "next": "16.1.6", "react": "19.0.0", "react-dom": "19.0.0" } }, "sha512-r7uRSA/ECBdhtszSQxVEbFAKEB7QhfKNUELnUtp+mOAWSC3/IJ63M182ARoeUKTnxOTBct8F1yF5hyU91Y8J+g=="],
 
-    "@schemavaults/auth-server-sdk": ["@schemavaults/auth-server-sdk@0.21.18", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.21", "@schemavaults/auth-common": "0.9.8", "@schemavaults/jwt": "0.6.37", "zod": "3.25.8" }, "bin": { "auth-server-sdk": "dist/cli.cjs" } }, "sha512-YKuFWt33cI/W+mve9d12gvUpXLkSdoIGf3T/Ia6dK3yyVr8A/xFyo2QxVv03vklWJIB3snYB2q9hanRvs64xKQ=="],
+    "@schemavaults/auth-server-sdk": ["@schemavaults/auth-server-sdk@0.22.7", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.22", "@schemavaults/auth-common": "0.10.5", "@schemavaults/jwt": "0.7.4", "zod": "3.25.8" }, "bin": { "auth-server-sdk": "dist/cli.cjs" } }, "sha512-lXVvQ9bfWjWQpZBXEbysh3hA7qHN8t2tMLuN3I1/Msoqmx8BdsEjdkcWgRMyeEuFHDdsECiuhXeRyghouddiqg=="],
 
     "@schemavaults/dbh": ["@schemavaults/dbh@0.8.7", "", { "dependencies": { "@neondatabase/serverless": "1.0.1", "kysely": "0.28.10", "kysely-neon": "1.3.0" }, "bin": { "dbh": "dist-cli/cli.js" } }, "sha512-TeNZOgVPfNRqLgbdlkO2Tl9Gl5mVfAT3aKa1FcAg5lzLubhwVeJ6EwFXY7M/48Q+CKcl9SBV352vLmMFg73BJg=="],
 
-    "@schemavaults/jwt": ["@schemavaults/jwt@0.6.37", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.21", "@schemavaults/auth-common": "0.9.8", "jose": "6.1.3", "zod": "3.25.8" } }, "sha512-LTYrUm22vkyTCj+6ctjfDBPBZdkpWah4SJ3D4Fa15aTC1oMFF9zYqiqcQtydL8+NZFZnkYJX8iTYzfvIFj1kIQ=="],
+    "@schemavaults/jwt": ["@schemavaults/jwt@0.7.4", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.22", "@schemavaults/auth-common": "0.10.5", "jose": "6.1.3", "zod": "3.25.8" } }, "sha512-oC+rqt9UcvkWYT/IQS0OOjTgwTu+3o3BduR1y6W9nEOlYWrh/uqjZcGbSbhbWpndZi9vyVWZ6Ap77NN0Bp5H8A=="],
 
     "@schemavaults/send-email-api-options": ["@schemavaults/send-email-api-options@0.0.4", "", { "dependencies": { "zod": "3.25.8" } }, "sha512-1YaoK2ajVsrXIbCQZyfd2zgS5TEt3/Fy+diQblkie25MpzzMFz7QwIaCfwVMUpHE0VhyvuBuJx/7pzHN3Jxpow=="],
 
