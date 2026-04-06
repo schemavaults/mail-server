@@ -108,6 +108,7 @@ export function PublicPageFooter({
                   title="SchemaVaults Auth Platform"
                   href="https://auth.schemavaults.com"
                 />
+                <ResourcesSectionLink title="Login" href="/auth/login" />
               </ul>
             </div>
             <div>
