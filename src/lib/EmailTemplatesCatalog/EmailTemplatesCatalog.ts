@@ -4,6 +4,8 @@ import type EmailTemplatesCatalogEntry from "./EmailTemplatesCatalogEntry";
 export const EmailTemplatesCatalog = {
   "my-test-email": async () =>
     import("./email-template-refs/MyTestEmail").then((m) => m.default),
+  "password-reset": async () =>
+    import("./email-template-refs/PasswordReset").then((m) => m.default),
 };
 
 export type EmailTemplateId = keyof typeof EmailTemplatesCatalog;

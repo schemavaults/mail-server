@@ -95,8 +95,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
           result = await sendEmailFromTemplate({
             ...baseEmailOpts,
-            template_id,
-            template_props: sendEmailOpts.message.template_props as any,
+            message: {
+              template_id,
+              template_props: sendEmailOpts.message.template_props as any,
+            },
           });
         } else {
           result = await sendEmail({
