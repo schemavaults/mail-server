@@ -94,13 +94,14 @@ export default function AvailableMailingListItem({
         "flex flex-col md:flex-row gap-2",
         "border rounded-md",
         "bg-card shadow-md",
+        "overflow-hidden",
       )}
     >
       <div className={cn("flex flex-col gap-2", "grow")}>
         <p className="text-md font-bold text-foreground">{mailing_list.name}</p>
         <p className="text-sm text-foreground">{mailing_list.description}</p>
       </div>
-      <div className={cn("flex flex-row gap-2")}>
+      <div className={cn("flex flex-row flex-wrap gap-2 shrink-0 items-center")}>
         <OpenJoinMailingListDialogButton mailing_list={mailing_list} />
         {admin && (
           <AdditionalMailingListItemActions mailing_list={mailing_list} />
