@@ -122,7 +122,9 @@ export function ListMailingListsPage({
                 <AvailableMailingLists mailing_lists={[]} />
               )}
             </section>
-            {admin && !isAdminPage && <AdminLinksSection />}
+            {admin && !isAdminPage && (
+              <AdminLinksSection renderLocation={"homepage"} />
+            )}
           </main>
           <Separator decorative orientation="horizontal" className="w-full" />
           <PublicPageFooter containerClassName="w-full" />

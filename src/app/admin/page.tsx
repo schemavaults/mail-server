@@ -6,7 +6,7 @@ import { AdminLinksSection } from "@/components/AdminLinksSection";
 import { connection } from "next/server";
 
 async function AdminLandingPage(): Promise<ReactElement> {
-  return <AdminLinksSection />;
+  return <AdminLinksSection renderLocation="admin_dashboard" />;
 }
 
 export default async function AdminPage() {

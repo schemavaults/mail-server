@@ -3,9 +3,15 @@
 import { cn, Button } from "@schemavaults/ui";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { ShieldAlert } from "lucide-react";
+import { BookTemplate, Home, ShieldAlert } from "lucide-react";
 
-export default function AdminLinksSection(): ReactElement {
+export interface AdminLinksSectionProps {
+  renderLocation: "homepage" | "admin_dashboard";
+}
+
+export default function AdminLinksSection({
+  renderLocation,
+}: AdminLinksSectionProps): ReactElement {
   const linkButtonClassname: string = cn(
     "flex flex-row flex-nowrap gap-2 items-center justify-start",
   );
@@ -18,6 +24,14 @@ export default function AdminLinksSection(): ReactElement {
         "px-4 md:px-8 lg:px-16 xl:px-24",
       )}
     >
+      {renderLocation !== "homepage" && (
+        <Link href="/">
+          <Button className={linkButtonClassname}>
+            <Home className="h-4 w-4" />
+            View public homepage
+          </Button>
+        </Link>
+      )}
       <Link href="/admin/all_mailing_lists">
         <Button className={linkButtonClassname}>
           <ShieldAlert className="h-4 w-4" />
@@ -26,7 +40,7 @@ export default function AdminLinksSection(): ReactElement {
       </Link>
       <Link href="/admin/templates">
         <Button className={linkButtonClassname}>
-          <ShieldAlert className="h-4 w-4" />
+          <BookTemplate className="h-4 w-4" />
           View mail templates
         </Button>
       </Link>
