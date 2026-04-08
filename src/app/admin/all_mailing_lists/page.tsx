@@ -14,6 +14,7 @@ import {
   type IBaseProtectedAdminServerComponentPageProps,
 } from "@schemavaults/auth-server-sdk";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 
 const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
 
@@ -48,6 +49,7 @@ async function AdminPageWithPreloadedMailingLists({
 }
 
 export default async function AdminPage() {
+  await connection();
   return await withAdminServerComponentRouteGuard(
     AdminPageWithPreloadedMailingLists,
   );

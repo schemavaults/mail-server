@@ -1,18 +1,20 @@
 import "server-only";
 
 import type { ReactElement } from "react";
-import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry } from "@/lib/mail-db";
 import type { MailingListSubscriber } from "@/lib/mail-db";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
 import { withAdminServerComponentRouteGuard } from "@/lib/withAdminRouteGuard";
 import SubscribersClientView from "./subscribers-client-view";
+import { connection } from "next/server";
 
 export default async function SubscribersPage({
   params,
 }: {
   params: Promise<{ mailing_list_id: string }>;
 }): Promise<ReactElement> {
+  await connection();
+
   const { mailing_list_id } = await params;
 
   return await withAdminServerComponentRouteGuard(
