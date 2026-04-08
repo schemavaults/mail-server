@@ -2,7 +2,7 @@
 
 import listMailingLists from "@/lib/client-mail-db-actions/listMailingLists";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
-import { Button, cn, LoadingPage, Separator, Wordmark } from "@schemavaults/ui";
+import { cn, LoadingPage, Separator, Wordmark } from "@schemavaults/ui";
 import { useState, type ReactElement } from "react";
 import useSWR from "swr";
 import AvailableMailingLists from "./available-mailing-lists";
@@ -21,8 +21,7 @@ import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
-import Link from "next/link";
-import { ShieldAlert } from "lucide-react";
+import { AdminLinksSection } from "@/components/AdminLinksSection";
 
 export interface ListMailingListsPageProps {
   mailing_lists: readonly MailingListDefinition[];
@@ -123,16 +122,7 @@ export function ListMailingListsPage({
                 <AvailableMailingLists mailing_lists={[]} />
               )}
             </section>
-            {admin && !isAdminPage && (
-              <section className="flex flex-row items-center justify-center w-full">
-                <Link href="/admin">
-                  <Button className="flex flex-row flex-nowrap gap-2">
-                    <ShieldAlert className="h-4 w-4" />
-                    View all (including non-public)
-                  </Button>
-                </Link>
-              </section>
-            )}
+            {admin && !isAdminPage && <AdminLinksSection />}
           </main>
           <Separator decorative orientation="horizontal" className="w-full" />
           <PublicPageFooter containerClassName="w-full" />
