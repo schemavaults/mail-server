@@ -1,6 +1,6 @@
 {
   "name": "@schemavaults/mail-server",
-  "version": "0.0.49",
+  "version": "0.0.50",
   "description": "Manages the SchemaVaults mailing list, sending to the list, mail templates, and sending transactional emails.",
   "type": "module",
   "private": true,
@@ -15,7 +15,7 @@
     "@schemavaults/theme": "0.25.9",
     "@schemavaults/ui": "0.14.7",
     "@schemavaults/auth-react-provider": "0.10.25",
-    "@schemavaults/auth-server-sdk": "0.22.15",
+    "@schemavaults/auth-server-sdk": "0.22.16",
     "@schemavaults/app-definitions": "0.6.23",
     "@schemavaults/dbh": "0.8.7",
     "@schemavaults/send-email-api-options": "0.0.4",
