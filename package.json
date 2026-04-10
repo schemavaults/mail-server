@@ -5,8 +5,7 @@
   "type": "module",
   "private": true,
   "dependencies": {
-    "react-email": "5.2.10",
-    "resend": "6.10.0",
+    "@modelcontextprotocol/sdk": "1.29.0",
     "@react-email/components": "1.0.11",
     "@react-email/render": "2.0.5",
     "react": "19.2.4",
@@ -16,13 +15,20 @@
     "@schemavaults/ui": "0.14.7",
     "@schemavaults/auth-react-provider": "0.10.27",
     "@schemavaults/auth-server-sdk": "0.22.16",
-    "@schemavaults/app-definitions": "0.6.23",
     "@schemavaults/dbh": "0.8.7",
     "@schemavaults/send-email-api-options": "0.0.4",
+    "@schemavaults/theme": "0.25.9",
+    "@schemavaults/ui": "0.14.7",
+    "lucide-react": "0.575.0",
+    "mcp-handler": "1.1.0",
+    "next": "16.2.2",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-email": "5.2.10",
+    "resend": "6.10.0",
     "server-only": "0.0.1",
-    "zod": "3.25.8",
     "swr": "2.4.1",
-    "lucide-react": "0.575.0"
+    "zod": "3.25.8"
   },
   "devDependencies": {
     "@types/react": "19.2.14",

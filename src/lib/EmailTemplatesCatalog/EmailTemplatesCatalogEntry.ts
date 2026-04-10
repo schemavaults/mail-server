@@ -2,6 +2,7 @@ import type { FC, ReactNode } from "react";
 
 export interface IEmailTemplatesCatalogEntry<TemplateProps> {
   id: string;
+  description: string;
   renderTemplate: (props: TemplateProps) => Promise<ReactNode>;
   renderPlainTextVersion: (props: TemplateProps) => Promise<string>;
 }
@@ -10,6 +11,8 @@ export abstract class EmailTemplatesCatalogEntry<TemplateProps>
   implements IEmailTemplatesCatalogEntry<TemplateProps>
 {
   public abstract id: string;
+
+  public abstract description: string;
 
   protected abstract loadReactEmailTemplate(): Promise<FC<TemplateProps>>;
 
