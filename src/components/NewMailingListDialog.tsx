@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ListPlus } from "lucide-react";
 import { Checkbox, useForm, useToast } from "@schemavaults/ui";
 
 // If you're using shadcn UI or a similar library, adjust these imports
@@ -93,7 +94,13 @@ export function NewMailingListDialog({}: NewMailingListDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="default">New Mailing List</Button>
+        <Button
+          variant="default"
+          className="flex flex-row gap-2 flex-nowrap items-center"
+        >
+          <ListPlus className="h-5 w-5" />
+          New Mailing List
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
