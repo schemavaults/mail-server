@@ -132,6 +132,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         );
       }
 
+      console.log(`[/api/send] Successfully sent email to: `, to);
+
       return emailSentSuccessfullyResponse();
     },
   );

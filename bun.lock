@@ -9,7 +9,7 @@
         "@react-email/components": "1.0.11",
         "@react-email/render": "2.0.5",
         "@schemavaults/app-definitions": "0.6.23",
-        "@schemavaults/auth-react-provider": "0.10.25",
+        "@schemavaults/auth-react-provider": "0.10.27",
         "@schemavaults/auth-server-sdk": "0.22.16",
         "@schemavaults/dbh": "0.8.7",
         "@schemavaults/send-email-api-options": "0.0.4",
@@ -362,11 +362,11 @@
 
     "@schemavaults/app-definitions": ["@schemavaults/app-definitions@0.6.23", "", { "dependencies": { "zod": "3.25.8" } }, "sha512-gdI1PVujXrcHObcjiqO0/aeiKCKSzsGzWu8fWwOwCp9BQeDu2iovAJRp3Gme9iWBnWz1Yv+Mg4A5Y/G3HXp1jA=="],
 
-    "@schemavaults/auth-client-sdk": ["@schemavaults/auth-client-sdk@0.9.35", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.23", "@schemavaults/auth-common": "0.10.6", "zod": "3.25.8" } }, "sha512-ISIAOSdeZr60j+VOU/OCE5nPoQfArIIyTrcyOM4uePlSZN/1H1moFNAshPfTbFiZH02ERgwTtDQ1xxZaXi9+fQ=="],
+    "@schemavaults/auth-client-sdk": ["@schemavaults/auth-client-sdk@0.9.37", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.23", "@schemavaults/auth-common": "0.10.6", "zod": "3.25.8" } }, "sha512-7AzkSHUoP4vHtTWKqiS64WuuHv/C2+QhITlp3WqvfNSeJH+AaR1wM4drXuYkCT85I3dnxlLXqOvnp0YPFJC1tw=="],
 
     "@schemavaults/auth-common": ["@schemavaults/auth-common@0.10.6", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.23", "crypto-js": "4.2.0", "zod": "3.25.8" } }, "sha512-Vdj3XSykSnA/cRH9t/J7/gzmrVC2LtDPOb9bVEv6Q9xwB0eID4HyqlG9d/a9QhJEDkMsyjjbsjCcsmtezclX0w=="],
 
-    "@schemavaults/auth-react-provider": ["@schemavaults/auth-react-provider@0.10.25", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.23", "@schemavaults/auth-client-sdk": "0.9.35", "@schemavaults/auth-common": "0.10.6", "cookies-next": "6.1.1", "swr": "2.3.4", "uuid": "11.0.3", "zod": "3.25.8" }, "peerDependencies": { "next": "16.2.2", "react": "19.2.4", "react-dom": "19.2.4" } }, "sha512-wJG3+Zq2uQfDZaun5x+14DJTtyfsjsqoGO+e8dOCDpfei0w0uDksrGI2wXGQg1WvgXs13tpTWUlPg1XLWk9X8Q=="],
+    "@schemavaults/auth-react-provider": ["@schemavaults/auth-react-provider@0.10.27", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.23", "@schemavaults/auth-client-sdk": "0.9.37", "@schemavaults/auth-common": "0.10.6", "cookies-next": "6.1.1", "swr": "2.3.4", "uuid": "11.0.3", "zod": "3.25.8" }, "peerDependencies": { "next": "16.2.2", "react": "19.2.4", "react-dom": "19.2.4" } }, "sha512-F1x7p1ZToxGJO4ktLxTOuym8XW8fnakNaI9j8sDWXlYJ9vOb515db2P8bwtBW2n1692npQ7UVw7j5BjphntFkA=="],
 
     "@schemavaults/auth-server-sdk": ["@schemavaults/auth-server-sdk@0.22.16", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.23", "@schemavaults/auth-common": "0.10.6", "@schemavaults/jwt": "0.7.5", "zod": "3.25.8" }, "bin": { "auth-server-sdk": "dist/cli.cjs" } }, "sha512-vswbPmFyhNRwEbKNEFGC0nUruphXQox/Jvnu8ieWRzZA2RtB8Khg81v99JaPMR8Qn0lJjIMkTazkWec9AwI1MA=="],
 
