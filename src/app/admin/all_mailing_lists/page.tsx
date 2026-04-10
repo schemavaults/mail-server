@@ -31,9 +31,7 @@ async function AdminPageWithPreloadedMailingLists({
     const mailingListsRegistry = new MailingListRegistry(dbh);
     const mailingListsResult: readonly MailingListDefinition[] =
       await mailingListsRegistry.listMailingLists("all");
-    mailingLists = mailingListsResult.filter(
-      (mailingList) => mailingList.public,
-    );
+    mailingLists = mailingListsResult;
   } catch (e: unknown) {
     console.error("Failed to preload all mailing lists for admin page: ", e);
     mailingLists = [];
