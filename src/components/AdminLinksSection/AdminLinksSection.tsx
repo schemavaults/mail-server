@@ -3,7 +3,7 @@
 import { cn, Button } from "@schemavaults/ui";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { BookTemplate, Home, ShieldAlert } from "lucide-react";
+import { BookTemplate, Home, Send, ShieldAlert } from "lucide-react";
 
 export interface AdminLinksSectionProps {
   renderLocation: "homepage" | "admin_dashboard";
@@ -42,6 +42,12 @@ export default function AdminLinksSection({
         <Button className={linkButtonClassname}>
           <BookTemplate className="h-4 w-4" />
           View mail templates
+        </Button>
+      </Link>
+      <Link href="/admin/send-email">
+        <Button className={linkButtonClassname}>
+          <Send className="h-4 w-4" />
+          Send an email
         </Button>
       </Link>
     </section>
