@@ -4,6 +4,9 @@ import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 export class MyTestEmail extends EmailTemplatesCatalogEntry<{ name: string }> {
   public id = "my-test-email" as const satisfies string;
 
+  public description =
+    "Simple test email. Props: { name: string }" as const satisfies string;
+
   public validateProps(val: unknown): val is { name: string } {
     if (typeof val !== "object" || !val) {
       return false;

@@ -9,6 +9,9 @@ interface PasswordResetProps {
 export class PasswordReset extends EmailTemplatesCatalogEntry<PasswordResetProps> {
   public id = "password-reset" as const satisfies string;
 
+  public description =
+    "Password reset email with a magic link. Props: { resetLink: string, expiresInMinutes: number }" as const satisfies string;
+
   public validateProps(val: unknown): val is PasswordResetProps {
     if (typeof val !== "object" || !val) {
       return false;
