@@ -1,6 +1,6 @@
 {
   "name": "@schemavaults/mail-server",
-  "version": "0.0.66",
+  "version": "0.0.67",
   "description": "Manages the SchemaVaults mailing list, sending to the list, mail templates, and sending transactional emails.",
   "type": "module",
   "private": true,
@@ -16,7 +16,7 @@
     "@schemavaults/auth-react-provider": "0.10.27",
     "@schemavaults/auth-server-sdk": "0.22.16",
     "@schemavaults/dbh": "0.8.7",
-    "@schemavaults/send-email-api-options": "0.0.7",
+    "@schemavaults/send-email-api-options": "0.0.8",
     "lucide-react": "0.575.0",
     "mcp-handler": "1.1.0",
     "react-email": "5.2.10",
