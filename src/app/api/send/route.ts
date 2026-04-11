@@ -1,7 +1,8 @@
 import "server-only";
 
 import { type NextRequest, NextResponse } from "next/server";
-import { sendEmailRequestBodySchema } from "@schemavaults/send-email-api-options";
+import { z } from "zod";
+import { createSendEmailRequestBodySchema } from "@schemavaults/send-email-api-options";
 import sendEmailFromTemplate from "@/lib/send-email-from-template";
 import DefaultMailSenderAddress from "@/lib/DefaultMailSenderAddress";
 import sendEmail from "@/lib/send-email";
@@ -16,6 +17,15 @@ import {
   requestLooksLikeApiKeyAuth,
   validateApiKeyFromRequest,
 } from "@/lib/api-keys/validateApiKeyFromRequest";
+import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
+import { MailingListRegistry } from "@/lib/mail-db";
+
+const sendEmailRequestBodySchema = createSendEmailRequestBodySchema(true);
+const uuidSchema = z.string().uuid();
+
+// Resend's API caps `to` recipients per send call. Keep in sync with the
+// limit enforced by the Resend service.
+const MAX_RESEND_RECIPIENTS = 50;
 
 function badRequest(message: string = "Invalid request"): NextResponse {
   return NextResponse.json(
@@ -86,11 +96,64 @@ async function handleSendEmailRequest(req: NextRequest): Promise<NextResponse> {
   const sendEmailOpts = parsed_data.data;
 
   const subject: string = sendEmailOpts.subject;
-  const to = sendEmailOpts.to;
+  let to: string | string[] = sendEmailOpts.to;
   const from: string =
     typeof sendEmailOpts.from === "string"
       ? sendEmailOpts.from
       : DefaultMailSenderAddress;
+
+  // If `to` is a single UUID string, treat it as a mailing list ID and
+  // expand it into the list of active subscriber emails (subscribers
+  // minus anyone with an unsubscribe record for that list).
+  let resolvedFromMailingListId: string | null = null;
+  if (typeof to === "string" && uuidSchema.safeParse(to).success) {
+    const mailingListId: string = to;
+    try {
+      await using dbh = ServerlessDatabase.getAsyncResource();
+      const mailRegistry = new MailingListRegistry(dbh);
+
+      const [subscribers, unsubscribeRows] = await Promise.all([
+        mailRegistry.listSubscribers(mailingListId),
+        dbh.db
+          .selectFrom("unsubscribe_records")
+          .select("email")
+          .where("mailing_list_id", "=", mailingListId)
+          .execute(),
+      ]);
+
+      const unsubscribed = new Set<string>(
+        unsubscribeRows.map((row) => row.email.toLowerCase()),
+      );
+
+      const seen = new Set<string>();
+      const recipients: string[] = [];
+      for (const sub of subscribers) {
+        const normalized = sub.email.toLowerCase();
+        if (unsubscribed.has(normalized)) continue;
+        if (seen.has(normalized)) continue;
+        seen.add(normalized);
+        recipients.push(sub.email);
+      }
+
+      if (recipients.length === 0) {
+        return badRequest("Mailing list has no active subscribers.");
+      }
+      if (recipients.length > MAX_RESEND_RECIPIENTS) {
+        return badRequest(
+          `Mailing list has more than ${MAX_RESEND_RECIPIENTS} active subscribers; Resend per-call limit exceeded.`,
+        );
+      }
+
+      to = recipients;
+      resolvedFromMailingListId = mailingListId;
+    } catch (e: unknown) {
+      console.error(
+        `Failed to load subscribers for mailing list '${mailingListId}': `,
+        e,
+      );
+      return internalServerError("Failed to load mailing list subscribers!");
+    }
+  }
 
   const baseEmailOpts = {
     subject,
@@ -151,7 +214,14 @@ async function handleSendEmailRequest(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  console.log(`[/api/send] Successfully sent email to: `, to);
+  if (resolvedFromMailingListId !== null) {
+    console.log(
+      `[/api/send] Successfully sent email to mailing list '${resolvedFromMailingListId}' (${(to as string[]).length} recipients): `,
+      to,
+    );
+  } else {
+    console.log(`[/api/send] Successfully sent email to: `, to);
+  }
 
   return emailSentSuccessfullyResponse();
 }

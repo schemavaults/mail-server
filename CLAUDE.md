@@ -11,6 +11,7 @@ bun install                    # Install dependencies
 bun run dev:app                # Next.js dev server on port 5346 (runs auth-codegen first)
 bun run dev:mail               # Email template dev server on port 5347 (react-email preview)
 bun run build                  # Production build (runs auth-codegen first)
+bun run typecheck              # Compile types
 bun run auth-codegen           # Generate auth routes/components from @schemavaults/auth-server-sdk
 bun run build:migrations       # Compile TypeScript migrations to JS in dist/migrations/
 bun run migrate:development    # Build & run migrations against development DB (.env.development)

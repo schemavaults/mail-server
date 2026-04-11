@@ -1,6 +1,6 @@
 {
   "name": "@schemavaults/mail-server",
-  "version": "0.0.63",
+  "version": "0.0.64",
   "description": "Manages the SchemaVaults mailing list, sending to the list, mail templates, and sending transactional emails.",
   "type": "module",
   "private": true,
@@ -42,7 +42,8 @@
     "build:migrations": "bunx @schemavaults/dbh build-db-migrations ./src/lib/mail-db/migrations --outdir ./dist/migrations --sql-module ./src/lib/mail-db/sql.ts --sql-outdir ./dist/",
     "migrate:development": "bun run build:migrations && npx @schemavaults/dbh migrate ./dist/migrations --environment development --env-file .env.development",
     "migrate:test": "bun run build:migrations && npx @schemavaults/dbh migrate ./dist/migrations --environment test --env-file .env.test",
-    "migrate:production": "bun run build:migrations && npx @schemavaults/dbh migrate ./dist/migrations --environment production --env-file .env.production"
+    "migrate:production": "bun run build:migrations && npx @schemavaults/dbh migrate ./dist/migrations --environment production --env-file .env.production",
+    "typecheck": "tsc --noEmit"
   },
   "packageManager": "bun@1.3.11"
 }
