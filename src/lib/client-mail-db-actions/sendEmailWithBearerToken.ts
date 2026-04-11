@@ -1,14 +1,25 @@
-import type { SendEmailRequestBody } from "@schemavaults/send-email-api-options";
+import {
+  type SendEmailRequestBody,
+  createSendEmailRequestBodySchema,
+} from "@schemavaults/send-email-api-options";
+
+const body_schema = createSendEmailRequestBodySchema(true);
 
 export async function sendEmailWithBearerToken(
   body: SendEmailRequestBody,
   bearerToken: string,
   mail_server_url: string = "",
 ): Promise<void> {
+  const parsed = await body_schema.safeParseAsync(body);
+  if (!parsed.success) {
+    console.error("Bad request body: ", parsed.error);
+    throw new TypeError("Bad request body to send email with!");
+  }
+
   const endpoint: string = `${mail_server_url}/api/send`;
   const response = await fetch(endpoint, {
     method: "POST",
-    body: JSON.stringify(body),
+    body: JSON.stringify(parsed.data satisfies SendEmailRequestBody),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${bearerToken}`,
