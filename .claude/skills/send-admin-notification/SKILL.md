@@ -1,21 +1,32 @@
 ---
 name: send-admin-notification
-description: Send a notification email to the SchemaVaults admin mailing list via the schemavaults/mail-server `/api/send` route, using the `sendEmailToMailingList()` helper from `@schemavaults/send-email-api-options`. Use when any server-side TypeScript/JavaScript code needs to ping admins about signups, errors, billing events, ops alerts, or similar notifications.
+description: Send a notification email to the SchemaVaults admin mailing list via the schemavaults/mail-server `/api/send` route, using the `sendEmailToMailingList()` helper from `@schemavaults/send-email-api-options`. Use when any server-side TypeScript/JavaScript code needs to ping admins about signups, errors, billing events, or ops alerts — **or when Claude Code itself wants to send a one-shot "I just finished this workflow" notification to admins at the end of a task** (by writing a short script to `/tmp/` and running it with `bun`).
 ---
 
 # Send Admin Notification
 
-This skill teaches Claude how to send a notification email to SchemaVaults admins from any server-side TypeScript/JavaScript project. It wraps the `schemavaults/mail-server` `POST /api/send` route via the `sendEmailToMailingList()` helper from `@schemavaults/send-email-api-options`, which automatically resolves the API key and mailing-list audience UUID from environment variables. The skill is self-contained and portable — drop the directory into any project's `.claude/skills/` folder and you're done.
+This skill teaches Claude how to send a notification email to SchemaVaults admins, either (a) from any server-side TypeScript/JavaScript project that imports `@schemavaults/send-email-api-options`, or (b) directly from a Claude Code session — for example, to tell admins "I just finished this workflow" at the end of a task. In both cases the same `sendEmailToMailingList()` helper wraps the `schemavaults/mail-server` `POST /api/send` route and automatically resolves the API key and mailing-list audience UUID from environment variables. The skill is self-contained and portable — drop the directory into any project's `.claude/skills/` folder and you're done.
 
 ## When to use this skill
 
-Use it any time server-side code in another SchemaVaults project needs to fan an event out to admins, for example:
+There are two distinct use cases. Either fits this skill:
+
+**(a) Application code in a SchemaVaults project needs to ping admins about an event.** For example:
 
 - New user signup / first-purchase events
 - Unhandled errors in background jobs or cron tasks
 - Billing / subscription lifecycle events (trial ending, payment failed)
 - Ops alerts (deploy succeeded, rate-limit tripped, healthcheck failed)
 - Any ad-hoc "FYI, this just happened" message intended for the admin audience
+
+**(b) Claude Code itself wants to notify admins at the end of a workflow.** For example:
+
+- Claude just finished implementing a feature and pushed the branch.
+- Claude finished reviewing a PR and posted comments.
+- A long-running build, migration, or CI task finished (success or failure).
+- A scheduled maintenance script Claude was orchestrating completed.
+
+For use case (b), see the "Usage — Claude Code post-workflow notification" section below for the concrete `/tmp/send-notification-to-admin-after-workflow.ts` pattern.
 
 Do **not** use it for:
 
@@ -97,6 +108,75 @@ export async function notifyAdminsOfError(err: Error, context: string): Promise<
 ```
 
 Escape user-supplied values before embedding them in `html` if they can contain `<` / `>` / `&` — the mail-server does not sanitize this for you.
+
+## Usage — Claude Code post-workflow notification
+
+Claude itself can use this skill to send a one-shot "I just finished X" notification to admins at the end of a workflow in any repo that depends on `@schemavaults/send-email-api-options` (this repo already does). Because the helper lives in `node_modules/`, Claude can drop a standalone TypeScript file into `/tmp/` and run it with Bun — no new dependencies, no build step, no changes to the repo under review.
+
+### Pattern
+
+1. **Write the script to `/tmp/send-notification-to-admin-after-workflow.ts`** (fresh on every run — `/tmp/` is scratch space, overwrite freely):
+
+   ```ts
+   // /tmp/send-notification-to-admin-after-workflow.ts
+   import { sendEmailToMailingList } from "@schemavaults/send-email-api-options";
+
+   async function main(): Promise<void> {
+     await sendEmailToMailingList({
+       body: {
+         subject: "[claude-code] workflow finished: <short description>",
+         message: {
+           text:
+             "Claude just finished a workflow on schemavaults/mail-server.\n\n" +
+             "Summary:\n" +
+             "- <bullet 1>\n" +
+             "- <bullet 2>\n" +
+             "- <bullet 3>\n",
+           html:
+             "<p>Claude just finished a workflow on <code>schemavaults/mail-server</code>.</p>" +
+             "<p><strong>Summary:</strong></p>" +
+             "<ul>" +
+             "<li>&lt;bullet 1&gt;</li>" +
+             "<li>&lt;bullet 2&gt;</li>" +
+             "<li>&lt;bullet 3&gt;</li>" +
+             "</ul>",
+         },
+       },
+     });
+     console.log("[admin-notify] sent");
+   }
+
+   main().catch((err) => {
+     console.error("[admin-notify] failed:", err);
+     process.exit(1);
+   });
+   ```
+
+2. **Fill in real content.** Replace `<short description>` and the bullet placeholders with a concrete summary of what the workflow actually did — e.g. `"implemented feature X"`, `"fixed bug Y"`, `"reviewed PR #123 and left 4 comments"`. Keep the subject under ~70 characters and the body scannable (3–5 bullets is usually enough).
+
+3. **Run it from the repo root** so Bun resolves `@schemavaults/send-email-api-options` through the repo's `node_modules/`:
+
+   ```bash
+   bun run /tmp/send-notification-to-admin-after-workflow.ts
+   ```
+
+4. **Check the exit code.** `0` means the email was accepted by the mail-server. Non-zero means the helper threw — surface the error in your summary to the user rather than retrying silently.
+
+### When to trigger this
+
+Send **exactly one** notification at the **end** of a workflow, after all commits and pushes have landed, so the email reflects the final state:
+
+- A feature or fix has been implemented and pushed to the remote branch.
+- A PR review has been completed and comments posted.
+- A long-running build, migration, or CI task finished (mention success vs. failure in the subject).
+- A scheduled maintenance or cleanup script Claude was orchestrating completed.
+
+### Cautions
+
+- The env vars `SCHEMAVAULTS_MAIL_API_KEY` and `SCHEMAVAULTS_MAILING_LIST_ID` must be set in Claude's process. If they're missing, the helper throws a clear error — report it to the user instead of retrying blindly.
+- **One notification per workflow, not per step.** If a workflow had no meaningful outcome (e.g. "user asked a question, Claude answered"), skip the notification entirely. The admin inbox should not become chatty.
+- **Do not send the notification before the work is finished.** Push first, notify second — otherwise the email will describe a state that isn't on `origin` yet.
+- **Ask before sending** if the user hasn't explicitly opted in to post-workflow notifications. Sending email is a side effect visible to other humans; don't do it silently on tasks where the user hasn't asked for it.
 
 ## Request body shape
 
