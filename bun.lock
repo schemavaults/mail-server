@@ -11,7 +11,7 @@
         "@schemavaults/auth-react-provider": "0.10.27",
         "@schemavaults/auth-server-sdk": "0.22.16",
         "@schemavaults/dbh": "0.8.7",
-        "@schemavaults/send-email-api-options": "0.0.5",
+        "@schemavaults/send-email-api-options": "0.0.7",
         "@schemavaults/theme": "0.25.9",
         "@schemavaults/ui": "0.14.7",
         "lucide-react": "0.575.0",
@@ -373,7 +373,7 @@
 
     "@schemavaults/jwt": ["@schemavaults/jwt@0.7.5", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.23", "@schemavaults/auth-common": "0.10.6", "jose": "6.1.3", "zod": "3.25.8" } }, "sha512-yW80ng2tcdLShKce7Nc2tj+0bo+kCgaClgDKC0BBtTs9bpZdE7gpAzYy23K2QnfrHjRdiR/yweB4Fj4duVyGgg=="],
 
-    "@schemavaults/send-email-api-options": ["@schemavaults/send-email-api-options@0.0.5", "", { "dependencies": { "zod": "3.25.8" } }, "sha512-dTWUhOSKQvdfwVgGjb6CWm8gZCJh5Hx81/vPK5up4QPWPUzC6YTOnMVGeD/vuTjDWayCHiVtYFOEnJ4lCWp4fQ=="],
+    "@schemavaults/send-email-api-options": ["@schemavaults/send-email-api-options@0.0.7", "", { "dependencies": { "@schemavaults/app-definitions": "0.6.23", "zod": "3.25.8" } }, "sha512-0526qDFD6IYUXnIRGKP2pNv4oVa9Qjthm3+ttBroV3m5Rlojo9r6ltyuAvpvJSEjIQjpNksgpPu7RMVLUZzArw=="],
 
     "@schemavaults/theme": ["@schemavaults/theme@0.25.9", "", { "dependencies": { "resolve": "1.22.11", "tailwindcss-animate": "1.0.7" } }, "sha512-obU5tZGcCgdzA/JaSmzjDchVzQu6zZcfTvPuWvqTu0RRGlDwNmXQeBtV81C3xTVjVLXG86x0CXheUOfy5hyFsQ=="],
 
