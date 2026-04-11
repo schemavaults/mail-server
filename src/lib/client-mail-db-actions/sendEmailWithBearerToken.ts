@@ -3,8 +3,10 @@ import type { SendEmailRequestBody } from "@schemavaults/send-email-api-options"
 export async function sendEmailWithBearerToken(
   body: SendEmailRequestBody,
   bearerToken: string,
+  mail_server_url: string = "",
 ): Promise<void> {
-  const response = await fetch(`/api/send`, {
+  const endpoint: string = `${mail_server_url}/api/send`;
+  const response = await fetch(endpoint, {
     method: "POST",
     body: JSON.stringify(body),
     headers: {
