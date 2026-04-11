@@ -64,24 +64,79 @@ export async function notifyAdminsOfSignup(userName: string): Promise<void> {
     body: {
       subject: `New signup: ${userName}`,
       message: {
-        template_id: "my-test-email",
-        template_props: { name: userName },
+        // Replace with a real template_id from `GET /api/templates`
+        // (see "Discovering available templates" below). This skill
+        // does not hardcode a template list because it drifts across repos.
+        template_id: "<template-id-from-GET-/api/templates>",
+        template_props: {
+          /* prop shape per the template's description field */
+        },
       },
     },
   });
 }
 ```
 
-### Templates currently in the catalog
+### Discovering available templates
 
-The mail-server's catalog lives at `src/lib/EmailTemplatesCatalog/EmailTemplatesCatalog.ts` and template IDs are validated server-side — passing an unknown ID returns HTTP 400. At the time this skill was written, the registered templates are:
+Registered templates **can change over time**. This skill intentionally does not hardcode a list — copying stale template tables across repos is exactly how consumers end up calling non-existent IDs and getting HTTP 400s. Instead, query the live catalog via `GET /api/templates`, which accepts the same API-key bearer-token auth as `POST /api/send`.
 
-| `template_id`     | `template_props` shape                                     | Purpose                                      |
-| ----------------- | ---------------------------------------------------------- | -------------------------------------------- |
-| `my-test-email`   | `{ name: string }`                                         | Simple test / smoke test template.           |
-| `password-reset`  | `{ resetLink: string; expiresInMinutes: number }`          | Password reset email with a magic link.      |
+**From a shell:**
 
-If none of these fits your notification, use the raw form below instead of trying to bend a mismatched template.
+```bash
+# Replace <mail-server-origin> with the mail-server's URL for your environment.
+curl -sS \
+  -H "Authorization: Bearer $SCHEMAVAULTS_MAIL_API_KEY" \
+  https://<mail-server-origin>/api/templates
+```
+
+**From a Node/Bun script** — re-using the helper package's own environment-aware URL resolution so you don't have to know the origin:
+
+```ts
+import {
+  getHardcodedApiServerDomain,
+  SCHEMAVAULTS_MAIL_APP_DEFINITION,
+} from "@schemavaults/app-definitions";
+
+const { domain } = getHardcodedApiServerDomain(
+  SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+  "production", // or "development" / "staging"
+);
+
+const response = await fetch(`${domain}/api/templates`, {
+  headers: {
+    Authorization: `Bearer ${process.env.SCHEMAVAULTS_MAIL_API_KEY}`,
+  },
+});
+const { data } = (await response.json()) as {
+  success: true;
+  data: Array<{ id: string; description: string }>;
+};
+console.log(data);
+```
+
+**Response shape:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "<template-id>",
+      "description": "<human-readable blurb; usually documents the expected props shape>"
+    }
+  ]
+}
+```
+
+Each entry has an `id` (pass this verbatim as `template_id`) and a `description` that, by convention, documents the expected `template_props` shape. If the description is ambiguous, either (a) pass the props and let the server reject malformed calls with HTTP 400, or (b) read the template's source file in the mail-server repo at `src/lib/EmailTemplatesCatalog/email-template-refs/<id>.ts` for authoritative type info.
+
+Errors:
+
+- **401** `Invalid or revoked API key.` — `SCHEMAVAULTS_MAIL_API_KEY` is wrong, expired, or revoked. Same auth path as `POST /api/send`.
+- **500** `Failed to list email templates!` — unexpected server-side failure while loading the catalog; retry or escalate.
+
+**If none of the registered templates fits your notification**, use the raw `text`/`html` form below instead of trying to bend a mismatched template. The raw form is always available and never depends on the catalog.
 
 ## Usage — raw HTML/text form (ad-hoc)
 
@@ -276,4 +331,5 @@ Source files inside the installed package (`node_modules/@schemavaults/send-emai
 On the mail-server side, the canonical references are:
 
 - `src/app/api/send/route.ts` — the `POST /api/send` handler (auth, template validation, 50-recipient cap, response shape).
-- `src/lib/EmailTemplatesCatalog/EmailTemplatesCatalog.ts` — authoritative list of template IDs available via the `template_id` form.
+- `src/app/api/templates/route.ts` — the `GET /api/templates` handler (dual auth: API key or admin JWT; returns `{ id, description }` per registered template).
+- `src/lib/EmailTemplatesCatalog/EmailTemplatesCatalog.ts` — authoritative list of template IDs; the source `GET /api/templates` reads from.
