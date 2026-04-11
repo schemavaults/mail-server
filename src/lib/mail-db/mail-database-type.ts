@@ -1,3 +1,4 @@
+import type { ApiKeyMailingListAllowlistsTable } from "./api-key-mailing-list-allowlists-table";
 import type { ApiKeysTable } from "./api-keys-table";
 import type { MailingListSubscriberTable } from "./mailing-list-subscriber-table";
 import type { MailingListUnsubscribeTable } from "./mailing-list-unsubscribe-record-table";
@@ -8,4 +9,5 @@ export type MailDatabase = {
   subscribers: MailingListSubscriberTable;
   unsubscribe_records: MailingListUnsubscribeTable;
   api_keys: ApiKeysTable;
+  api_key_mailing_list_allowlists: ApiKeyMailingListAllowlistsTable;
 };

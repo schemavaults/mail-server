@@ -159,6 +159,60 @@ export class MailKeysRegistry {
       .where("api_key_id", "=", api_key_id)
       .execute();
   }
+
+  /**
+   * Returns the mailing list IDs this API key is permitted to send to.
+   * An empty array means the key is unrestricted (legacy behavior — can
+   * send to any recipient or mailing list). A non-empty array means the
+   * key is scoped: it may ONLY pass one of these mailing list UUIDs in
+   * the `to` field on `/api/send`, and cc/bcc are forbidden.
+   */
+  public async listAllowedMailingListIds(
+    api_key_id: string,
+  ): Promise<string[]> {
+    const rows = await this.db
+      .selectFrom("api_key_mailing_list_allowlists")
+      .select("mailing_list_id")
+      .where("api_key_id", "=", api_key_id)
+      .execute();
+    return rows.map((row) => row.mailing_list_id);
+  }
+
+  /**
+   * Adds a mailing list to an API key's allowlist. Idempotent — duplicate
+   * inserts are silently ignored via `ON CONFLICT DO NOTHING`. Throws on
+   * FK violation (unknown api_key_id or mailing_list_id) so callers can
+   * surface a 400 to the admin UI.
+   */
+  public async addAllowedMailingList(
+    api_key_id: string,
+    mailing_list_id: string,
+  ): Promise<void> {
+    await this.db
+      .insertInto("api_key_mailing_list_allowlists")
+      .values({
+        api_key_id,
+        mailing_list_id,
+        created_at: Date.now(),
+      })
+      .onConflict((oc) => oc.columns(["api_key_id", "mailing_list_id"]).doNothing())
+      .execute();
+  }
+
+  /**
+   * Removes a mailing list from an API key's allowlist. Idempotent —
+   * removing a row that does not exist is a no-op.
+   */
+  public async removeAllowedMailingList(
+    api_key_id: string,
+    mailing_list_id: string,
+  ): Promise<void> {
+    await this.db
+      .deleteFrom("api_key_mailing_list_allowlists")
+      .where("api_key_id", "=", api_key_id)
+      .where("mailing_list_id", "=", mailing_list_id)
+      .execute();
+  }
 }
 
 export default MailKeysRegistry;
