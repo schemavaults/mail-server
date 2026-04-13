@@ -14,6 +14,10 @@ const sampleProps: Record<string, Record<string, unknown>> = {
     resetLink: "https://example.com/reset?token=sample-token",
     expiresInMinutes: 30,
   },
+  "verify-email": {
+    url: "https://example.com/verify?token=sample-token",
+    welcomeMessage: "Welcome to SchemaVaults!",
+  },
 };
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
