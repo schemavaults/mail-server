@@ -1,6 +1,6 @@
 import { SCHEMAVAULTS_MAIL_APP_DEFINITION } from "@schemavaults/app-definitions";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
-import type { SendEmailRequestBody } from "@schemavaults/send-email-api-options";
+import type { SendEmailRequestBody } from "@schemavaults/send-email";
 import sendEmailWithBearerToken from "./sendEmailWithBearerToken";
 
 export async function sendEmail(

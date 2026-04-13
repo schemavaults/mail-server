@@ -2,7 +2,7 @@ import "server-only";
 
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createSendEmailRequestBodySchema } from "@schemavaults/send-email-api-options";
+import { createSendEmailRequestBodySchema } from "@schemavaults/send-email";
 import sendEmailFromTemplate from "@/lib/send-email-from-template";
 import DefaultMailSenderAddress from "@/lib/DefaultMailSenderAddress";
 import sendEmail from "@/lib/send-email";
@@ -151,9 +151,7 @@ async function handleSendEmailRequest(
             sendEmailOpts.cc !== undefined ||
             sendEmailOpts.bcc !== undefined
           ) {
-            return forbidden(
-              "This API key is not permitted to set cc or bcc.",
-            );
+            return forbidden("This API key is not permitted to set cc or bcc.");
           }
 
           // Restricted key: `to` MUST be a single mailing list UUID.
@@ -216,9 +214,7 @@ async function handleSendEmailRequest(
     } catch (e: unknown) {
       console.error(
         `Failed to prepare send (apiKeyId='${auth.apiKeyId ?? "none"}', to='${
-          typeof sendEmailOpts.to === "string"
-            ? sendEmailOpts.to
-            : "<array>"
+          typeof sendEmailOpts.to === "string" ? sendEmailOpts.to : "<array>"
         }'): `,
         e,
       );

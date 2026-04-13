@@ -9,7 +9,7 @@ import EmailTemplatesCatalog, {
 } from "@/lib/EmailTemplatesCatalog";
 import type { ReactNode } from "react";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
-import { type SendEmailRequestBody } from "@schemavaults/send-email-api-options";
+import { type SendEmailRequestBody } from "@schemavaults/send-email";
 
 type TemplateMessageDef<T extends EmailTemplateId> =
   SendEmailRequestBody["message"] & { template_id: T };

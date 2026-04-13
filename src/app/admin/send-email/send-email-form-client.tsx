@@ -25,7 +25,7 @@ import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
-import type { SendEmailRequestBody } from "@schemavaults/send-email-api-options";
+import type { SendEmailRequestBody } from "@schemavaults/send-email";
 import sendEmail from "@/lib/client-mail-db-actions/sendEmail";
 
 const emailOrEmpty = z
@@ -358,11 +358,7 @@ export default function SendEmailFormClient({
             <Label>Message Type</Label>
             <div className="flex flex-row gap-4 mt-2">
               <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  value="template"
-                  {...register("mode")}
-                />
+                <input type="radio" value="template" {...register("mode")} />
                 Template
               </label>
               <label className="flex items-center gap-2 text-sm">

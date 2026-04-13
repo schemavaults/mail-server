@@ -1,8 +1,5 @@
 import { getAppEnvironment } from "@schemavaults/auth-server-sdk";
-import {
-  type SendEmailRequestBody,
-  sendEmail,
-} from "@schemavaults/send-email-api-options";
+import { type SendEmailRequestBody, sendEmail } from "@schemavaults/send-email";
 
 export async function sendEmailWithBearerToken(
   body: SendEmailRequestBody,
