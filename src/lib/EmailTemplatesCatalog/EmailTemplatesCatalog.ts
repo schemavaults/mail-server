@@ -6,6 +6,8 @@ export const EmailTemplatesCatalog = {
     import("./email-template-refs/MyTestEmail").then((m) => m.default),
   "password-reset": async () =>
     import("./email-template-refs/PasswordReset").then((m) => m.default),
+  "verify-email": async () =>
+    import("./email-template-refs/VerifyEmail").then((m) => m.default),
 };
 
 export type EmailTemplateId = keyof typeof EmailTemplatesCatalog;
