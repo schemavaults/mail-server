@@ -118,6 +118,7 @@ async function handleSendEmailRequest(
     return badRequest("Failed to parse request body!");
   }
   const sendEmailOpts = parsed_data.data;
+  const dryRun: boolean = sendEmailOpts.dryRun === true;
 
   const subject: string = sendEmailOpts.subject;
   let to: string | string[] = sendEmailOpts.to;
@@ -231,7 +232,7 @@ async function handleSendEmailRequest(
     bcc: sendEmailOpts.bcc ?? undefined,
   };
 
-  let result: CreateEmailResponse;
+  let result: CreateEmailResponse | null;
   try {
     if ("template_id" in sendEmailOpts.message) {
       const parsed_template_id = await emailTemplateIdSchema.safeParseAsync(
@@ -248,16 +249,19 @@ async function handleSendEmailRequest(
           template_id,
           template_props: sendEmailOpts.message.template_props as any,
         },
+        dryRun,
       });
-    } else {
+    } else if (!dryRun) {
       result = await sendEmail({
         ...baseEmailOpts,
         text: sendEmailOpts.message.text,
         html: sendEmailOpts.message.html,
       });
+    } else {
+      result = null;
     }
 
-    if (result.error) {
+    if (result !== null && result.error) {
       console.error(
         "Received error response from attempt to send email: ",
         result.error,
@@ -283,13 +287,18 @@ async function handleSendEmailRequest(
 
   const authLogTag: string =
     auth.apiKeyId !== null ? ` [api_key=${auth.apiKeyId}]` : "";
+  const dryRunLogTag: string = dryRun ? " [dry-run]" : "";
+  const verb: string = dryRun ? "validated email send to" : "sent email to";
   if (resolvedFromMailingListId !== null) {
     console.log(
-      `[/api/send]${authLogTag} Successfully sent email to mailing list '${resolvedFromMailingListId}' (${(to as string[]).length} recipients): `,
+      `[/api/send]${authLogTag}${dryRunLogTag} Successfully ${verb} mailing list '${resolvedFromMailingListId}' (${(to as string[]).length} recipients): `,
       to,
     );
   } else {
-    console.log(`[/api/send]${authLogTag} Successfully sent email to: `, to);
+    console.log(
+      `[/api/send]${authLogTag}${dryRunLogTag} Successfully ${verb}: `,
+      to,
+    );
   }
 
   return emailSentSuccessfullyResponse();

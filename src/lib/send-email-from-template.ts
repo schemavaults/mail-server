@@ -22,7 +22,7 @@ export type ISendEmailFromTemplateOptions<T extends EmailTemplateId> =
 export async function sendEmailFromTemplate<T extends EmailTemplateId>(
   options: ISendEmailFromTemplateOptions<T>,
   resend: Resend = new Resend(loadResendApiKey()),
-): Promise<CreateEmailResponse> {
+): Promise<CreateEmailResponse | null> {
   if (typeof options.message !== "object") {
     throw new TypeError("Expected 'message' to be an object!");
   }
@@ -62,6 +62,10 @@ export async function sendEmailFromTemplate<T extends EmailTemplateId>(
 
   const from: string =
     options.from ?? "SchemaVaults <noreply@schemavaults.com>";
+
+  if (options.dryRun === true) {
+    return null;
+  }
 
   return await sendEmail(
     {
