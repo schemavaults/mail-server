@@ -1,10 +1,31 @@
-import { Button, Html, Text } from "@react-email/components";
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Hr,
+  Html,
+  Preview,
+  Section,
+  Text,
+} from "@react-email/components";
 import type { ReactElement } from "react";
 
 export interface VerifyEmailProps {
   url: string;
   welcomeMessage?: string;
 }
+
+// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
+// Email clients don't resolve CSS custom properties, so the token hex values are inlined here.
+const BRAND_BLUE = "#60a5fa";
+const BRAND_BLUE_DARK = "#2563eb";
+const FOREGROUND = "#0b1220";
+const MUTED_FOREGROUND = "#64748b";
+const BORDER = "#e2e8f0";
+const CARD_BG = "#ffffff";
+const PAGE_BG = "#f8fafc";
 
 export default function VerifyEmail(props: VerifyEmailProps): ReactElement {
   if (
@@ -16,27 +37,166 @@ export default function VerifyEmail(props: VerifyEmailProps): ReactElement {
     throw new Error("Missing required props for VerifyEmail template!");
   }
 
-  const greeting =
+  const productName = "SchemaVaults";
+  const supportEmail = "support@schemavaults.com";
+  const greeting: string =
     typeof props.welcomeMessage === "string" && props.welcomeMessage.length > 0
       ? props.welcomeMessage
-      : "Welcome! Please verify your email address to get started.";
+      : `Welcome to ${productName}! Please verify your email address to get started.`;
 
   return (
     <Html>
-      <Text>{greeting}</Text>
-      <Text>
-        Click the button below to verify your email address and activate your
-        account.
-      </Text>
-      <Button
-        href={props.url}
-        style={{ background: "#000", color: "#fff", padding: "12px 20px" }}
+      <Head />
+      <Preview>{`Verify your email to activate your ${productName} account.`}</Preview>
+      <Body
+        style={{
+          backgroundColor: PAGE_BG,
+          color: FOREGROUND,
+          fontFamily:
+            "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+          margin: 0,
+          padding: "32px 0",
+        }}
       >
-        Verify Email
-      </Button>
-      <Text style={{ color: "#666", fontSize: "14px", marginTop: "16px" }}>
-        If you did not create an account, you can safely ignore this email.
-      </Text>
+        <Container
+          style={{
+            backgroundColor: CARD_BG,
+            border: `1px solid ${BORDER}`,
+            borderRadius: "12px",
+            margin: "0 auto",
+            maxWidth: "560px",
+            overflow: "hidden",
+            padding: 0,
+          }}
+        >
+          <Section
+            style={{
+              background: `linear-gradient(135deg, ${BRAND_BLUE} 0%, ${BRAND_BLUE_DARK} 100%)`,
+              padding: "32px 32px 28px 32px",
+            }}
+          >
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: "12px",
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                margin: 0,
+                textTransform: "uppercase",
+              }}
+            >
+              {productName} · Verify email
+            </Text>
+            <Heading
+              as="h1"
+              style={{
+                color: "#ffffff",
+                fontSize: "24px",
+                fontWeight: 700,
+                lineHeight: "1.25",
+                margin: "8px 0 0 0",
+              }}
+            >
+              Confirm your email address
+            </Heading>
+          </Section>
+
+          <Section style={{ padding: "28px 32px 8px 32px" }}>
+            <Text
+              style={{
+                color: FOREGROUND,
+                fontSize: "16px",
+                lineHeight: "1.6",
+                margin: "0 0 8px 0",
+              }}
+            >
+              {greeting}
+            </Text>
+            <Text
+              style={{
+                color: FOREGROUND,
+                fontSize: "15px",
+                lineHeight: "1.6",
+                margin: 0,
+              }}
+            >
+              Click the button below to verify your email address and activate
+              your account.
+            </Text>
+          </Section>
+
+          <Section style={{ padding: "16px 32px 24px 32px" }}>
+            <Button
+              href={props.url}
+              style={{
+                backgroundColor: BRAND_BLUE_DARK,
+                borderRadius: "8px",
+                color: "#ffffff",
+                display: "inline-block",
+                fontSize: "15px",
+                fontWeight: 600,
+                padding: "12px 22px",
+                textDecoration: "none",
+              }}
+            >
+              Verify email
+            </Button>
+          </Section>
+
+          <Hr style={{ borderColor: BORDER, margin: "0 32px" }} />
+
+          <Section style={{ padding: "20px 32px 8px 32px" }}>
+            <Text
+              style={{
+                color: MUTED_FOREGROUND,
+                fontSize: "13px",
+                lineHeight: "1.6",
+                margin: 0,
+              }}
+            >
+              If you did not create an account, you can safely ignore this
+              email.
+            </Text>
+          </Section>
+
+          <Hr style={{ borderColor: BORDER, margin: "16px 32px 0 32px" }} />
+
+          <Section style={{ padding: "20px 32px 28px 32px" }}>
+            <Text
+              style={{
+                color: MUTED_FOREGROUND,
+                fontSize: "13px",
+                lineHeight: "1.6",
+                margin: 0,
+              }}
+            >
+              Questions? Reach us at{" "}
+              <a
+                href={`mailto:${supportEmail}`}
+                style={{ color: BRAND_BLUE_DARK, textDecoration: "none" }}
+              >
+                {supportEmail}
+              </a>
+              .
+            </Text>
+          </Section>
+        </Container>
+
+        <Container style={{ margin: "16px auto 0 auto", maxWidth: "560px" }}>
+          <Text
+            style={{
+              color: MUTED_FOREGROUND,
+              fontSize: "12px",
+              lineHeight: "1.5",
+              margin: 0,
+              textAlign: "center",
+            }}
+          >
+            © {new Date().getFullYear()} {productName}. You are receiving this
+            email because someone used this address to sign up.
+          </Text>
+        </Container>
+      </Body>
     </Html>
   );
 }
