@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller } from "react-hook-form";
 import {
   Button,
+  Checkbox,
   cn,
   Input,
   Label,
@@ -49,6 +50,7 @@ const formSchema = z
     template_props_json: z.string().optional(),
     text: z.string().optional(),
     html: z.string().optional(),
+    dryRun: z.boolean().optional(),
   })
   .superRefine((v, ctx) => {
     if (v.mode === "template") {
@@ -120,6 +122,7 @@ export default function SendEmailFormClient({
       template_props_json: "{}",
       text: "",
       html: "",
+      dryRun: false,
     },
   });
 
@@ -195,6 +198,7 @@ export default function SendEmailFormClient({
     if (ccField) body.cc = ccField;
     const bccField = toRecipientField(formData.bcc);
     if (bccField) body.bcc = bccField;
+    if (formData.dryRun) body.dryRun = true;
 
     try {
       await sendEmail(body, authClient);
@@ -210,8 +214,10 @@ export default function SendEmailFormClient({
     }
 
     toast({
-      title: "Email sent",
-      description: "The email was dispatched successfully.",
+      title: formData.dryRun ? "Dry run succeeded" : "Email sent",
+      description: formData.dryRun
+        ? "The request validated successfully; no email was dispatched."
+        : "The email was dispatched successfully.",
     });
     reset({
       ...formData,
@@ -222,6 +228,7 @@ export default function SendEmailFormClient({
       template_props_json: formData.template_props_json,
       text: "",
       html: "",
+      dryRun: formData.dryRun,
     });
   };
 
@@ -453,6 +460,23 @@ export default function SendEmailFormClient({
               </div>
             </>
           )}
+
+          <div className="flex items-center space-x-2">
+            <Controller
+              control={control}
+              name="dryRun"
+              render={({ field }) => (
+                <Checkbox
+                  id="dryRun"
+                  checked={field.value ?? false}
+                  onCheckedChange={(v) => field.onChange(v === true)}
+                />
+              )}
+            />
+            <Label htmlFor="dryRun">
+              Dry run (validate without sending)
+            </Label>
+          </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="submit" disabled={isSubmitting}>
