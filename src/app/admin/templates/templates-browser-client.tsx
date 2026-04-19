@@ -89,7 +89,7 @@ export default function TemplatesBrowserClient({
                 src={`/api/admin/templates/preview?template_id=${encodeURIComponent(selectedTemplateId)}`}
                 className="w-full grow border rounded-md bg-white"
                 title={`Preview of ${selectedTemplateId}`}
-                sandbox="allow-same-origin"
+                sandbox="allow-scripts allow-same-origin"
                 style={{ minHeight: "500px" }}
               />
             </>
