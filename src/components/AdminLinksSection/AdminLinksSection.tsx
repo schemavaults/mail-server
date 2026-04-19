@@ -3,7 +3,14 @@
 import { cn, Button } from "@schemavaults/ui";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import { BookTemplate, Home, KeyRound, Send, ShieldAlert } from "lucide-react";
+import {
+  BookTemplate,
+  Home,
+  KeyRound,
+  LogOut,
+  Send,
+  ShieldAlert,
+} from "lucide-react";
 
 export interface AdminLinksSectionProps {
   renderLocation: "homepage" | "admin_dashboard";
@@ -54,6 +61,12 @@ export default function AdminLinksSection({
         <Button className={linkButtonClassname}>
           <KeyRound className="h-4 w-4" />
           Manage API keys
+        </Button>
+      </Link>
+      <Link href="/auth/logout">
+        <Button className={linkButtonClassname}>
+          <LogOut className="h-4 w-4" />
+          Log out
         </Button>
       </Link>
     </section>
