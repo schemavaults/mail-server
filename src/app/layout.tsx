@@ -23,11 +23,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
-      className="w-full flex flex-col min-h-full h-full"
+      className="w-screen flex flex-col min-h-dvh h-full overscroll-none"
       suppressHydrationWarning
     >
       <body
-        className={`${inter.className} w-full flex flex-col grow min-h-full h-full`}
+        className={`${inter.className} w-screen flex flex-col grow min-h-full h-full`}
       >
         <ClientAppLogicProviders environment={environment}>
           <ClientAppVisualsProvider>{children}</ClientAppVisualsProvider>

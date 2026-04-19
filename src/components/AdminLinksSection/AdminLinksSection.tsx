@@ -26,7 +26,11 @@ export default function AdminLinksSection({
   return (
     <section
       className={cn(
-        "flex flex-col md:flex-row items-center justify-center w-full gap-4",
+        "w-full max-w-[90vw]",
+        "flex flex-col md:flex-row",
+        "flex-nowrap md:flex-wrap",
+        "gap-4",
+        "items-center justify-center",
         "my-4",
         "px-4 md:px-8 lg:px-16 xl:px-24",
       )}
