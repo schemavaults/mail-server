@@ -1,7 +1,7 @@
 import { Button, Html, Text } from "@react-email/components";
 import type { ReactElement } from "react";
 
-interface PasswordResetEmailProps {
+export interface PasswordResetEmailProps {
   resetLink: string;
   expiresInMinutes: number;
 }
@@ -36,3 +36,8 @@ export default function PasswordResetEmail(
     </Html>
   );
 }
+
+PasswordResetEmail.PreviewProps = {
+  resetLink: "https://schemavaults.com/reset?token=sample-token",
+  expiresInMinutes: 30,
+} satisfies PasswordResetEmailProps;

@@ -21,11 +21,12 @@ import {
 } from "@schemavaults/ui";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import type { ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
+import { SCHEMAVAULTS_MAIL_APP_DEFINITION } from "@schemavaults/app-definitions";
 import type { SendEmailRequestBody } from "@schemavaults/send-email";
 import sendEmail from "@/lib/client-mail-db-actions/sendEmail";
 import JsonCodeEditor from "./JsonCodeEditor";
@@ -141,6 +142,103 @@ export default function SendEmailFormClient({
   const mode = watch("mode");
   const selectedTemplateId = watch("template_id");
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
+  const templatePropsJson = watch("template_props_json");
+
+  const [previewHtml, setPreviewHtml] = useState<string>("");
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState<boolean>(false);
+  const previewRequestIdRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (mode !== "template") {
+      setPreviewHtml("");
+      setPreviewError(null);
+      setPreviewLoading(false);
+      return;
+    }
+    if (!selectedTemplateId) {
+      setPreviewHtml("");
+      setPreviewError(null);
+      setPreviewLoading(false);
+      return;
+    }
+    if (!auth.ready) return;
+    const authClient = auth.client.current;
+    if (!authClient) return;
+
+    let parsedProps: unknown = undefined;
+    const raw = templatePropsJson?.trim() ?? "";
+    if (raw.length > 0) {
+      try {
+        parsedProps = JSON.parse(raw);
+      } catch (e: unknown) {
+        setPreviewError(
+          e instanceof Error
+            ? `Invalid props JSON: ${e.message}`
+            : "Invalid props JSON.",
+        );
+        setPreviewLoading(false);
+        return;
+      }
+    }
+
+    const requestId = ++previewRequestIdRef.current;
+    const handle = setTimeout(async () => {
+      setPreviewLoading(true);
+      setPreviewError(null);
+      try {
+        const accessToken = await authClient.acquireAccessToken({
+          audience: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+        });
+        const response = await fetch(`/api/admin/templates/preview`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            template_id: selectedTemplateId,
+            props: parsedProps,
+          }),
+        });
+        if (requestId !== previewRequestIdRef.current) return;
+        if (!response.ok) {
+          let errMsg = `Preview failed (HTTP ${response.status})`;
+          try {
+            const errBody = await response.json();
+            if (
+              errBody &&
+              typeof errBody === "object" &&
+              "error" in errBody &&
+              typeof errBody.error === "string"
+            ) {
+              errMsg = errBody.error;
+            }
+          } catch {
+            // ignore
+          }
+          setPreviewHtml("");
+          setPreviewError(errMsg);
+        } else {
+          const html = await response.text();
+          setPreviewHtml(html);
+          setPreviewError(null);
+        }
+      } catch (e: unknown) {
+        if (requestId !== previewRequestIdRef.current) return;
+        setPreviewHtml("");
+        setPreviewError(
+          e instanceof Error ? e.message : "Failed to render preview.",
+        );
+      } finally {
+        if (requestId === previewRequestIdRef.current) {
+          setPreviewLoading(false);
+        }
+      }
+    }, 300);
+
+    return () => clearTimeout(handle);
+  }, [mode, selectedTemplateId, templatePropsJson, auth]);
 
   const onSubmit = async (formData: SendEmailFormValues): Promise<void> => {
     if (!auth.ready || !auth.client.current) {
@@ -509,6 +607,35 @@ export default function SendEmailFormClient({
             </Button>
           </div>
         </form>
+
+        {mode === "template" && selectedTemplateId ? (
+          <section
+            className={cn(
+              "w-full max-w-3xl",
+              "flex flex-col gap-2",
+              "p-4 md:p-6 mt-4",
+              "border rounded-md bg-card",
+            )}
+          >
+            <div className="flex items-baseline justify-between">
+              <h3 className="text-lg font-semibold">Live preview</h3>
+              <span className="text-xs text-muted-foreground">
+                {previewLoading ? "Rendering…" : selectedTemplateId}
+              </span>
+            </div>
+            {previewError ? (
+              <p className="text-red-500 text-sm">{previewError}</p>
+            ) : null}
+            <iframe
+              title="Email template preview"
+              srcDoc={previewHtml}
+              className={cn(
+                "w-full min-h-[600px]",
+                "border rounded-md bg-white",
+              )}
+            />
+          </section>
+        ) : null}
       </main>
     </div>
   );
