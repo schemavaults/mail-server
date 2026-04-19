@@ -1,4 +1,3 @@
-import { getAppEnvironment } from "@schemavaults/auth-server-sdk";
 import { type SendEmailRequestBody, sendEmail } from "@schemavaults/send-email";
 
 export async function sendEmailWithBearerToken(
@@ -9,7 +8,6 @@ export async function sendEmailWithBearerToken(
   return await sendEmail({
     body,
     bearerToken,
-    environment: getAppEnvironment(),
     mailServerUrl: mail_server_url,
   });
 }
