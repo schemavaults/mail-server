@@ -28,6 +28,7 @@ import {
 } from "@schemavaults/auth-react-provider";
 import type { SendEmailRequestBody } from "@schemavaults/send-email";
 import sendEmail from "@/lib/client-mail-db-actions/sendEmail";
+import JsonCodeEditor from "./JsonCodeEditor";
 
 const emailOrEmpty = z
   .string()
@@ -47,7 +48,18 @@ const formSchema = z
     subject: z.string().nonempty("Please provide a subject."),
     mode: z.enum(["template", "raw"]),
     template_id: z.string().optional(),
-    template_props_json: z.string().optional(),
+    template_props_json: z
+      .string()
+      .optional()
+      .refine((v) => {
+        if (!v || v.trim().length === 0) return true;
+        try {
+          JSON.parse(v);
+          return true;
+        } catch {
+          return false;
+        }
+      }, "Template props must be valid JSON."),
     text: z.string().optional(),
     html: z.string().optional(),
     dryRun: z.boolean().optional(),
@@ -424,12 +436,18 @@ export default function SendEmailFormClient({
                 <Label htmlFor="template_props_json">
                   Template Props (JSON)
                 </Label>
-                <Textarea
-                  id="template_props_json"
-                  rows={6}
-                  placeholder='{"name": "value"}'
-                  className="font-mono text-sm"
-                  {...register("template_props_json")}
+                <Controller
+                  control={control}
+                  name="template_props_json"
+                  render={({ field }) => (
+                    <JsonCodeEditor
+                      id="template_props_json"
+                      value={field.value ?? ""}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      minHeight="9rem"
+                    />
+                  )}
                 />
                 {errors.template_props_json && (
                   <p className="text-red-500 text-sm">
