@@ -629,6 +629,7 @@ export default function SendEmailFormClient({
             <iframe
               title="Email template preview"
               srcDoc={previewHtml}
+              sandbox="allow-scripts allow-same-origin"
               className={cn(
                 "w-full min-h-[600px]",
                 "border rounded-md bg-white",
