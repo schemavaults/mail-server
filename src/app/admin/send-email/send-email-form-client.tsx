@@ -92,11 +92,11 @@ function toRecipientField(
 }
 
 export interface SendEmailFormClientProps {
-  templateIds: string[];
+  templates: { id: string; description: string }[];
 }
 
 export default function SendEmailFormClient({
-  templateIds,
+  templates,
 }: SendEmailFormClientProps): ReactElement {
   const { toast } = useToast();
   const auth = useAuth();
@@ -118,7 +118,7 @@ export default function SendEmailFormClient({
       bcc: "",
       subject: "",
       mode: "template",
-      template_id: templateIds[0] ?? "",
+      template_id: templates[0]?.id ?? "",
       template_props_json: "{}",
       text: "",
       html: "",
@@ -127,6 +127,8 @@ export default function SendEmailFormClient({
   });
 
   const mode = watch("mode");
+  const selectedTemplateId = watch("template_id");
+  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
 
   const onSubmit = async (formData: SendEmailFormValues): Promise<void> => {
     if (!auth.ready || !auth.client.current) {
@@ -379,7 +381,7 @@ export default function SendEmailFormClient({
             <>
               <div>
                 <Label htmlFor="template_id">Template</Label>
-                {templateIds.length === 0 ? (
+                {templates.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
                     No templates registered.
                   </p>
@@ -396,7 +398,7 @@ export default function SendEmailFormClient({
                           <SelectValue placeholder="Select a template" />
                         </SelectTrigger>
                         <SelectContent>
-                          {templateIds.map((id) => (
+                          {templates.map(({ id }) => (
                             <SelectItem key={id} value={id}>
                               {id}
                             </SelectItem>
@@ -405,6 +407,11 @@ export default function SendEmailFormClient({
                       </Select>
                     )}
                   />
+                )}
+                {selectedTemplate && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {selectedTemplate.description}
+                  </p>
                 )}
                 {errors.template_id && (
                   <p className="text-red-500 text-sm">
