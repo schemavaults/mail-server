@@ -235,3 +235,16 @@ export default function WelcomeEmail(props: WelcomeEmailProps): ReactElement {
     </Html>
   );
 }
+
+WelcomeEmail.PreviewProps = {
+  name: "Jane Doe",
+  productName: "SchemaVaults",
+  ctaUrl: "https://schemavaults.com/dashboard",
+  ctaLabel: "Open your dashboard",
+  highlights: [
+    "Browse curated schemas in the SchemaVaults library",
+    "Vault your own schemas to share with your team",
+    "Plug the schemas into your pipeline via the SchemaVaults SDK",
+  ],
+  supportEmail: "support@schemavaults.com",
+} satisfies WelcomeEmailProps;

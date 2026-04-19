@@ -21,3 +21,7 @@ export default function TestEmail(props: { name: string }): ReactElement {
     </Html>
   );
 }
+
+TestEmail.PreviewProps = {
+  name: "Jane Doe",
+} satisfies { name: string };

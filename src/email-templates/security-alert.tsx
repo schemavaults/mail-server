@@ -349,3 +349,16 @@ export default function SecurityAlertEmail(
     </Html>
   );
 }
+
+SecurityAlertEmail.PreviewProps = {
+  name: "Jane Doe",
+  eventType: "new-sign-in",
+  device: "MacBook Pro",
+  browser: "Chrome 126",
+  location: "San Francisco, CA",
+  ipAddress: "203.0.113.42",
+  eventTime: "Apr 19, 2026 10:30 UTC",
+  secureAccountUrl: "https://schemavaults.com/account/security",
+  productName: "SchemaVaults",
+  supportEmail: "support@schemavaults.com",
+} satisfies SecurityAlertEmailProps;

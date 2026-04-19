@@ -1,7 +1,7 @@
 import { Button, Html, Text } from "@react-email/components";
 import type { ReactElement } from "react";
 
-interface VerifyEmailProps {
+export interface VerifyEmailProps {
   url: string;
   welcomeMessage?: string;
 }
@@ -40,3 +40,8 @@ export default function VerifyEmail(props: VerifyEmailProps): ReactElement {
     </Html>
   );
 }
+
+VerifyEmail.PreviewProps = {
+  url: "https://schemavaults.com/verify?token=sample-token",
+  welcomeMessage: "Welcome to SchemaVaults!",
+} satisfies VerifyEmailProps;
