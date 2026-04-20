@@ -1,9 +1,7 @@
 name: Run Production Migrations
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
 
 jobs:
   migrate:
