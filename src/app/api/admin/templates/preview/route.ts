@@ -56,6 +56,19 @@ const sampleProps: Record<string, Record<string, unknown>> = {
     productName: "SchemaVaults",
     supportEmail: "support@schemavaults.com",
   },
+  "team-invitation-accepted": {
+    inviterName: "Alex Kim",
+    accepterName: "Jane Doe",
+    accepterEmail: "jane@acme.co",
+    teamName: "Acme Platform",
+    teamDescription:
+      "The data platform team at Acme — we publish and curate schemas for the event pipeline.",
+    role: "Editor",
+    acceptedAt: "Apr 20, 2026 14:32 UTC",
+    teamUrl: "https://schemavaults.com/teams/acme-platform",
+    productName: "SchemaVaults",
+    supportEmail: "support@schemavaults.com",
+  },
 };
 
 async function renderTemplateToHtml(

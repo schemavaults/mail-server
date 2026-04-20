@@ -10,6 +10,10 @@ export const EmailTemplatesCatalog = {
     import("./email-template-refs/SecurityAlert").then((m) => m.default),
   "team-invitation": async () =>
     import("./email-template-refs/TeamInvitation").then((m) => m.default),
+  "team-invitation-accepted": async () =>
+    import("./email-template-refs/TeamInvitationAccepted").then(
+      (m) => m.default,
+    ),
   "verify-email": async () =>
     import("./email-template-refs/VerifyEmail").then((m) => m.default),
   welcome: async () =>
