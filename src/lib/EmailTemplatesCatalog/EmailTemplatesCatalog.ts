@@ -2,6 +2,10 @@ import type { IEmailTemplatesCatalogEntry } from "./EmailTemplatesCatalogEntry";
 import type EmailTemplatesCatalogEntry from "./EmailTemplatesCatalogEntry";
 
 export const EmailTemplatesCatalog = {
+  "mailing-list-subscription-confirmation": async () =>
+    import("./email-template-refs/MailingListSubscriptionConfirmation").then(
+      (m) => m.default,
+    ),
   "my-test-email": async () =>
     import("./email-template-refs/MyTestEmail").then((m) => m.default),
   "password-reset": async () =>

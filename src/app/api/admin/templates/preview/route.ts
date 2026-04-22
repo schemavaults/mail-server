@@ -9,6 +9,20 @@ import { type NextRequest, NextResponse } from "next/server";
 import type { ReactElement } from "react";
 
 const sampleProps: Record<string, Record<string, unknown>> = {
+  "mailing-list-subscription-confirmation": {
+    email: "jane@acme.co",
+    mailingListName: "SchemaVaults Product Updates",
+    mailingListDescription:
+      "Monthly notes on new schemas, platform releases, and upcoming features — from the SchemaVaults team.",
+    confirmUrl:
+      "https://schemavaults.com/mailing-lists/confirm?token=example-token",
+    unsubscribeUrl:
+      "https://schemavaults.com/mailing-lists/unsubscribe?token=example-token",
+    cadence: "About one email per month",
+    expiresAt: "Apr 29, 2026 17:00 UTC",
+    productName: "SchemaVaults",
+    supportEmail: "support@schemavaults.com",
+  },
   "my-test-email": { name: "Jane Doe" },
   "password-reset": {
     resetLink: "https://example.com/reset?token=sample-token",
