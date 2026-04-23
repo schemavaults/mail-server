@@ -9,6 +9,21 @@ import { type NextRequest, NextResponse } from "next/server";
 import type { ReactElement } from "react";
 
 const sampleProps: Record<string, Record<string, unknown>> = {
+  "api-key-created": {
+    userName: "Jane Doe",
+    keyName: "CI deploy key",
+    keyPrefix: "svlts_mail_pk_a7k2",
+    manageKeysUrl: "https://schemavaults.com/admin/keys",
+    createdAt: "Apr 23, 2026 14:07 UTC",
+    createdFromDevice: "MacBook Pro",
+    createdFromIpAddress: "203.0.113.42",
+    createdFromLocation: "San Francisco, CA",
+    expiresAt: "Apr 23, 2027 14:07 UTC",
+    scopes: ["mail:send", "mailing-lists:read"],
+    revokeUrl: "https://schemavaults.com/admin/keys?revoke=a7k2",
+    productName: "SchemaVaults",
+    supportEmail: "support@schemavaults.com",
+  },
   "my-test-email": { name: "Jane Doe" },
   "password-reset": {
     resetLink: "https://example.com/reset?token=sample-token",
