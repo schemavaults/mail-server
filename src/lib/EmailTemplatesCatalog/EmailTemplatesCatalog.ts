@@ -2,6 +2,8 @@ import type { IEmailTemplatesCatalogEntry } from "./EmailTemplatesCatalogEntry";
 import type EmailTemplatesCatalogEntry from "./EmailTemplatesCatalogEntry";
 
 export const EmailTemplatesCatalog = {
+  "api-key-expiring": async () =>
+    import("./email-template-refs/ApiKeyExpiring").then((m) => m.default),
   "my-test-email": async () =>
     import("./email-template-refs/MyTestEmail").then((m) => m.default),
   "password-reset": async () =>

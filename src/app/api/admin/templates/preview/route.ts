@@ -9,6 +9,18 @@ import { type NextRequest, NextResponse } from "next/server";
 import type { ReactElement } from "react";
 
 const sampleProps: Record<string, Record<string, unknown>> = {
+  "api-key-expiring": {
+    name: "Jane Doe",
+    keyName: "production-ingest",
+    keyPrefix: "sk_live_ab4c…9f21",
+    expiresAt: "May 08, 2026 00:00 UTC",
+    daysUntilExpiration: 7,
+    lastUsedAt: "Apr 24, 2026 09:14 UTC",
+    rotateKeyUrl:
+      "https://schemavaults.com/account/api-keys?rotate=sk_live_ab4c9f21",
+    productName: "SchemaVaults",
+    supportEmail: "support@schemavaults.com",
+  },
   "my-test-email": { name: "Jane Doe" },
   "password-reset": {
     resetLink: "https://example.com/reset?token=sample-token",
