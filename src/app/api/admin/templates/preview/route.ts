@@ -42,6 +42,20 @@ const sampleProps: Record<string, Record<string, unknown>> = {
     productName: "SchemaVaults",
     supportEmail: "support@schemavaults.com",
   },
+  "subscription-confirmation": {
+    subscriberName: "Jane Doe",
+    mailingListName: "SchemaVaults Product Updates",
+    mailingListDescription:
+      "Monthly highlights from the SchemaVaults team — new schemas, platform updates, and tips for getting more out of your vaults.",
+    frequency: "Monthly",
+    confirmUrl:
+      "https://schemavaults.com/mailing-lists/confirm?token=example-token",
+    expiresAt: "Apr 27, 2026 17:00 UTC",
+    productName: "SchemaVaults",
+    supportEmail: "support@schemavaults.com",
+    unsubscribeUrl:
+      "https://schemavaults.com/mailing-lists/unsubscribe?token=example-token",
+  },
   "team-invitation": {
     inviteeName: "Jane Doe",
     inviterName: "Alex Kim",

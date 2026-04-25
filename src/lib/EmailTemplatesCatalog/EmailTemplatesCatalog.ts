@@ -8,6 +8,10 @@ export const EmailTemplatesCatalog = {
     import("./email-template-refs/PasswordReset").then((m) => m.default),
   "security-alert": async () =>
     import("./email-template-refs/SecurityAlert").then((m) => m.default),
+  "subscription-confirmation": async () =>
+    import("./email-template-refs/SubscriptionConfirmation").then(
+      (m) => m.default,
+    ),
   "team-invitation": async () =>
     import("./email-template-refs/TeamInvitation").then((m) => m.default),
   "team-invitation-accepted": async () =>
