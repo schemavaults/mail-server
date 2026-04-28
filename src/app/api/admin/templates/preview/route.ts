@@ -9,6 +9,21 @@ import { type NextRequest, NextResponse } from "next/server";
 import type { ReactElement } from "react";
 
 const sampleProps: Record<string, Record<string, unknown>> = {
+  "magic-link-sign-in": {
+    magicLinkUrl:
+      "https://schemavaults.com/auth/magic-link?token=example-magic-link-token-please-replace-in-production",
+    recipientEmail: "jane@acme.co",
+    recipientName: "Jane",
+    oneTimeCode: "742-918",
+    expiresInMinutes: 15,
+    device: "MacBook Pro",
+    browser: "Chrome 134",
+    location: "San Francisco, CA",
+    ipAddress: "203.0.113.42",
+    requestedAt: "Apr 28, 2026 09:14 UTC",
+    productName: "SchemaVaults",
+    supportEmail: "support@schemavaults.com",
+  },
   "mailing-list-confirmation": {
     mailingListName: "SchemaVaults Product Updates",
     confirmationUrl:
