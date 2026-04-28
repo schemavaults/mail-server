@@ -92,11 +92,13 @@ export class MailingListRegistry implements IMailingListRegistry {
       maybe_mailing_list_subscriber_ref_obj,
     );
     if (!parsed.success) {
+      console.error(
+        "Received bad mailing list subscriber row!",
+        { row: maybe_mailing_list_subscriber_ref_obj, issues: parsed.error.issues },
+      );
       return false;
-    } else {
-      console.error("Received bad mailing list row!");
-      return true;
     }
+    return true;
   }
 
   private parseMailingListSubscriberDefinition(
