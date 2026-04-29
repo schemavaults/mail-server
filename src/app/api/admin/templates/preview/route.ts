@@ -96,6 +96,24 @@ const sampleProps: Record<string, Record<string, unknown>> = {
     productName: "SchemaVaults",
     supportEmail: "support@schemavaults.com",
   },
+  "trial-ending": {
+    recipientName: "Jane Doe",
+    daysRemaining: 3,
+    trialEndsAt: "May 2, 2026 23:59 UTC",
+    currentPlan: "Pro trial",
+    upgradePlanName: "Pro",
+    upgradePlanPrice: "$29 / month",
+    upgradeUrl: "https://schemavaults.com/billing/upgrade?plan=pro",
+    manageBillingUrl: "https://schemavaults.com/account/billing",
+    featuresAtRisk: [
+      "Private vaults beyond the free-tier limit",
+      "Schema-evolution diff history older than 7 days",
+      "Team seats above 3 collaborators",
+      "API request quota above 1,000 requests/day",
+    ],
+    productName: "SchemaVaults",
+    supportEmail: "support@schemavaults.com",
+  },
 };
 
 async function renderTemplateToHtml(
