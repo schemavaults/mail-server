@@ -41,6 +41,38 @@ const sampleProps: Record<string, Record<string, unknown>> = {
     resetLink: "https://example.com/reset?token=sample-token",
     expiresInMinutes: 30,
   },
+  "payment-receipt": {
+    receiptNumber: "RCPT-2026-04-30-00427",
+    total: "$31.32",
+    paidAt: "Apr 30, 2026 14:08 UTC",
+    customerName: "Jane Doe",
+    customerEmail: "jane@acme.co",
+    description:
+      "Monthly subscription to the SchemaVaults Pro plan — billed for the period of Apr 30 – May 30, 2026.",
+    lineItems: [
+      {
+        description: "SchemaVaults Pro · Monthly subscription",
+        amount: "$29.00",
+      },
+      {
+        description: "Additional team seat (1 × $5.00)",
+        amount: "$5.00",
+      },
+      {
+        description: "Promotional credit",
+        amount: "−$5.00",
+      },
+    ],
+    subtotal: "$29.00",
+    tax: "$2.32",
+    paymentMethod: "Visa ending in 4242",
+    viewReceiptUrl:
+      "https://schemavaults.com/account/billing/receipts/RCPT-2026-04-30-00427",
+    manageBillingUrl: "https://schemavaults.com/account/billing",
+    nextBillingDate: "May 30, 2026",
+    productName: "SchemaVaults",
+    supportEmail: "support@schemavaults.com",
+  },
   "verify-email": {
     url: "https://example.com/verify?token=sample-token",
     welcomeMessage: "Welcome to SchemaVaults!",
