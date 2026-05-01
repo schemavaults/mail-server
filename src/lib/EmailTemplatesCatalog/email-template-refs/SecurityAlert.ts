@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 import type { SecurityAlertEmailProps } from "@/email-templates/security-alert";
 
 const VALID_EVENT_TYPES: readonly string[] = [
@@ -17,17 +18,30 @@ export class SecurityAlert extends EmailTemplatesCatalogEntry<SecurityAlertEmail
 
   public validateProps(val: unknown): val is SecurityAlertEmailProps {
     if (typeof val !== "object" || !val) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected props to be an object, but got ${val === null ? "null" : typeof val}.`,
+      );
     }
-    if (!("name" in val) || typeof val.name !== "string") {
-      return false;
+    if (!("name" in val)) {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' is missing required prop 'name' (expected string).`,
+      );
+    }
+    if (typeof val.name !== "string") {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected prop 'name' to be a string, but got ${typeof val.name}.`,
+      );
     }
     if ("eventType" in val && typeof val.eventType !== "undefined") {
-      if (
-        typeof val.eventType !== "string" ||
-        !VALID_EVENT_TYPES.includes(val.eventType)
-      ) {
-        return false;
+      if (typeof val.eventType !== "string") {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected optional prop 'eventType' to be a string when provided, but got ${typeof val.eventType}.`,
+        );
+      }
+      if (!VALID_EVENT_TYPES.includes(val.eventType)) {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' received invalid 'eventType' value '${val.eventType}'. Allowed values: ${VALID_EVENT_TYPES.join(", ")}.`,
+        );
       }
     }
     const optionalStringKeys: readonly (keyof SecurityAlertEmailProps)[] = [
@@ -46,7 +60,9 @@ export class SecurityAlert extends EmailTemplatesCatalogEntry<SecurityAlertEmail
         typeof (val as Record<string, unknown>)[key] !== "undefined" &&
         typeof (val as Record<string, unknown>)[key] !== "string"
       ) {
-        return false;
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected optional prop '${key}' to be a string when provided, but got ${typeof (val as Record<string, unknown>)[key]}.`,
+        );
       }
     }
     return true;

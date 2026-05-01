@@ -1,4 +1,5 @@
 import type { FC, ReactNode } from "react";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 
 export interface IEmailTemplatesCatalogEntry<TemplateProps> {
   id: string;
@@ -16,7 +17,12 @@ export abstract class EmailTemplatesCatalogEntry<TemplateProps>
 
   protected abstract loadReactEmailTemplate(): Promise<FC<TemplateProps>>;
 
-  protected abstract validateProps(val: unknown): val is TemplateProps;
+  /**
+   * Validates `val` and narrows it to `TemplateProps` on success. On failure,
+   * throws `BadEmailTemplatePropsError` whose `message` describes which prop
+   * was invalid; that message is considered safe to surface to the caller.
+   */
+  public abstract validateProps(val: unknown): val is TemplateProps;
 
   public abstract renderPlainTextVersion(props: TemplateProps): Promise<string>;
 
@@ -29,10 +35,16 @@ export abstract class EmailTemplatesCatalogEntry<TemplateProps>
       throw new Error(`Failed to load email template for '${this.id}'`);
     }
 
-    let isValidProps: boolean;
     try {
-      isValidProps = this.validateProps(props);
+      if (!this.validateProps(props)) {
+        throw new BadEmailTemplatePropsError(
+          `Invalid inputs to email template '${this.id}'`,
+        );
+      }
     } catch (e: unknown) {
+      if (e instanceof BadEmailTemplatePropsError) {
+        throw e;
+      }
       console.error(
         "Error while attempting to validate inputs for email template: ",
         e,
@@ -40,10 +52,6 @@ export abstract class EmailTemplatesCatalogEntry<TemplateProps>
       throw new Error(
         "Error while attempting to validate inputs for email template!",
       );
-    }
-
-    if (!isValidProps) {
-      throw new Error(`Invalid inputs to email template '${this.id}'`);
     }
 
     return TemplateComponent(props);

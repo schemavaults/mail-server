@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 import type { TeamInvitationEmailProps } from "@/email-templates/team-invitation";
 
 export class TeamInvitation extends EmailTemplatesCatalogEntry<TeamInvitationEmailProps> {
@@ -10,68 +11,46 @@ export class TeamInvitation extends EmailTemplatesCatalogEntry<TeamInvitationEma
 
   public validateProps(val: unknown): val is TeamInvitationEmailProps {
     if (typeof val !== "object" || !val) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected props to be an object, but got ${val === null ? "null" : typeof val}.`,
+      );
     }
-    if (!("inviterName" in val) || typeof val.inviterName !== "string") {
-      return false;
+    const requiredStringKeys: readonly (keyof TeamInvitationEmailProps)[] = [
+      "inviterName",
+      "teamName",
+      "acceptInviteUrl",
+    ];
+    for (const key of requiredStringKeys) {
+      if (!(key in val)) {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' is missing required prop '${key}' (expected string).`,
+        );
+      }
+      if (typeof (val as Record<string, unknown>)[key] !== "string") {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected prop '${key}' to be a string, but got ${typeof (val as Record<string, unknown>)[key]}.`,
+        );
+      }
     }
-    if (!("teamName" in val) || typeof val.teamName !== "string") {
-      return false;
-    }
-    if (
-      !("acceptInviteUrl" in val) ||
-      typeof val.acceptInviteUrl !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "inviteeName" in val &&
-      typeof val.inviteeName !== "undefined" &&
-      typeof val.inviteeName !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "inviterEmail" in val &&
-      typeof val.inviterEmail !== "undefined" &&
-      typeof val.inviterEmail !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "teamDescription" in val &&
-      typeof val.teamDescription !== "undefined" &&
-      typeof val.teamDescription !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "role" in val &&
-      typeof val.role !== "undefined" &&
-      typeof val.role !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "expiresAt" in val &&
-      typeof val.expiresAt !== "undefined" &&
-      typeof val.expiresAt !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "productName" in val &&
-      typeof val.productName !== "undefined" &&
-      typeof val.productName !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "supportEmail" in val &&
-      typeof val.supportEmail !== "undefined" &&
-      typeof val.supportEmail !== "string"
-    ) {
-      return false;
+    const optionalStringKeys: readonly (keyof TeamInvitationEmailProps)[] = [
+      "inviteeName",
+      "inviterEmail",
+      "teamDescription",
+      "role",
+      "expiresAt",
+      "productName",
+      "supportEmail",
+    ];
+    for (const key of optionalStringKeys) {
+      if (
+        key in val &&
+        typeof (val as Record<string, unknown>)[key] !== "undefined" &&
+        typeof (val as Record<string, unknown>)[key] !== "string"
+      ) {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected optional prop '${key}' to be a string when provided, but got ${typeof (val as Record<string, unknown>)[key]}.`,
+        );
+      }
     }
     return true;
   }

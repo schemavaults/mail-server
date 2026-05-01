@@ -47,9 +47,23 @@ export async function sendEmailFromTemplate<T extends EmailTemplateId>(
       ? template_details.template_props
       : null;
 
-  const isValidTemplateProps: boolean = template.validateProps(template_props);
-  if (!isValidTemplateProps) {
-    throw new BadEmailTemplatePropsError();
+  try {
+    if (!template.validateProps(template_props)) {
+      throw new BadEmailTemplatePropsError(
+        `Received invalid template props for template '${template_id}'.`,
+      );
+    }
+  } catch (e: unknown) {
+    if (e instanceof BadEmailTemplatePropsError) {
+      throw e;
+    }
+    console.error(
+      `Error while validating template props for template '${template_id}': `,
+      e,
+    );
+    throw new BadEmailTemplatePropsError(
+      `Error while validating template props for template '${template_id}'.`,
+    );
   }
 
   const rendered: ReactNode = await template.renderTemplate(

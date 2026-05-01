@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 
 interface VerifyEmailProps {
   url: string;
@@ -14,23 +15,29 @@ export class VerifyEmail extends EmailTemplatesCatalogEntry<VerifyEmailProps> {
 
   public validateProps(val: unknown): val is VerifyEmailProps {
     if (typeof val !== "object" || !val) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected props to be an object, but got ${val === null ? "null" : typeof val}.`,
+      );
     }
     if (!("url" in val)) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' is missing required prop 'url' (expected string).`,
+      );
     }
     if (typeof val.url !== "string") {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected prop 'url' to be a string, but got ${typeof val.url}.`,
+      );
     }
-    if ("welcomeMessage" in val) {
-      if (
-        typeof val.welcomeMessage !== "undefined" &&
-        typeof val.welcomeMessage !== "string"
-      ) {
-        return false;
-      }
+    if (
+      "welcomeMessage" in val &&
+      typeof val.welcomeMessage !== "undefined" &&
+      typeof val.welcomeMessage !== "string"
+    ) {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected optional prop 'welcomeMessage' to be a string when provided, but got ${typeof val.welcomeMessage}.`,
+      );
     }
-
     return true;
   }
 

@@ -1,6 +1,7 @@
 export class BadEmailTemplatePropsError extends Error {
-  public constructor() {
-    super("Received invalid template props for template!");
+  public constructor(message: string = "Received invalid template props for template!") {
+    super(message);
+    this.name = "BadEmailTemplatePropsError";
   }
 }
 
