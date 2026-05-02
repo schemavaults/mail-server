@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 
 interface PasswordResetProps {
   resetLink: string;
@@ -14,16 +15,31 @@ export class PasswordReset extends EmailTemplatesCatalogEntry<PasswordResetProps
 
   public validateProps(val: unknown): val is PasswordResetProps {
     if (typeof val !== "object" || !val) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected props to be an object, but got ${val === null ? "null" : typeof val}.`,
+      );
     }
-    if (!("resetLink" in val) || !("expiresInMinutes" in val)) {
-      return false;
+    if (!("resetLink" in val)) {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' is missing required prop 'resetLink' (expected string).`,
+      );
     }
-
-    return (
-      typeof val.resetLink === "string" &&
-      typeof val.expiresInMinutes === "number"
-    );
+    if (typeof val.resetLink !== "string") {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected prop 'resetLink' to be a string, but got ${typeof val.resetLink}.`,
+      );
+    }
+    if (!("expiresInMinutes" in val)) {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' is missing required prop 'expiresInMinutes' (expected number).`,
+      );
+    }
+    if (typeof val.expiresInMinutes !== "number") {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected prop 'expiresInMinutes' to be a number, but got ${typeof val.expiresInMinutes}.`,
+      );
+    }
+    return true;
   }
 
   public async loadReactEmailTemplate(): Promise<FC<PasswordResetProps>> {

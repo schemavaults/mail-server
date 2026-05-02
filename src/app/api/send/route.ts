@@ -269,11 +269,12 @@ async function handleSendEmailRequest(
       throw result.error;
     }
   } catch (e: unknown) {
-    console.error("Error sending email: ", e);
-
     if (e instanceof BadEmailTemplatePropsError) {
-      return badRequest("Invalid options supplied for email template!");
+      console.error("Error sending email — invalid template props: ", e.message);
+      return badRequest(e.message);
     }
+
+    console.error("Error sending email: ", e);
 
     return internalServerError(
       typeof e === "object" &&

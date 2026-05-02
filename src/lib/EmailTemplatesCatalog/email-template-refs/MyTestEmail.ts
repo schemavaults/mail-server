@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 
 export class MyTestEmail extends EmailTemplatesCatalogEntry<{ name: string }> {
   public id = "my-test-email" as const satisfies string;
@@ -9,17 +10,21 @@ export class MyTestEmail extends EmailTemplatesCatalogEntry<{ name: string }> {
 
   public validateProps(val: unknown): val is { name: string } {
     if (typeof val !== "object" || !val) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected props to be an object, but got ${val === null ? "null" : typeof val}.`,
+      );
     }
     if (!("name" in val)) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' is missing required prop 'name' (expected string).`,
+      );
     }
-
-    if (typeof val.name === "string") {
-      return true;
+    if (typeof val.name !== "string") {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected prop 'name' to be a string, but got ${typeof val.name}.`,
+      );
     }
-
-    return false;
+    return true;
   }
 
   public async loadReactEmailTemplate(): Promise<FC<{ name: string }>> {

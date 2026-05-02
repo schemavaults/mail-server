@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 import type { MagicLinkSignInEmailProps } from "@/email-templates/magic-link-sign-in";
 
 export class MagicLinkSignIn extends EmailTemplatesCatalogEntry<MagicLinkSignInEmailProps> {
@@ -10,87 +11,51 @@ export class MagicLinkSignIn extends EmailTemplatesCatalogEntry<MagicLinkSignInE
 
   public validateProps(val: unknown): val is MagicLinkSignInEmailProps {
     if (typeof val !== "object" || !val) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected props to be an object, but got ${val === null ? "null" : typeof val}.`,
+      );
     }
-    if (!("magicLinkUrl" in val) || typeof val.magicLinkUrl !== "string") {
-      return false;
+    if (!("magicLinkUrl" in val)) {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' is missing required prop 'magicLinkUrl' (expected string).`,
+      );
     }
-    if (
-      "recipientEmail" in val &&
-      typeof val.recipientEmail !== "undefined" &&
-      typeof val.recipientEmail !== "string"
-    ) {
-      return false;
+    if (typeof val.magicLinkUrl !== "string") {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected prop 'magicLinkUrl' to be a string, but got ${typeof val.magicLinkUrl}.`,
+      );
     }
-    if (
-      "recipientName" in val &&
-      typeof val.recipientName !== "undefined" &&
-      typeof val.recipientName !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "oneTimeCode" in val &&
-      typeof val.oneTimeCode !== "undefined" &&
-      typeof val.oneTimeCode !== "string"
-    ) {
-      return false;
+    const optionalStringKeys: readonly (keyof MagicLinkSignInEmailProps)[] = [
+      "recipientEmail",
+      "recipientName",
+      "oneTimeCode",
+      "device",
+      "browser",
+      "location",
+      "ipAddress",
+      "requestedAt",
+      "productName",
+      "supportEmail",
+    ];
+    for (const key of optionalStringKeys) {
+      if (
+        key in val &&
+        typeof (val as Record<string, unknown>)[key] !== "undefined" &&
+        typeof (val as Record<string, unknown>)[key] !== "string"
+      ) {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected optional prop '${key}' to be a string when provided, but got ${typeof (val as Record<string, unknown>)[key]}.`,
+        );
+      }
     }
     if (
       "expiresInMinutes" in val &&
       typeof val.expiresInMinutes !== "undefined" &&
       typeof val.expiresInMinutes !== "number"
     ) {
-      return false;
-    }
-    if (
-      "device" in val &&
-      typeof val.device !== "undefined" &&
-      typeof val.device !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "browser" in val &&
-      typeof val.browser !== "undefined" &&
-      typeof val.browser !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "location" in val &&
-      typeof val.location !== "undefined" &&
-      typeof val.location !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "ipAddress" in val &&
-      typeof val.ipAddress !== "undefined" &&
-      typeof val.ipAddress !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "requestedAt" in val &&
-      typeof val.requestedAt !== "undefined" &&
-      typeof val.requestedAt !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "productName" in val &&
-      typeof val.productName !== "undefined" &&
-      typeof val.productName !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "supportEmail" in val &&
-      typeof val.supportEmail !== "undefined" &&
-      typeof val.supportEmail !== "string"
-    ) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected optional prop 'expiresInMinutes' to be a number when provided, but got ${typeof val.expiresInMinutes}.`,
+      );
     }
     return true;
   }

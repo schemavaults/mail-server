@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 import type { TrialEndingEmailProps } from "@/email-templates/trial-ending";
 
 export class TrialEnding extends EmailTemplatesCatalogEntry<TrialEndingEmailProps> {
@@ -10,78 +11,74 @@ export class TrialEnding extends EmailTemplatesCatalogEntry<TrialEndingEmailProp
 
   public validateProps(val: unknown): val is TrialEndingEmailProps {
     if (typeof val !== "object" || !val) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected props to be an object, but got ${val === null ? "null" : typeof val}.`,
+      );
     }
-    if (!("daysRemaining" in val) || typeof val.daysRemaining !== "number") {
-      return false;
+    if (!("daysRemaining" in val)) {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' is missing required prop 'daysRemaining' (expected finite number).`,
+      );
+    }
+    if (typeof val.daysRemaining !== "number") {
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected prop 'daysRemaining' to be a number, but got ${typeof val.daysRemaining}.`,
+      );
     }
     if (!Number.isFinite(val.daysRemaining)) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected prop 'daysRemaining' to be a finite number, but got ${val.daysRemaining}.`,
+      );
     }
-    if (!("trialEndsAt" in val) || typeof val.trialEndsAt !== "string") {
-      return false;
+    const requiredStringKeys: readonly (keyof TrialEndingEmailProps)[] = [
+      "trialEndsAt",
+      "upgradeUrl",
+    ];
+    for (const key of requiredStringKeys) {
+      if (!(key in val)) {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' is missing required prop '${key}' (expected string).`,
+        );
+      }
+      if (typeof (val as Record<string, unknown>)[key] !== "string") {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected prop '${key}' to be a string, but got ${typeof (val as Record<string, unknown>)[key]}.`,
+        );
+      }
     }
-    if (!("upgradeUrl" in val) || typeof val.upgradeUrl !== "string") {
-      return false;
-    }
-    if (
-      "recipientName" in val &&
-      typeof val.recipientName !== "undefined" &&
-      typeof val.recipientName !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "currentPlan" in val &&
-      typeof val.currentPlan !== "undefined" &&
-      typeof val.currentPlan !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "upgradePlanName" in val &&
-      typeof val.upgradePlanName !== "undefined" &&
-      typeof val.upgradePlanName !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "upgradePlanPrice" in val &&
-      typeof val.upgradePlanPrice !== "undefined" &&
-      typeof val.upgradePlanPrice !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "manageBillingUrl" in val &&
-      typeof val.manageBillingUrl !== "undefined" &&
-      typeof val.manageBillingUrl !== "string"
-    ) {
-      return false;
+    const optionalStringKeys: readonly (keyof TrialEndingEmailProps)[] = [
+      "recipientName",
+      "currentPlan",
+      "upgradePlanName",
+      "upgradePlanPrice",
+      "manageBillingUrl",
+      "productName",
+      "supportEmail",
+    ];
+    for (const key of optionalStringKeys) {
+      if (
+        key in val &&
+        typeof (val as Record<string, unknown>)[key] !== "undefined" &&
+        typeof (val as Record<string, unknown>)[key] !== "string"
+      ) {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected optional prop '${key}' to be a string when provided, but got ${typeof (val as Record<string, unknown>)[key]}.`,
+        );
+      }
     }
     if ("featuresAtRisk" in val && typeof val.featuresAtRisk !== "undefined") {
       if (!Array.isArray(val.featuresAtRisk)) {
-        return false;
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected optional prop 'featuresAtRisk' to be an array of strings when provided, but got ${typeof val.featuresAtRisk}.`,
+        );
       }
-      for (const feature of val.featuresAtRisk) {
-        if (typeof feature !== "string") {
-          return false;
+      for (let i = 0; i < val.featuresAtRisk.length; i++) {
+        if (typeof val.featuresAtRisk[i] !== "string") {
+          throw new BadEmailTemplatePropsError(
+            `Template '${this.id}' expected every entry of prop 'featuresAtRisk' to be a string, but entry at index ${i} is ${typeof val.featuresAtRisk[i]}.`,
+          );
         }
       }
-    }
-    if (
-      "productName" in val &&
-      typeof val.productName !== "undefined" &&
-      typeof val.productName !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "supportEmail" in val &&
-      typeof val.supportEmail !== "undefined" &&
-      typeof val.supportEmail !== "string"
-    ) {
-      return false;
     }
     return true;
   }

@@ -1,5 +1,6 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
+import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 import type { MailingListConfirmationEmailProps } from "@/email-templates/mailing-list-confirmation";
 
 export class MailingListConfirmation extends EmailTemplatesCatalogEntry<MailingListConfirmationEmailProps> {
@@ -12,61 +13,43 @@ export class MailingListConfirmation extends EmailTemplatesCatalogEntry<MailingL
     val: unknown,
   ): val is MailingListConfirmationEmailProps {
     if (typeof val !== "object" || !val) {
-      return false;
+      throw new BadEmailTemplatePropsError(
+        `Template '${this.id}' expected props to be an object, but got ${val === null ? "null" : typeof val}.`,
+      );
     }
-    if (
-      !("mailingListName" in val) ||
-      typeof val.mailingListName !== "string"
-    ) {
-      return false;
+    const requiredStringKeys: readonly (keyof MailingListConfirmationEmailProps)[] =
+      ["mailingListName", "confirmationUrl"];
+    for (const key of requiredStringKeys) {
+      if (!(key in val)) {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' is missing required prop '${key}' (expected string).`,
+        );
+      }
+      if (typeof (val as Record<string, unknown>)[key] !== "string") {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected prop '${key}' to be a string, but got ${typeof (val as Record<string, unknown>)[key]}.`,
+        );
+      }
     }
-    if (
-      !("confirmationUrl" in val) ||
-      typeof val.confirmationUrl !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "mailingListDescription" in val &&
-      typeof val.mailingListDescription !== "undefined" &&
-      typeof val.mailingListDescription !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "subscriberEmail" in val &&
-      typeof val.subscriberEmail !== "undefined" &&
-      typeof val.subscriberEmail !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "expiresAt" in val &&
-      typeof val.expiresAt !== "undefined" &&
-      typeof val.expiresAt !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "senderOrganization" in val &&
-      typeof val.senderOrganization !== "undefined" &&
-      typeof val.senderOrganization !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "productName" in val &&
-      typeof val.productName !== "undefined" &&
-      typeof val.productName !== "string"
-    ) {
-      return false;
-    }
-    if (
-      "supportEmail" in val &&
-      typeof val.supportEmail !== "undefined" &&
-      typeof val.supportEmail !== "string"
-    ) {
-      return false;
+    const optionalStringKeys: readonly (keyof MailingListConfirmationEmailProps)[] =
+      [
+        "mailingListDescription",
+        "subscriberEmail",
+        "expiresAt",
+        "senderOrganization",
+        "productName",
+        "supportEmail",
+      ];
+    for (const key of optionalStringKeys) {
+      if (
+        key in val &&
+        typeof (val as Record<string, unknown>)[key] !== "undefined" &&
+        typeof (val as Record<string, unknown>)[key] !== "string"
+      ) {
+        throw new BadEmailTemplatePropsError(
+          `Template '${this.id}' expected optional prop '${key}' to be a string when provided, but got ${typeof (val as Record<string, unknown>)[key]}.`,
+        );
+      }
     }
     return true;
   }

@@ -31,6 +31,9 @@ jobs:
       - name: Typecheck
         run: bun run typecheck
 
+      - name: Run unit tests
+        run: bun test
+
       - name: Build Next.js app
         run: bun run build
 
