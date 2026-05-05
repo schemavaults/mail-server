@@ -8,3 +8,7 @@ export type {
   ApiKeyMailingListAllowlistRow,
   NewApiKeyMailingListAllowlistRow,
 } from "./api-key-mailing-list-allowlists-table";
+export type {
+  PendingSubscription,
+  NewPendingSubscription,
+} from "./pending-subscriptions-table";
