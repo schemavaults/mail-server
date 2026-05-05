@@ -2,6 +2,7 @@ import MagicLinkSignInEmail from "@/email-templates/magic-link-sign-in";
 import MailingListConfirmationEmail from "@/email-templates/mailing-list-confirmation";
 import TestEmail from "@/email-templates/my-test-email";
 import PasswordResetEmail from "@/email-templates/password-reset";
+import PaymentReceiptEmail from "@/email-templates/payment-receipt";
 import SecurityAlertEmail from "@/email-templates/security-alert";
 import TeamInvitationEmail from "@/email-templates/team-invitation";
 import TeamInvitationAcceptedEmail from "@/email-templates/team-invitation-accepted";
@@ -27,6 +28,7 @@ export const sampleEmailTemplateProps = {
   "mailing-list-confirmation": MailingListConfirmationEmail.PreviewProps,
   "my-test-email": TestEmail.PreviewProps,
   "password-reset": PasswordResetEmail.PreviewProps,
+  "payment-receipt": PaymentReceiptEmail.PreviewProps,
   "security-alert": SecurityAlertEmail.PreviewProps,
   "team-invitation": TeamInvitationEmail.PreviewProps,
   "team-invitation-accepted": TeamInvitationAcceptedEmail.PreviewProps,
