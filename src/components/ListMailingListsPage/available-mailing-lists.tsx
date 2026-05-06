@@ -33,7 +33,7 @@ function AvailableMailingLists({
 
   return (
     <div className="w-full grow flex flex-col items-start justify-start flex-nowrap">
-      <ul className="w-full grow mb-4">
+      <ul className="w-full grow mb-2 md:mb-4 flex flex-col items-stretch justify-start gap-2 md:gap-4">
         {mailing_lists.map(
           (mailing_list: MailingListDefinition): ReactElement => {
             return (
