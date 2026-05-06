@@ -1,10 +1,9 @@
 "use client";
 
 import type { MailingListSubscriber } from "@/lib/mail-db";
-import { cn, Separator } from "@schemavaults/ui";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { cn } from "@schemavaults/ui";
 import type { ReactElement } from "react";
+import { Nav } from "@/components/Nav";
 
 export interface SubscribersClientViewProps {
   mailing_list_name: string;
@@ -25,23 +24,7 @@ export default function SubscribersClientView({
         "bg-background",
       )}
     >
-      <header
-        className={cn(
-          "h-24",
-          "flex items-center justify-start gap-2 md:gap-4",
-          "p-2 md:p-4",
-          "shadow-md",
-        )}
-      >
-        <Link href="/" className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-          <span className="sr-only">Back to Mailing Lists</span>
-        </Link>
-        <h2 className="text-xl md:text-2xl text-foreground">
-          Subscribers: {mailing_list_name}
-        </h2>
-      </header>
-      <Separator decorative orientation="horizontal" className="w-full" />
+      <Nav title={`Subscribers: ${mailing_list_name}`} backHref="/" />
       <main className="flex flex-col justify-start items-stretch w-full grow flex-nowrap">
         <section
           className={cn(

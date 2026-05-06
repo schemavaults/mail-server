@@ -1,9 +1,9 @@
 "use client";
 
-import { cn, Separator } from "@schemavaults/ui";
-import { ArrowLeft, Mail } from "lucide-react";
-import Link from "next/link";
+import { cn } from "@schemavaults/ui";
+import { Mail } from "lucide-react";
 import { useState, type ReactElement } from "react";
+import { Nav } from "@/components/Nav";
 
 export interface TemplatesBrowserClientProps {
   templateIds: string[];
@@ -24,26 +24,7 @@ export default function TemplatesBrowserClient({
         "bg-background",
       )}
     >
-      <header
-        className={cn(
-          "h-24",
-          "flex items-center justify-start gap-2 md:gap-4",
-          "p-2 md:p-4",
-          "shadow-md",
-        )}
-      >
-        <Link
-          href="/admin"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="sr-only">Back to Admin</span>
-        </Link>
-        <h2 className="text-xl md:text-2xl text-foreground">
-          Mail Templates
-        </h2>
-      </header>
-      <Separator decorative orientation="horizontal" className="w-full" />
+      <Nav title="Mail Templates" backHref="/admin" />
       <main className="flex flex-col md:flex-row justify-start items-stretch w-full grow flex-nowrap">
         <aside
           className={cn(

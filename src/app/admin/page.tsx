@@ -6,12 +6,6 @@ import { AdminLinksSection } from "@/components/AdminLinksSection";
 import { Nav } from "@/components/Nav";
 import { connection } from "next/server";
 import { cn } from "@schemavaults/ui";
-import {
-  getAppEnvironment,
-  type SchemaVaultsAppEnvironment,
-} from "@schemavaults/app-definitions";
-
-const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
 
 async function AdminLandingPage(): Promise<ReactElement> {
   return (
@@ -22,7 +16,7 @@ async function AdminLandingPage(): Promise<ReactElement> {
         "bg-background",
       )}
     >
-      <Nav title="Admin" environment={environment} />
+      <Nav title="Admin" />
       <main className="flex flex-col justify-start items-stretch w-full grow flex-nowrap">
         <AdminLinksSection renderLocation="admin_dashboard" />
       </main>

@@ -20,9 +20,9 @@ import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
-import { ArrowLeft, Copy, KeyRound, Trash2, Users } from "lucide-react";
-import Link from "next/link";
+import { Copy, KeyRound, Trash2, Users } from "lucide-react";
 import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
+import { Nav } from "@/components/Nav";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
 import createApiKey, {
   type CreatedApiKey,
@@ -269,31 +269,17 @@ export default function ApiKeysClientView({
         "bg-background",
       )}
     >
-      <header
-        className={cn(
-          "h-24",
-          "flex items-center justify-between gap-2 md:gap-4",
-          "p-2 md:p-4",
-          "shadow-md",
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="sr-only">Back to admin dashboard</span>
-          </Link>
-          <h2 className="text-xl md:text-2xl text-foreground flex items-center gap-2">
+      <Nav
+        title={
+          <>
             <KeyRound className="h-5 w-5" />
             API Keys
-          </h2>
-        </div>
+          </>
+        }
+        backHref="/admin"
+      >
         <Button onClick={() => setCreateOpen(true)}>New API Key</Button>
-      </header>
-
-      <Separator decorative orientation="horizontal" className="w-full" />
+      </Nav>
 
       <main className="flex flex-col w-full grow">
         <section

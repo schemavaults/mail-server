@@ -19,9 +19,8 @@ import {
   useForm,
   useToast,
 } from "@schemavaults/ui";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useRef, useState, type ReactElement } from "react";
+import { Nav } from "@/components/Nav";
 import {
   useAuth,
   type ISchemaVaultsAuthClient,
@@ -352,24 +351,7 @@ export default function SendEmailFormClient({
         "bg-background",
       )}
     >
-      <header
-        className={cn(
-          "h-24",
-          "flex items-center justify-start gap-2 md:gap-4",
-          "p-2 md:p-4",
-          "shadow-md",
-        )}
-      >
-        <Link
-          href="/admin"
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="sr-only">Back to Admin</span>
-        </Link>
-        <h2 className="text-xl md:text-2xl text-foreground">Send Email</h2>
-      </header>
-      <Separator decorative orientation="horizontal" className="w-full" />
+      <Nav title="Send Email" backHref="/admin" />
       <main
         className={cn(
           "w-full grow",

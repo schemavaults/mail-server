@@ -88,7 +88,7 @@ export function ListMailingListsPage({
             "bg-background",
           )}
         >
-          <Nav title="Mailing Lists" environment={environment} />
+          <Nav title="Mailing Lists" />
           <main className="flex flex-col justify-start items-stretch w-full grow flex-nowrap">
             <section
               className={cn(
