@@ -3,14 +3,8 @@
 import { cn, Button } from "@schemavaults/ui";
 import type { ReactElement } from "react";
 import Link from "next/link";
-import {
-  BookTemplate,
-  Home,
-  KeyRound,
-  LogOut,
-  Send,
-  ShieldAlert,
-} from "lucide-react";
+import { LogOut } from "lucide-react";
+import ADMIN_LINKS from "@/lib/admin-links";
 
 export interface AdminLinksSectionProps {
   renderLocation: "homepage" | "admin_dashboard";
@@ -22,6 +16,11 @@ export default function AdminLinksSection({
   const linkButtonClassname: string = cn(
     "flex flex-row flex-nowrap gap-2 items-center justify-start",
   );
+
+  const links =
+    renderLocation === "homepage"
+      ? ADMIN_LINKS.filter((link) => link.href !== "/")
+      : ADMIN_LINKS;
 
   return (
     <section
@@ -35,38 +34,14 @@ export default function AdminLinksSection({
         "px-4 md:px-8 lg:px-16 xl:px-24",
       )}
     >
-      {renderLocation !== "homepage" && (
-        <Link href="/">
+      {links.map(({ href, label, icon: Icon }) => (
+        <Link key={href} href={href}>
           <Button className={linkButtonClassname}>
-            <Home className="h-4 w-4" />
-            View public homepage
+            <Icon className="h-4 w-4" />
+            {label}
           </Button>
         </Link>
-      )}
-      <Link href="/admin/all_mailing_lists">
-        <Button className={linkButtonClassname}>
-          <ShieldAlert className="h-4 w-4" />
-          View all mailing lists (including non-public)
-        </Button>
-      </Link>
-      <Link href="/admin/templates">
-        <Button className={linkButtonClassname}>
-          <BookTemplate className="h-4 w-4" />
-          View mail templates
-        </Button>
-      </Link>
-      <Link href="/admin/send-email">
-        <Button className={linkButtonClassname}>
-          <Send className="h-4 w-4" />
-          Send an email
-        </Button>
-      </Link>
-      <Link href="/admin/keys">
-        <Button className={linkButtonClassname}>
-          <KeyRound className="h-4 w-4" />
-          Manage API keys
-        </Button>
-      </Link>
+      ))}
       <Link href="/auth/logout">
         <Button className={linkButtonClassname}>
           <LogOut className="h-4 w-4" />

@@ -13,10 +13,12 @@ import {
   Wordmark,
 } from "@schemavaults/ui";
 import {
+  useAdmin,
   useAppEnvironment,
   useCurrentUser,
 } from "@schemavaults/auth-react-provider";
 import getSchemaVaultsCoreWebAppUrl from "@/lib/getSchemaVaultsCoreWebAppUrl";
+import { ADMIN_LINKS } from "@/lib/admin-links";
 import { ArrowLeft, ChevronDown, LogOut } from "lucide-react";
 import Link from "next/link";
 import type { PropsWithChildren, ReactElement, ReactNode } from "react";
@@ -29,6 +31,7 @@ export type NavProps = PropsWithChildren<{
 export function Nav({ title, backHref, children }: NavProps): ReactElement {
   const environment = useAppEnvironment();
   const user = useCurrentUser();
+  const admin = useAdmin();
   const headerFontSizeClassName: string = "text-xl md:text-2xl";
 
   return (
@@ -91,6 +94,22 @@ export function Nav({ title, backHref, children }: NavProps): ReactElement {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  {admin && (
+                    <>
+                      {ADMIN_LINKS.map(({ href, label, icon: Icon }) => (
+                        <DropdownMenuItem key={href} asChild>
+                          <Link
+                            href={href}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <Icon className="h-4 w-4" />
+                            {label}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link
                       href="/auth/logout"
