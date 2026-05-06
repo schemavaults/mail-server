@@ -1,6 +1,6 @@
 {
   "name": "@schemavaults/mail-server",
-  "version": "0.0.86",
+  "version": "0.0.87",
   "description": "Manages the SchemaVaults mailing list, sending to the list, mail templates, and sending transactional emails.",
   "type": "module",
   "private": true,

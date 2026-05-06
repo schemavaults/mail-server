@@ -17,10 +17,8 @@ export default function AdminLinksSection({
     "flex flex-row flex-nowrap gap-2 items-center justify-start",
   );
 
-  const links =
-    renderLocation === "homepage"
-      ? ADMIN_LINKS.filter((link) => link.href !== "/")
-      : ADMIN_LINKS;
+  const currentHref = renderLocation === "homepage" ? "/" : "/admin";
+  const links = ADMIN_LINKS.filter((link) => link.href !== currentHref);
 
   return (
     <section

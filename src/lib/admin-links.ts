@@ -4,6 +4,7 @@ import {
   BookTemplate,
   Home,
   KeyRound,
+  LayoutDashboard,
   Send,
   ShieldAlert,
   type LucideIcon,
@@ -20,6 +21,11 @@ export const ADMIN_LINKS: readonly AdminLink[] = [
     href: "/",
     label: "View public homepage",
     icon: Home,
+  },
+  {
+    href: "/admin",
+    label: "View admin dashboard",
+    icon: LayoutDashboard,
   },
   {
     href: "/admin/all_mailing_lists",
