@@ -113,16 +113,19 @@ export function NewMailingListDialog({}: NewMailingListDialogProps) {
           onSubmit={handleSubmit(
             onSubmit,
             function onFormSubmitError(errs): void {
-              console.error(
+              console.warn(
                 "There was an error attempting to submit the mailing list creation form: ",
                 errs,
               );
-              toast({
-                variant: "destructive",
-                title:
-                  "There was an error attempting to submit the mailing list creation form",
-                description: "Please ensure that your form inputs are valid!",
-              });
+              if (open) {
+                toast({
+                  variant: "destructive",
+                  title:
+                    "There was an error attempting to submit the mailing list creation form",
+                  description: "Please ensure that your form inputs are valid!",
+                });
+              }
+              return;
             },
           )}
           className="space-y-4 mt-4"
