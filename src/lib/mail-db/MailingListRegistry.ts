@@ -14,7 +14,15 @@ import {
   type MailingListUnsubscribeRecord,
   type MailingListUnsubscribeTable,
 } from "./mailing-list-unsubscribe-record-table";
-import type { IMailingListRegistry } from "./IMailingListRegistry";
+import {
+  pendingSubscriptionRowSchema,
+  type PendingSubscription,
+} from "./pending-subscriptions-table";
+import type {
+  CreatePendingSubscriptionInput,
+  CreatePendingSubscriptionResult,
+  IMailingListRegistry,
+} from "./IMailingListRegistry";
 
 export class MailingListRegistry implements IMailingListRegistry {
   private readonly dbh: ServerlessDatabase;
@@ -189,6 +197,88 @@ export class MailingListRegistry implements IMailingListRegistry {
     }
 
     return parsed satisfies readonly MailingListSubscriber[];
+  }
+
+  public async isAlreadySubscribed(
+    mailing_list_id: MailingListDefinition["mailing_list_id"],
+    email: string,
+  ): Promise<boolean> {
+    const result = await this.db
+      .selectFrom("subscribers")
+      .select("email")
+      .where("mailing_list_id", "=", mailing_list_id)
+      .where("email", "=", email)
+      .executeTakeFirst();
+    return Boolean(result);
+  }
+
+  public async createPendingSubscription(
+    input: CreatePendingSubscriptionInput,
+  ): Promise<CreatePendingSubscriptionResult> {
+    const now = Date.now();
+    const expires_at = now + input.ttl_ms;
+    const pending_subscription_id = crypto.randomUUID();
+
+    await this.db
+      .insertInto("pending_subscriptions")
+      .values({
+        pending_subscription_id,
+        mailing_list_id: input.mailing_list_id,
+        email: input.email,
+        token_hash: input.token_hash,
+        created_at: now,
+        expires_at,
+        confirmed_at: null,
+      })
+      .execute();
+
+    return { pending_subscription_id, expires_at };
+  }
+
+  public async findPendingSubscriptionByTokenHash(
+    token_hash: string,
+  ): Promise<PendingSubscription | null> {
+    const result = await this.db
+      .selectFrom("pending_subscriptions")
+      .selectAll()
+      .where("token_hash", "=", token_hash)
+      .executeTakeFirst();
+    if (!result) {
+      return null;
+    }
+    const normalized = {
+      ...result,
+      created_at:
+        typeof result.created_at === "number"
+          ? result.created_at
+          : Number.parseInt(result.created_at as unknown as string),
+      expires_at:
+        typeof result.expires_at === "number"
+          ? result.expires_at
+          : Number.parseInt(result.expires_at as unknown as string),
+      confirmed_at:
+        result.confirmed_at === null || result.confirmed_at === undefined
+          ? null
+          : typeof result.confirmed_at === "number"
+            ? result.confirmed_at
+            : Number.parseInt(result.confirmed_at as unknown as string),
+    };
+    const parsed = pendingSubscriptionRowSchema.safeParse(normalized);
+    if (!parsed.success) {
+      throw new Error("Failed to parse pending subscription row from database!");
+    }
+    return parsed.data;
+  }
+
+  public async markPendingSubscriptionConfirmed(
+    pending_subscription_id: string,
+    now: number,
+  ): Promise<void> {
+    await this.db
+      .updateTable("pending_subscriptions")
+      .set({ confirmed_at: now })
+      .where("pending_subscription_id", "=", pending_subscription_id)
+      .execute();
   }
 
   public async getMailingList(
