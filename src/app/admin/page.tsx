@@ -3,10 +3,31 @@ import "server-only";
 import { withAdminServerComponentRouteGuard } from "@/lib/withAdminRouteGuard";
 import type { ReactElement } from "react";
 import { AdminLinksSection } from "@/components/AdminLinksSection";
+import { Nav } from "@/components/Nav";
 import { connection } from "next/server";
+import { cn } from "@schemavaults/ui";
+import {
+  getAppEnvironment,
+  type SchemaVaultsAppEnvironment,
+} from "@schemavaults/app-definitions";
+
+const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
 
 async function AdminLandingPage(): Promise<ReactElement> {
-  return <AdminLinksSection renderLocation="admin_dashboard" />;
+  return (
+    <div
+      className={cn(
+        "w-full min-h-screen h-full",
+        "flex flex-col justify-start items-stretch",
+        "bg-background",
+      )}
+    >
+      <Nav title="Admin" environment={environment} />
+      <main className="flex flex-col justify-start items-stretch w-full grow flex-nowrap">
+        <AdminLinksSection renderLocation="admin_dashboard" />
+      </main>
+    </div>
+  );
 }
 
 export default async function AdminPage() {

@@ -2,7 +2,7 @@
 
 import listMailingLists from "@/lib/client-mail-db-actions/listMailingLists";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
-import { cn, LoadingPage, Separator, Wordmark } from "@schemavaults/ui";
+import { cn, LoadingPage, Separator } from "@schemavaults/ui";
 import { useState, type ReactElement } from "react";
 import useSWR from "swr";
 import AvailableMailingLists from "./available-mailing-lists";
@@ -10,8 +10,8 @@ import {
   SCHEMAVAULTS_MAIL_SERVER,
   type SchemaVaultsAppEnvironment,
 } from "@schemavaults/app-definitions";
-import getSchemaVaultsCoreWebAppUrl from "@/lib/getSchemaVaultsCoreWebAppUrl";
 import PublicPageFooter from "@/components/PublicPageFooter";
+import { Nav } from "@/components/Nav";
 import {
   SelectedMailingListToJoinContext,
   SelectMailingListToJoinDispatchContext,
@@ -21,7 +21,7 @@ import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
-import { AdminLinksSection } from "@/components/AdminLinksSection";
+import AdminLinksSection from "@/components/AdminLinksSection";
 
 export interface ListMailingListsPageProps {
   mailing_lists: readonly MailingListDefinition[];
@@ -73,7 +73,6 @@ export function ListMailingListsPage({
 
   const isSomeDataReady = data;
 
-  const headerFontSizeClassName: string = "text-xl md:text-2xl";
   const [selectedMailingList, setSelectedMailingList] =
     useState<MailingListDefinition | null>(null);
 
@@ -89,24 +88,7 @@ export function ListMailingListsPage({
             "bg-background",
           )}
         >
-          <header
-            className={cn(
-              "h-24",
-              "flex items-center justify-start gap-2 md:gap-4",
-              "p-2 md:p-4",
-              "shadow-md",
-            )}
-          >
-            <a href={getSchemaVaultsCoreWebAppUrl(environment)}>
-              <h1 className={cn(headerFontSizeClassName)}>
-                <Wordmark />
-              </h1>
-            </a>
-
-            <Separator decorative orientation="vertical" className="h-14" />
-            <h2 className={cn(headerFontSizeClassName)}>Mailing Lists</h2>
-          </header>
-          <Separator decorative orientation="horizontal" className="w-full" />
+          <Nav title="Mailing Lists" environment={environment} />
           <main className="flex flex-col justify-start items-stretch w-full grow flex-nowrap">
             <section
               className={cn(
