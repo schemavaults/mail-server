@@ -8,6 +8,7 @@ import SecurityAlertEmail from "@/email-templates/security-alert";
 import TeamInvitationEmail from "@/email-templates/team-invitation";
 import TeamInvitationAcceptedEmail from "@/email-templates/team-invitation-accepted";
 import TrialEndingEmail from "@/email-templates/trial-ending";
+import UpcomingInvoiceEmail from "@/email-templates/upcoming-invoice";
 import VerifyEmail from "@/email-templates/verify-email";
 import WelcomeEmail from "@/email-templates/welcome";
 import type { EmailTemplateId } from "./EmailTemplatesCatalog";
@@ -35,6 +36,7 @@ export const sampleEmailTemplateProps = {
   "team-invitation": TeamInvitationEmail.PreviewProps,
   "team-invitation-accepted": TeamInvitationAcceptedEmail.PreviewProps,
   "trial-ending": TrialEndingEmail.PreviewProps,
+  "upcoming-invoice": UpcomingInvoiceEmail.PreviewProps,
   "verify-email": VerifyEmail.PreviewProps,
   welcome: WelcomeEmail.PreviewProps,
 } satisfies Record<EmailTemplateId, Record<string, unknown>>;
