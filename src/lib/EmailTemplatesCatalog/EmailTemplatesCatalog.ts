@@ -2,6 +2,8 @@ import type { IEmailTemplatesCatalogEntry } from "./EmailTemplatesCatalogEntry";
 import type EmailTemplatesCatalogEntry from "./EmailTemplatesCatalogEntry";
 
 export const EmailTemplatesCatalog = {
+  "export-ready": async () =>
+    import("./email-template-refs/ExportReady").then((m) => m.default),
   "magic-link-sign-in": async () =>
     import("./email-template-refs/MagicLinkSignIn").then((m) => m.default),
   "mailing-list-confirmation": async () =>

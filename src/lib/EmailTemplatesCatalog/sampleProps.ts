@@ -1,3 +1,4 @@
+import ExportReadyEmail from "@/email-templates/export-ready";
 import MagicLinkSignInEmail from "@/email-templates/magic-link-sign-in";
 import MailingListConfirmationEmail from "@/email-templates/mailing-list-confirmation";
 import TestEmail from "@/email-templates/my-test-email";
@@ -25,6 +26,7 @@ import type { EmailTemplateId } from "./EmailTemplatesCatalog";
  * on its component (or omitting the entry here) is a type error.
  */
 export const sampleEmailTemplateProps = {
+  "export-ready": ExportReadyEmail.PreviewProps,
   "magic-link-sign-in": MagicLinkSignInEmail.PreviewProps,
   "mailing-list-confirmation": MailingListConfirmationEmail.PreviewProps,
   "my-test-email": TestEmail.PreviewProps,
