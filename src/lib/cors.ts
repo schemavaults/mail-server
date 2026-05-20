@@ -2,29 +2,28 @@ import "server-only";
 
 import { type NextRequest, NextResponse } from "next/server";
 import {
-  SCHEMAVAULTS_MAIL_APP_DEVELOPMENT_DOMAIN,
-  SCHEMAVAULTS_MAIL_APP_PRODUCTION_DOMAIN,
-  SCHEMAVAULTS_MAIL_APP_STAGING_DOMAIN,
-  SCHEMAVAULTS_MAIL_APP_TEST_DOMAIN,
-  SCHEMAVAULTS_WEB_APP_DEVELOPMENT_DOMAIN,
-  SCHEMAVAULTS_WEB_APP_PRODUCTION_DOMAIN,
-  SCHEMAVAULTS_WEB_APP_STAGING_DOMAIN,
-  SCHEMAVAULTS_WEB_APP_TEST_DOMAIN,
+  getAppEnvironment,
+  getHardcodedClientWebAppDomain,
+  SCHEMAVAULTS_MAIL_APP_DEFINITION,
+  SCHEMAVAULTS_WEB,
+  type SchemaVaultsAppEnvironment,
 } from "@schemavaults/app-definitions";
 
-const ALLOWED_ORIGINS: readonly string[] = [
-  SCHEMAVAULTS_WEB_APP_PRODUCTION_DOMAIN.domain,
-  SCHEMAVAULTS_WEB_APP_STAGING_DOMAIN.domain,
-  SCHEMAVAULTS_WEB_APP_DEVELOPMENT_DOMAIN.domain,
-  SCHEMAVAULTS_WEB_APP_TEST_DOMAIN.domain,
-  SCHEMAVAULTS_MAIL_APP_PRODUCTION_DOMAIN.domain,
-  SCHEMAVAULTS_MAIL_APP_STAGING_DOMAIN.domain,
-  SCHEMAVAULTS_MAIL_APP_DEVELOPMENT_DOMAIN.domain,
-  SCHEMAVAULTS_MAIL_APP_TEST_DOMAIN.domain,
-];
+function buildAllowedOrigins(
+  environment: SchemaVaultsAppEnvironment,
+): readonly string[] {
+  return [
+    getHardcodedClientWebAppDomain(SCHEMAVAULTS_WEB.app_id, environment),
+    getHardcodedClientWebAppDomain(
+      SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+      environment,
+    ),
+  ];
+}
 
 function isAllowedOrigin(origin: string | null): origin is string {
-  return typeof origin === "string" && ALLOWED_ORIGINS.includes(origin);
+  if (typeof origin !== "string") return false;
+  return buildAllowedOrigins(getAppEnvironment()).includes(origin);
 }
 
 export function applyCorsHeaders(
