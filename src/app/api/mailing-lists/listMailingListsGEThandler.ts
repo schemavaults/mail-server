@@ -10,6 +10,7 @@ import {
 } from "@schemavaults/auth-server-sdk";
 import type { PotentiallyValidTokenSource } from "@schemavaults/auth-common";
 import { SCHEMAVAULTS_MAIL_SERVER } from "@schemavaults/app-definitions";
+import { applyCorsHeaders } from "@/lib/cors";
 
 export async function listMailingListsGEThandler(
   req: NextRequest,
@@ -54,14 +55,17 @@ export async function listMailingListsGEThandler(
     );
   } catch (e: unknown) {
     console.error("Failed to list mailing lists: ", e);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to list mailing lists!",
-      },
-      {
-        status: 500,
-      },
+    return applyCorsHeaders(
+      req,
+      NextResponse.json(
+        {
+          success: false,
+          message: "Failed to list mailing lists!",
+        },
+        {
+          status: 500,
+        },
+      ),
     );
   }
 
@@ -69,12 +73,15 @@ export async function listMailingListsGEThandler(
     mailingLists = mailingLists.filter((mailingList) => mailingList.public);
   }
 
-  return NextResponse.json(
-    {
-      success: true,
-      data: mailingLists satisfies readonly MailingListDefinition[],
-    },
-    { status: 200 },
+  return applyCorsHeaders(
+    req,
+    NextResponse.json(
+      {
+        success: true,
+        data: mailingLists satisfies readonly MailingListDefinition[],
+      },
+      { status: 200 },
+    ),
   );
 }
 
