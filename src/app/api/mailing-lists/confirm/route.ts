@@ -5,39 +5,31 @@ import { confirmSubscriptionRequestBodySchema } from "./confirm-subscription-req
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry } from "@/lib/mail-db";
 import { hashApiKey } from "@/lib/api-keys/hashApiKey";
-import { applyCorsHeaders, corsPreflightResponse } from "@/lib/cors";
 
-function badRequest(req: NextRequest, message: string): NextResponse {
-  return applyCorsHeaders(
-    req,
-    NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      {
-        status: 400,
-      },
-    ),
+function badRequest(message: string): NextResponse {
+  return NextResponse.json(
+    {
+      success: false,
+      message,
+    },
+    {
+      status: 400,
+    },
   );
 }
 
 const INVALID_LINK_MESSAGE = "Confirmation link is invalid.";
 
-export async function OPTIONS(req: NextRequest): Promise<NextResponse> {
-  return corsPreflightResponse(req);
-}
-
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const raw_json_body = await req.json().catch(() => null);
   if (typeof raw_json_body !== "object" || !raw_json_body) {
-    return badRequest(req, "Expected request to have JSON body.");
+    return badRequest("Expected request to have JSON body.");
   }
 
   const parsed_body =
     await confirmSubscriptionRequestBodySchema.safeParseAsync(raw_json_body);
   if (!parsed_body.success) {
-    return badRequest(req, INVALID_LINK_MESSAGE);
+    return badRequest(INVALID_LINK_MESSAGE);
   }
   const { token, email } = parsed_body.data;
 
@@ -51,38 +43,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
 
     if (!pending) {
-      return badRequest(req, INVALID_LINK_MESSAGE);
+      return badRequest(INVALID_LINK_MESSAGE);
     }
 
     if (pending.email.toLowerCase() !== email.toLowerCase()) {
-      return badRequest(req, INVALID_LINK_MESSAGE);
+      return badRequest(INVALID_LINK_MESSAGE);
     }
 
     if (pending.confirmed_at !== null) {
-      return applyCorsHeaders(
-        req,
-        NextResponse.json(
-          {
-            success: true,
-            mailing_list_id: pending.mailing_list_id,
-            email: pending.email,
-          },
-          { status: 200 },
-        ),
+      return NextResponse.json(
+        {
+          success: true,
+          mailing_list_id: pending.mailing_list_id,
+          email: pending.email,
+        },
+        { status: 200 },
       );
     }
 
     const now = Date.now();
     if (pending.expires_at < now) {
-      return applyCorsHeaders(
-        req,
-        NextResponse.json(
-          {
-            success: false,
-            message: "Confirmation link has expired.",
-          },
-          { status: 410 },
-        ),
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Confirmation link has expired.",
+        },
+        { status: 410 },
       );
     }
 
@@ -102,28 +88,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    return applyCorsHeaders(
-      req,
-      NextResponse.json(
-        {
-          success: true,
-          mailing_list_id: pending.mailing_list_id,
-          email: pending.email,
-        },
-        { status: 200 },
-      ),
+    return NextResponse.json(
+      {
+        success: true,
+        mailing_list_id: pending.mailing_list_id,
+        email: pending.email,
+      },
+      { status: 200 },
     );
   } catch (e: unknown) {
     console.error("Failed to confirm mailing list subscription:", e);
-    return applyCorsHeaders(
-      req,
-      NextResponse.json(
-        {
-          success: false,
-          message: "Failed to confirm mailing list subscription!",
-        },
-        { status: 500 },
-      ),
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Failed to confirm mailing list subscription!",
+      },
+      { status: 500 },
     );
   }
 }

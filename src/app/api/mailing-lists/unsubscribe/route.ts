@@ -4,38 +4,29 @@ import { type NextRequest, NextResponse } from "next/server";
 import { leaveMailingListRequestBodySchema } from "./leave-mailing-list-request-body-schema";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry } from "@/lib/mail-db";
-import { applyCorsHeaders, corsPreflightResponse } from "@/lib/cors";
 
-function badRequest(req: NextRequest, message: string): NextResponse {
-  return applyCorsHeaders(
-    req,
-    NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      {
-        status: 400,
-      },
-    ),
+function badRequest(message: string): NextResponse {
+  return NextResponse.json(
+    {
+      success: false,
+      message,
+    },
+    {
+      status: 400,
+    },
   );
-}
-
-export async function OPTIONS(req: NextRequest): Promise<NextResponse> {
-  return corsPreflightResponse(req);
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const raw_json_body = await req.json();
   if (typeof raw_json_body !== "object" || !raw_json_body) {
-    return badRequest(req, "Expected request to have JSON body.");
+    return badRequest("Expected request to have JSON body.");
   }
 
   const parsed_body =
     await leaveMailingListRequestBodySchema.safeParseAsync(raw_json_body);
   if (!parsed_body.success) {
     return badRequest(
-      req,
       "Failed to parse request body to unsubscribe from mailing list!",
     );
   }
@@ -48,31 +39,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     await mailRegistry.leaveMailingList(mailing_list_id, email);
   } catch (e: unknown) {
     console.error("Failed to remove email address from the mailing list: ", e);
-    return applyCorsHeaders(
-      req,
-      NextResponse.json(
-        {
-          success: false,
-          message:
-            "Failed to unsubscribe your email address from the mailing list!",
-        },
-        {
-          status: 500,
-        },
-      ),
+    return NextResponse.json(
+      {
+        success: false,
+        message:
+          "Failed to unsubscribe your email address from the mailing list!",
+      },
+      {
+        status: 500,
+      },
     );
   }
 
-  return applyCorsHeaders(
-    req,
-    NextResponse.json(
-      {
-        success: true,
-        message: `Successfully unsubscribed from mailing list with ID: '${mailing_list_id}'`,
-      },
-      {
-        status: 200,
-      },
-    ),
+  return NextResponse.json(
+    {
+      success: true,
+      message: `Successfully unsubscribed from mailing list with ID: '${mailing_list_id}'`,
+    },
+    {
+      status: 200,
+    },
   );
 }
