@@ -87,20 +87,27 @@ export default function ConfirmSubscriptionClient({
       </h1>
 
       {linkIsMissingPieces ? (
-        <p style={{ color: "#475569", lineHeight: 1.6 }}>
+        <p
+          className="text-muted-foreground"
+          style={{ lineHeight: 1.6 }}
+        >
           This confirmation link is missing required information. Please open
           the link from your email exactly as you received it.
         </p>
       ) : (
         <>
-          <p style={{ color: "#475569", lineHeight: 1.6, margin: "0 0 16px" }}>
+          <p
+            className="text-muted-foreground"
+            style={{ lineHeight: 1.6, margin: "0 0 16px" }}
+          >
             Please confirm that you'd like to subscribe the following email
             address:
           </p>
           <div
+            className="bg-muted text-foreground border-border"
             style={{
-              background: "#f1f5f9",
-              border: "1px solid #e2e8f0",
+              borderWidth: 1,
+              borderStyle: "solid",
               borderRadius: 8,
               padding: "12px 14px",
               fontFamily:
@@ -125,26 +132,38 @@ export default function ConfirmSubscriptionClient({
           ) : null}
 
           {status.kind === "success" ? (
-            <p style={{ color: "#15803d", lineHeight: 1.6 }}>
+            <p
+              className="text-green-700 dark:text-green-400"
+              style={{ lineHeight: 1.6 }}
+            >
               You're subscribed. Thanks for confirming!
             </p>
           ) : null}
 
           {status.kind === "expired" ? (
-            <p style={{ color: "#b45309", lineHeight: 1.6 }}>
+            <p
+              className="text-amber-700 dark:text-amber-400"
+              style={{ lineHeight: 1.6 }}
+            >
               This confirmation link has expired. Please request a new one by
               joining the mailing list again.
             </p>
           ) : null}
 
           {status.kind === "invalid" ? (
-            <p style={{ color: "#b91c1c", lineHeight: 1.6 }}>
+            <p
+              className="text-red-700 dark:text-red-400"
+              style={{ lineHeight: 1.6 }}
+            >
               {status.message}
             </p>
           ) : null}
 
           {status.kind === "error" ? (
-            <p style={{ color: "#b91c1c", lineHeight: 1.6 }}>
+            <p
+              className="text-red-700 dark:text-red-400"
+              style={{ lineHeight: 1.6 }}
+            >
               {status.message}
             </p>
           ) : null}
