@@ -7,44 +7,55 @@ import { MailingListRegistry } from "@/lib/mail-db";
 import { generateConfirmationToken } from "@/lib/mailing-list-confirmation-tokens/generateConfirmationToken";
 import { getMailServerWebAppUrl } from "@/lib/getMailServerWebAppUrl";
 import { sendEmailFromTemplate } from "@/lib/send-email-from-template";
+import { applyCorsHeaders, corsPreflightResponse } from "@/lib/cors";
 
 const CONFIRMATION_TTL_MS = 24 * 60 * 60 * 1000;
 
-function badRequest(message: string): NextResponse {
-  return NextResponse.json(
-    {
-      success: false,
-      message,
-    },
-    {
-      status: 400,
-    },
+function badRequest(req: NextRequest, message: string): NextResponse {
+  return applyCorsHeaders(
+    req,
+    NextResponse.json(
+      {
+        success: false,
+        message,
+      },
+      {
+        status: 400,
+      },
+    ),
   );
 }
 
-function pendingConfirmationResponse(): NextResponse {
-  return NextResponse.json(
-    {
-      success: true,
-      message:
-        "Check your inbox for a confirmation email to complete your subscription.",
-    },
-    {
-      status: 200,
-    },
+function pendingConfirmationResponse(req: NextRequest): NextResponse {
+  return applyCorsHeaders(
+    req,
+    NextResponse.json(
+      {
+        success: true,
+        message:
+          "Check your inbox for a confirmation email to complete your subscription.",
+      },
+      {
+        status: 200,
+      },
+    ),
   );
+}
+
+export async function OPTIONS(req: NextRequest): Promise<NextResponse> {
+  return corsPreflightResponse(req);
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const raw_json_body = await req.json();
   if (typeof raw_json_body !== "object" || !raw_json_body) {
-    return badRequest("Expected request to have JSON body.");
+    return badRequest(req, "Expected request to have JSON body.");
   }
 
   const parsed_body =
     await joinMailingListRequestBodySchema.safeParseAsync(raw_json_body);
   if (!parsed_body.success) {
-    return badRequest("Failed to parse request body to join mailing list!");
+    return badRequest(req, "Failed to parse request body to join mailing list!");
   }
   const { email, mailing_list_id } = parsed_body.data;
 
@@ -56,7 +67,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const list = await mailRegistry.getMailingList(mailing_list_id);
 
     if (await mailRegistry.isAlreadySubscribed(mailing_list_id, email)) {
-      return pendingConfirmationResponse();
+      return pendingConfirmationResponse(req);
     }
 
     const { plaintext, hash } = await generateConfirmationToken();
@@ -94,16 +105,19 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   } catch (e: unknown) {
     console.error("Failed to start mailing list subscription:", e);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to start mailing list subscription!",
-      },
-      {
-        status: 500,
-      },
+    return applyCorsHeaders(
+      req,
+      NextResponse.json(
+        {
+          success: false,
+          message: "Failed to start mailing list subscription!",
+        },
+        {
+          status: 500,
+        },
+      ),
     );
   }
 
-  return pendingConfirmationResponse();
+  return pendingConfirmationResponse(req);
 }
