@@ -4,6 +4,8 @@ import type EmailTemplatesCatalogEntry from "./EmailTemplatesCatalogEntry";
 export const EmailTemplatesCatalog = {
   "api-key-created": async () =>
     import("./email-template-refs/ApiKeyCreated").then((m) => m.default),
+  "api-key-expiring": async () =>
+    import("./email-template-refs/ApiKeyExpiring").then((m) => m.default),
   "magic-link-sign-in": async () =>
     import("./email-template-refs/MagicLinkSignIn").then((m) => m.default),
   "mailing-list-confirmation": async () =>
