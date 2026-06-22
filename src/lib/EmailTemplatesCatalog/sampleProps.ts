@@ -1,3 +1,4 @@
+import AccountDeletionRequestedEmail from "@/email-templates/account-deletion-requested";
 import ApiKeyCreatedEmail from "@/email-templates/api-key-created";
 import MagicLinkSignInEmail from "@/email-templates/magic-link-sign-in";
 import MailingListConfirmationEmail from "@/email-templates/mailing-list-confirmation";
@@ -26,6 +27,7 @@ import type { EmailTemplateId } from "./EmailTemplatesCatalog";
  * on its component (or omitting the entry here) is a type error.
  */
 export const sampleEmailTemplateProps = {
+  "account-deletion-requested": AccountDeletionRequestedEmail.PreviewProps,
   "api-key-created": ApiKeyCreatedEmail.PreviewProps,
   "magic-link-sign-in": MagicLinkSignInEmail.PreviewProps,
   "mailing-list-confirmation": MailingListConfirmationEmail.PreviewProps,
