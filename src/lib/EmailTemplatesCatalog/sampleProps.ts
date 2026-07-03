@@ -4,6 +4,7 @@ import MailingListConfirmationEmail from "@/email-templates/mailing-list-confirm
 import TestEmail from "@/email-templates/my-test-email";
 import PasswordResetEmail from "@/email-templates/password-reset";
 import PaymentFailedEmail from "@/email-templates/payment-failed";
+import PaymentMethodExpiringEmail from "@/email-templates/payment-method-expiring";
 import PaymentReceiptEmail from "@/email-templates/payment-receipt";
 import SecurityAlertEmail from "@/email-templates/security-alert";
 import TeamInvitationEmail from "@/email-templates/team-invitation";
@@ -32,6 +33,7 @@ export const sampleEmailTemplateProps = {
   "my-test-email": TestEmail.PreviewProps,
   "password-reset": PasswordResetEmail.PreviewProps,
   "payment-failed": PaymentFailedEmail.PreviewProps,
+  "payment-method-expiring": PaymentMethodExpiringEmail.PreviewProps,
   "payment-receipt": PaymentReceiptEmail.PreviewProps,
   "security-alert": SecurityAlertEmail.PreviewProps,
   "team-invitation": TeamInvitationEmail.PreviewProps,
