@@ -28,6 +28,8 @@ export const EmailTemplatesCatalog = {
     ),
   "trial-ending": async () =>
     import("./email-template-refs/TrialEnding").then((m) => m.default),
+  "two-factor-code": async () =>
+    import("./email-template-refs/TwoFactorCode").then((m) => m.default),
   "verify-email": async () =>
     import("./email-template-refs/VerifyEmail").then((m) => m.default),
   welcome: async () =>
