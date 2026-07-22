@@ -1,28 +1,14 @@
 "use client";
 
-import { cn, Wordmark } from "@schemavaults/ui";
+import { useBranding } from "@/contexts/BrandingContext";
+import { BrandWordmark } from "@/components/BrandWordmark";
+import { cn } from "@schemavaults/ui";
 import { Github, Linkedin, Twitter } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { FC, ReactElement } from "react";
 
-function ResourcesSectionLink({
-  href,
-  title,
-}: {
-  title: string;
-  href: string;
-}): ReactElement {
-  return (
-    <li>
-      <a href={href} className="hover:underline">
-        {title}
-      </a>
-    </li>
-  );
-}
-
-function FollowUsSectionLink({
+function FooterSectionLink({
   href,
   title,
 }: {
@@ -62,12 +48,33 @@ export interface PublicPageFooterProps {
 export function PublicPageFooter({
   containerClassName,
 }: PublicPageFooterProps): ReactElement {
+  const branding = useBranding();
+
   const linkItemFontClassName: string =
     "text-gray-500 dark:text-gray-400 font-medium";
 
-  const githubHref: string = "https://github.com/schemavaults";
-  const twitterHref: string = "https://x.com/schemavaults";
-  const linkedInHref: string = "https://linkedin.com/company/schemavaults";
+  const socialLinks: readonly {
+    Icon: FC<{ className?: string }>;
+    alt: string;
+    href: string | null;
+  }[] = [
+    { Icon: Github, alt: "GitHub", href: branding.githubUrl },
+    { Icon: Twitter, alt: "X/Twitter", href: branding.twitterUrl },
+    { Icon: Linkedin, alt: "LinkedIn", href: branding.linkedinUrl },
+  ];
+  const visibleSocialLinks = socialLinks.filter(
+    (link): link is { Icon: FC<{ className?: string }>; alt: string; href: string } =>
+      typeof link.href === "string" && link.href.length > 0,
+  );
+
+  const legalLinks: readonly { title: string; href: string | null }[] = [
+    { title: "Privacy Policy", href: branding.privacyPolicyUrl },
+    { title: "Terms & Conditions", href: branding.termsUrl },
+  ];
+  const visibleLegalLinks = legalLinks.filter(
+    (link): link is { title: string; href: string } =>
+      typeof link.href === "string" && link.href.length > 0,
+  );
 
   return (
     <footer className={cn("bg-card", containerClassName)}>
@@ -75,17 +82,18 @@ export function PublicPageFooter({
         <div className="md:flex md:justify-between">
           <div className="mb-6 md:mb-0">
             <Link
-              href="https://schemavaults.com"
+              href={branding.url}
               className="flex items-center flex-row flex-nowrap gap-2 md:gap-4"
             >
               <Image
-                src="/media/logo.png"
-                alt="SchemaVaults Logo"
+                src="/api/branding/logo"
+                alt={`${branding.name} Logo`}
                 width={48}
                 height={48}
+                unoptimized
               />
               <span className="self-center text-2xl font-semibold whitespace-nowrap">
-                <Wordmark />
+                <BrandWordmark />
               </span>
             </Link>
           </div>
@@ -100,66 +108,67 @@ export function PublicPageFooter({
                   "font-medium flex flex-col gap-2",
                 )}
               >
-                <ResourcesSectionLink
-                  title="SchemaVaults Web"
-                  href="https://schemavaults.com"
-                />
-                <ResourcesSectionLink
-                  title="SchemaVaults Auth Platform"
-                  href="https://auth.schemavaults.com"
-                />
-                <ResourcesSectionLink title="Login" href="/auth/login" />
+                <FooterSectionLink title={branding.name} href={branding.url} />
+                <FooterSectionLink title="Login" href="/auth/login" />
               </ul>
             </div>
-            <div>
-              <h2 className="mb-6 text-sm font-semibold text-card-foreground uppercase">
-                Follow us
-              </h2>
-              <ul className={cn(linkItemFontClassName)}>
-                <FollowUsSectionLink title="GitHub" href={githubHref} />
-              </ul>
-            </div>
-            <div>
-              <h2 className="mb-6 text-sm font-semibold uppercase text-card-foreground">
-                Legal
-              </h2>
-              <ul className={cn(linkItemFontClassName)}>
-                <li className="mb-4">
-                  <a href="#" className="hover:underline">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:underline">
-                    Terms &amp; Conditions
-                  </a>
-                </li>
-              </ul>
-            </div>
+            {visibleSocialLinks.length > 0 && (
+              <div>
+                <h2 className="mb-6 text-sm font-semibold text-card-foreground uppercase">
+                  Follow us
+                </h2>
+                <ul
+                  className={cn(
+                    linkItemFontClassName,
+                    "font-medium flex flex-col gap-2",
+                  )}
+                >
+                  {visibleSocialLinks.map(({ alt, href }) => (
+                    <FooterSectionLink key={alt} title={alt} href={href} />
+                  ))}
+                </ul>
+              </div>
+            )}
+            {visibleLegalLinks.length > 0 && (
+              <div>
+                <h2 className="mb-6 text-sm font-semibold uppercase text-card-foreground">
+                  Legal
+                </h2>
+                <ul
+                  className={cn(
+                    linkItemFontClassName,
+                    "font-medium flex flex-col gap-2",
+                  )}
+                >
+                  {visibleLegalLinks.map(({ title, href }) => (
+                    <FooterSectionLink key={title} title={title} href={href} />
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
         <hr className="my-6 border-card-foreground sm:mx-auto lg:my-8" />
         <div className="sm:flex sm:items-center sm:justify-between">
           <span className="text-sm sm:text-center text-accent-foreground">
-            © 2025{" "}
-            <a href="https://schemavaults.com" className="hover:underline">
-              <Wordmark />™
+            © {new Date().getFullYear()}{" "}
+            <a href={branding.url} className="hover:underline">
+              <BrandWordmark />
             </a>
             . All Rights Reserved.
           </span>
-          <div className="flex gap-2 md:gap-4 mt-4 sm:justify-center sm:mt-0">
-            <SocialMediaIconLink Icon={Github} alt="GitHub" href={githubHref} />
-            <SocialMediaIconLink
-              Icon={Twitter}
-              alt="X/Twitter"
-              href={twitterHref}
-            />
-            <SocialMediaIconLink
-              Icon={Linkedin}
-              alt="LinkedIn"
-              href={linkedInHref}
-            />
-          </div>
+          {visibleSocialLinks.length > 0 && (
+            <div className="flex gap-2 md:gap-4 mt-4 sm:justify-center sm:mt-0">
+              {visibleSocialLinks.map(({ Icon, alt, href }) => (
+                <SocialMediaIconLink
+                  key={alt}
+                  Icon={Icon}
+                  alt={alt}
+                  href={href}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </footer>

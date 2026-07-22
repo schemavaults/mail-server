@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface TrialEndingEmailProps {
   recipientName?: string;
@@ -26,10 +27,11 @@ export interface TrialEndingEmailProps {
   supportEmail?: string;
 }
 
-// Mirrors @schemavaults/theme brand and warning tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties or oklch(), so the token values are inlined as hex.
-// AMBER values approximate `--warning: oklch(82% 0.189 84.429)` and `--warning-foreground: oklch(41% 0.112 45.904)`.
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral and warning palette tokens. Email clients don't resolve CSS custom
+// properties or oklch(), so concrete values are inlined as hex; the brand
+// accent comes from the configured brand inside the component.
+// AMBER values approximate a `--warning: oklch(82% 0.189 84.429)` and
+// `--warning-foreground: oklch(41% 0.112 45.904)` semantic token pair.
 const FOREGROUND = "#0b1220";
 const MUTED_FOREGROUND = "#64748b";
 const BORDER = "#e2e8f0";
@@ -70,14 +72,17 @@ export default function TrialEndingEmail(
     );
   }
 
+  const brand = getEmailBrand();
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
   const productName: string =
     typeof props.productName === "string" && props.productName.length > 0
       ? props.productName
-      : "SchemaVaults";
+      : brand.productName;
   const supportEmail: string =
     typeof props.supportEmail === "string" && props.supportEmail.length > 0
       ? props.supportEmail
-      : "support@schemavaults.com";
+      : brand.supportEmail;
   const greetingName: string =
     typeof props.recipientName === "string" && props.recipientName.length > 0
       ? props.recipientName
@@ -443,14 +448,12 @@ TrialEndingEmail.PreviewProps = {
   currentPlan: "Pro trial",
   upgradePlanName: "Pro",
   upgradePlanPrice: "$29 / month",
-  upgradeUrl: "https://schemavaults.com/billing/upgrade?plan=pro",
-  manageBillingUrl: "https://schemavaults.com/account/billing",
+  upgradeUrl: "https://example.com/billing/upgrade?plan=pro",
+  manageBillingUrl: "https://example.com/account/billing",
   featuresAtRisk: [
-    "Private vaults beyond the free-tier limit",
-    "Schema-evolution diff history older than 7 days",
+    "Private projects beyond the free-tier limit",
+    "Version history older than 7 days",
     "Team seats above 3 collaborators",
     "API request quota above 1,000 requests/day",
   ],
-  productName: "SchemaVaults",
-  supportEmail: "support@schemavaults.com",
 } satisfies TrialEndingEmailProps;

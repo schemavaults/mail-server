@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface ApiKeyCreatedEmailProps {
   userName?: string;
@@ -30,10 +31,9 @@ export interface ApiKeyCreatedEmailProps {
   supportEmail?: string;
 }
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties, so the token hex values are inlined here.
-const BRAND_BLUE = "#60a5fa";
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral and semantic palette values. Email clients don't resolve CSS custom
+// properties, so concrete hex values are inlined here; the accent colors come
+// from the configured brand accent (see ./brand.ts) inside the component.
 const BRAND_RED = "#dc2626";
 const BRAND_RED_DARK = "#b91c1c";
 const FOREGROUND = "#0b1220";
@@ -76,14 +76,18 @@ export default function ApiKeyCreatedEmail(
     );
   }
 
+  const brand = getEmailBrand();
+  const BRAND_BLUE = brand.colors.accent;
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
   const productName: string =
     typeof props.productName === "string" && props.productName.length > 0
       ? props.productName
-      : "SchemaVaults";
+      : brand.productName;
   const supportEmail: string =
     typeof props.supportEmail === "string" && props.supportEmail.length > 0
       ? props.supportEmail
-      : "support@schemavaults.com";
+      : brand.supportEmail;
   const greetingName: string =
     typeof props.userName === "string" && props.userName.length > 0
       ? props.userName
@@ -445,18 +449,16 @@ export default function ApiKeyCreatedEmail(
 ApiKeyCreatedEmail.PreviewProps = {
   userName: "Jane Doe",
   keyName: "production-pipeline-writer",
-  keyPrefix: "svlts_pk",
+  keyPrefix: "mail_pk",
   keyLastFour: "a3f2",
-  scopes: ["schemas:read", "schemas:write", "vaults:read"],
+  scopes: ["mail:send", "lists:read", "lists:write"],
   createdAt: "May 14, 2026 14:22 UTC",
   createdByName: "Jane Doe",
   createdByEmail: "jane@acme.co",
   ipAddress: "203.0.113.42",
   location: "San Francisco, CA",
   expiresAt: "Nov 14, 2026 14:22 UTC",
-  manageKeysUrl: "https://schemavaults.com/account/api-keys",
+  manageKeysUrl: "https://mail.example.com/account/api-keys",
   revokeKeyUrl:
-    "https://schemavaults.com/account/api-keys/revoke?id=key_example",
-  productName: "SchemaVaults",
-  supportEmail: "support@schemavaults.com",
+    "https://mail.example.com/account/api-keys/revoke?id=key_example",
 } satisfies ApiKeyCreatedEmailProps;

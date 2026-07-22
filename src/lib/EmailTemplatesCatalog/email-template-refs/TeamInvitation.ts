@@ -1,13 +1,14 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { TeamInvitationEmailProps } from "@/email-templates/team-invitation";
 
 export class TeamInvitation extends EmailTemplatesCatalogEntry<TeamInvitationEmailProps> {
   public id = "team-invitation" as const satisfies string;
 
   public description =
-    "Team/workspace invitation email sent when an existing member invites another user to collaborate on a team. Uses SchemaVaults brand gradient header, an 'About this team' callout, a metadata table (team, inviter, role, expiration), and a primary CTA to accept the invite with a visible fallback link. Props: { inviterName: string, teamName: string, acceptInviteUrl: string, inviteeName?: string, inviterEmail?: string, teamDescription?: string, role?: string, expiresAt?: string, productName?: string, supportEmail?: string }" as const satisfies string;
+    "Team/workspace invitation email sent when an existing member invites another user to collaborate on a team. Uses the configured brand gradient header, an 'About this team' callout, a metadata table (team, inviter, role, expiration), and a primary CTA to accept the invite with a visible fallback link. Props: { inviterName: string, teamName: string, acceptInviteUrl: string, inviteeName?: string, inviterEmail?: string, teamDescription?: string, role?: string, expiresAt?: string, productName?: string, supportEmail?: string }" as const satisfies string;
 
   public validateProps(val: unknown): val is TeamInvitationEmailProps {
     if (typeof val !== "object" || !val) {
@@ -67,14 +68,15 @@ export class TeamInvitation extends EmailTemplatesCatalogEntry<TeamInvitationEma
   public async renderPlainTextVersion(
     props: TeamInvitationEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const greetingName: string =
       typeof props.inviteeName === "string" && props.inviteeName.length > 0
         ? props.inviteeName

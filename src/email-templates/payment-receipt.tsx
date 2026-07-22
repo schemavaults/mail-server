@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface PaymentReceiptLineItem {
   description: string;
@@ -39,10 +40,9 @@ export interface PaymentReceiptEmailProps {
   supportEmail?: string;
 }
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties or oklch(), so the token values are inlined as hex.
-// EMERALD palette is used to convey successful payment, complementing the SchemaVaults blue brand.
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral palette and semantic status colors for this template. Email clients
+// don't resolve CSS custom properties or oklch(), so the values are inlined as hex.
+// EMERALD palette is used to convey successful payment, complementing the configured brand accent.
 const FOREGROUND = "#0b1220";
 const MUTED_FOREGROUND = "#64748b";
 const BORDER = "#e2e8f0";
@@ -83,14 +83,17 @@ export default function PaymentReceiptEmail(
     );
   }
 
+  const brand = getEmailBrand();
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
   const productName: string =
     typeof props.productName === "string" && props.productName.length > 0
       ? props.productName
-      : "SchemaVaults";
+      : brand.productName;
   const supportEmail: string =
     typeof props.supportEmail === "string" && props.supportEmail.length > 0
       ? props.supportEmail
-      : "support@schemavaults.com";
+      : brand.supportEmail;
   const greetingName: string =
     typeof props.recipientName === "string" && props.recipientName.length > 0
       ? props.recipientName
@@ -691,7 +694,7 @@ PaymentReceiptEmail.PreviewProps = {
   paymentMethodLast4: "4242",
   lineItems: [
     {
-      description: "SchemaVaults Pro — Monthly subscription",
+      description: "Pro plan — Monthly subscription",
       quantity: 1,
       unitPrice: "$29.00",
       amount: "$29.00",
@@ -705,9 +708,5 @@ PaymentReceiptEmail.PreviewProps = {
   ],
   subtotal: "$45.00",
   tax: "$0.00",
-  invoiceUrl: "https://schemavaults.com/billing/invoices/RC-2026-0042.pdf",
-  manageBillingUrl: "https://schemavaults.com/account/billing",
   billingAddress: "Acme Platform, Inc.\n221B Baker Street\nLondon NW1 6XE",
-  productName: "SchemaVaults",
-  supportEmail: "support@schemavaults.com",
 } satisfies PaymentReceiptEmailProps;

@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface MagicLinkSignInEmailProps {
   magicLinkUrl: string;
@@ -27,10 +28,9 @@ export interface MagicLinkSignInEmailProps {
   supportEmail?: string;
 }
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties, so the token hex values are inlined here.
-const BRAND_BLUE = "#60a5fa";
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral palette values. Email clients don't resolve CSS custom properties,
+// so concrete hex values are inlined here; the accent colors come from the
+// configured brand accent (see ./brand.ts) inside the component.
 const FOREGROUND = "#0b1220";
 const MUTED_FOREGROUND = "#64748b";
 const BORDER = "#e2e8f0";
@@ -52,14 +52,18 @@ export default function MagicLinkSignInEmail(
     );
   }
 
+  const brand = getEmailBrand();
+  const BRAND_BLUE = brand.colors.accent;
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
   const productName: string =
     typeof props.productName === "string" && props.productName.length > 0
       ? props.productName
-      : "SchemaVaults";
+      : brand.productName;
   const supportEmail: string =
     typeof props.supportEmail === "string" && props.supportEmail.length > 0
       ? props.supportEmail
-      : "support@schemavaults.com";
+      : brand.supportEmail;
   const recipientName: string =
     typeof props.recipientName === "string" && props.recipientName.length > 0
       ? props.recipientName
@@ -368,7 +372,7 @@ export default function MagicLinkSignInEmail(
 
 MagicLinkSignInEmail.PreviewProps = {
   magicLinkUrl:
-    "https://schemavaults.com/auth/magic-link?token=example-magic-link-token-please-replace-in-production",
+    "https://mail.example.com/auth/magic-link?token=example-magic-link-token-please-replace-in-production",
   recipientEmail: "jane@acme.co",
   recipientName: "Jane",
   oneTimeCode: "742-918",
@@ -378,6 +382,4 @@ MagicLinkSignInEmail.PreviewProps = {
   location: "San Francisco, CA",
   ipAddress: "203.0.113.42",
   requestedAt: "Apr 28, 2026 09:14 UTC",
-  productName: "SchemaVaults",
-  supportEmail: "support@schemavaults.com",
 } satisfies MagicLinkSignInEmailProps;

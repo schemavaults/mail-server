@@ -10,32 +10,24 @@ import {
   type SchemaVaultsAppEnvironment,
 } from "@schemavaults/app-definitions";
 import { getAppId } from "@/lib/getAppId";
+import { getBrandConfig, type BrandConfig } from "@/lib/branding";
 
 const inter = Inter({ subsets: ["latin"] });
 
+const branding: BrandConfig = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: "SchemaVaults Mail",
-  description: "App for managing the sending of SchemaVaults' mail",
+  title: `${branding.name} Mail`,
+  description: `App for managing the sending of ${branding.name}'s mail`,
+  icons: {
+    // Served from the branding assets API so an admin-uploaded favicon takes
+    // effect without a redeploy; falls back to the bundled default icon.
+    icon: "/api/branding/favicon",
+  },
 };
 
 const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
 const app_id: ApiServerId = getAppId();
-
-/**
- * URL of the brand's main web app, configured via the BRAND_URL environment
- * variable (scheme optional; https is assumed when omitted).
- */
-function resolveCoreWebAppUrl(): string {
-  const configured = process.env.BRAND_URL;
-  if (typeof configured === "string" && configured.length > 0) {
-    return new URL(
-      configured.includes("://") ? configured : `https://${configured}`,
-    ).origin;
-  }
-  return "https://schemavaults.com";
-}
-
-const core_web_app_url: string = resolveCoreWebAppUrl();
 
 /** GLOBAL LAYOUT */
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -51,7 +43,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ClientAppLogicProviders
           environment={environment}
           app_id={app_id}
-          core_web_app_url={core_web_app_url}
+          branding={branding}
         >
           <ClientAppVisualsProvider>{children}</ClientAppVisualsProvider>
         </ClientAppLogicProviders>

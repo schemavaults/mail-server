@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface WelcomeEmailProps {
   name: string;
@@ -21,8 +22,6 @@ export interface WelcomeEmailProps {
   supportEmail?: string;
 }
 
-const BRAND_BLUE = "#60a5fa";
-const BRAND_BLUE_DARK = "#2563eb";
 const FOREGROUND = "#0b1220";
 const MUTED_FOREGROUND = "#64748b";
 const BORDER = "#e2e8f0";
@@ -30,9 +29,9 @@ const CARD_BG = "#ffffff";
 const PAGE_BG = "#f8fafc";
 
 const DEFAULT_HIGHLIGHTS: readonly string[] = [
-  "Browse curated schemas in the SchemaVaults library",
-  "Vault your own schemas to share with your team",
-  "Plug the schemas into your pipeline via the SchemaVaults SDK",
+  "Explore your dashboard and set up your workspace",
+  "Invite your team to collaborate",
+  "Connect your tools and integrations",
 ];
 
 export default function WelcomeEmail(props: WelcomeEmailProps): ReactElement {
@@ -40,14 +39,18 @@ export default function WelcomeEmail(props: WelcomeEmailProps): ReactElement {
     throw new Error("Missing 'name' in props for WelcomeEmail template!");
   }
 
+  const brand = getEmailBrand();
+  const BRAND_BLUE = brand.colors.accent;
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
   const productName: string =
     typeof props.productName === "string" && props.productName.length > 0
       ? props.productName
-      : "SchemaVaults";
+      : brand.productName;
   const ctaUrl: string =
     typeof props.ctaUrl === "string" && props.ctaUrl.length > 0
       ? props.ctaUrl
-      : "https://schemavaults.com";
+      : brand.url;
   const ctaLabel: string =
     typeof props.ctaLabel === "string" && props.ctaLabel.length > 0
       ? props.ctaLabel
@@ -59,7 +62,7 @@ export default function WelcomeEmail(props: WelcomeEmailProps): ReactElement {
   const supportEmail: string =
     typeof props.supportEmail === "string" && props.supportEmail.length > 0
       ? props.supportEmail
-      : "support@schemavaults.com";
+      : brand.supportEmail;
 
   const previewText = `Welcome to ${productName}, ${props.name} — here's how to get started.`;
 
@@ -238,13 +241,5 @@ export default function WelcomeEmail(props: WelcomeEmailProps): ReactElement {
 
 WelcomeEmail.PreviewProps = {
   name: "Jane Doe",
-  productName: "SchemaVaults",
-  ctaUrl: "https://schemavaults.com/dashboard",
   ctaLabel: "Open your dashboard",
-  highlights: [
-    "Browse curated schemas in the SchemaVaults library",
-    "Vault your own schemas to share with your team",
-    "Plug the schemas into your pipeline via the SchemaVaults SDK",
-  ],
-  supportEmail: "support@schemavaults.com",
 } satisfies WelcomeEmailProps;

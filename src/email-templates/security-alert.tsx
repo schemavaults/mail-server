@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface SecurityAlertEmailProps {
   name: string;
@@ -29,10 +30,8 @@ export interface SecurityAlertEmailProps {
   supportEmail?: string;
 }
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties, so the token hex values are inlined here.
-const BRAND_BLUE = "#60a5fa";
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral palette and semantic alert colors for this template. Email clients
+// don't resolve CSS custom properties, so the hex values are inlined here.
 const BRAND_RED = "#dc2626";
 const BRAND_RED_DARK = "#b91c1c";
 const FOREGROUND = "#0b1220";
@@ -95,19 +94,23 @@ export default function SecurityAlertEmail(
     throw new Error("Missing 'name' in props for SecurityAlertEmail template!");
   }
 
+  const brand = getEmailBrand();
+  const BRAND_BLUE = brand.colors.accent;
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
   const productName: string =
     typeof props.productName === "string" && props.productName.length > 0
       ? props.productName
-      : "SchemaVaults";
+      : brand.productName;
   const supportEmail: string =
     typeof props.supportEmail === "string" && props.supportEmail.length > 0
       ? props.supportEmail
-      : "support@schemavaults.com";
+      : brand.supportEmail;
   const secureAccountUrl: string =
     typeof props.secureAccountUrl === "string" &&
     props.secureAccountUrl.length > 0
       ? props.secureAccountUrl
-      : "https://schemavaults.com/account/security";
+      : `${brand.url}/account/security`;
   const eventType: NonNullable<SecurityAlertEmailProps["eventType"]> =
     props.eventType ?? "new-sign-in";
   const copy: EventCopy = EVENT_COPY[eventType];
@@ -358,7 +361,4 @@ SecurityAlertEmail.PreviewProps = {
   location: "San Francisco, CA",
   ipAddress: "203.0.113.42",
   eventTime: "Apr 19, 2026 10:30 UTC",
-  secureAccountUrl: "https://schemavaults.com/account/security",
-  productName: "SchemaVaults",
-  supportEmail: "support@schemavaults.com",
 } satisfies SecurityAlertEmailProps;
