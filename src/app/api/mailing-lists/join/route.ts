@@ -5,11 +5,24 @@ import { joinMailingListRequestBodySchema } from "./join-mailing-list-request-bo
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry } from "@/lib/mail-db";
 import { generateConfirmationToken } from "@/lib/mailing-list-confirmation-tokens/generateConfirmationToken";
-import { getMailServerWebAppUrl } from "@/lib/getMailServerWebAppUrl";
 import { sendEmailFromTemplate } from "@/lib/send-email-from-template";
 import { applyCorsHeaders, corsPreflightResponse } from "@/lib/cors";
 
 const CONFIRMATION_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Public base URL of this mail server, used to build absolute links embedded
+ * in emails. Configured via the HOST environment variable (with or without a
+ * scheme; https is assumed when omitted). Falls back to localhost with the
+ * dev server's PORT when unset.
+ */
+function getMailServerBaseUrl(): string {
+  const host = process.env.HOST;
+  if (typeof host === "string" && host.length > 0) {
+    return new URL(host.includes("://") ? host : `https://${host}`).origin;
+  }
+  return `http://localhost:${process.env.PORT ?? "3000"}`;
+}
 
 async function badRequest(
   req: NextRequest,
@@ -86,7 +99,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       ttl_ms: CONFIRMATION_TTL_MS,
     });
 
-    const confirmationUrl = `${getMailServerWebAppUrl()}/mailing-lists/confirm?token=${plaintext}&email=${encodeURIComponent(email)}`;
+    const confirmationUrl = `${getMailServerBaseUrl()}/mailing-lists/confirm?token=${plaintext}&email=${encodeURIComponent(email)}`;
 
     try {
       await sendEmailFromTemplate({
