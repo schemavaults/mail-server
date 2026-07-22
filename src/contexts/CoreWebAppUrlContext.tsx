@@ -8,9 +8,9 @@ import {
 } from "react";
 
 /**
- * URL of the core SchemaVaults web app (used e.g. for the Nav wordmark link).
- * Resolved server-side from the SCHEMAVAULTS_WEB_APP_URL environment variable
- * in the root layout and threaded to client components through this context.
+ * URL of the brand's main web app (used e.g. for the Nav wordmark link).
+ * Resolved server-side from the BRAND_URL environment variable in the root
+ * layout and threaded to client components through this context.
  */
 const CoreWebAppUrlContext = createContext<string | null>(null);
 

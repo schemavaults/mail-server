@@ -17,7 +17,7 @@ export interface ClientAppLogicProvidersProps extends PropsWithChildren {
   environment: SchemaVaultsAppEnvironment;
   /** Resolved server-side by getAppId() and passed down from the root layout. */
   app_id: ApiServerId;
-  /** Resolved server-side from SCHEMAVAULTS_WEB_APP_URL in the root layout. */
+  /** Resolved server-side from BRAND_URL in the root layout. */
   core_web_app_url: string;
 }
 

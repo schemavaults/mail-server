@@ -22,12 +22,11 @@ const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
 const app_id: ApiServerId = getAppId();
 
 /**
- * URL of the core SchemaVaults web app, configured via the
- * SCHEMAVAULTS_WEB_APP_URL environment variable (scheme optional; https is
- * assumed when omitted).
+ * URL of the brand's main web app, configured via the BRAND_URL environment
+ * variable (scheme optional; https is assumed when omitted).
  */
 function resolveCoreWebAppUrl(): string {
-  const configured = process.env.SCHEMAVAULTS_WEB_APP_URL;
+  const configured = process.env.BRAND_URL;
   if (typeof configured === "string" && configured.length > 0) {
     return new URL(
       configured.includes("://") ? configured : `https://${configured}`,
