@@ -28,7 +28,7 @@ export const corsAllowedOriginRowSchema = z
     origin: corsOriginValueSchema,
     description: z.string().max(255).nullable(),
     created_at: z.number().nonnegative(),
-    created_by_user_id: z.string().min(1),
+    created_by_user_id: z.string().uuid(),
   })
   .strict()
   .required({

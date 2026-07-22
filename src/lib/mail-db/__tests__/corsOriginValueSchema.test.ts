@@ -34,7 +34,7 @@ describe("corsAllowedOriginRowSchema", () => {
     origin: "https://schemavaults.com",
     description: null,
     created_at: 1_750_000_000_000,
-    created_by_user_id: "user-123",
+    created_by_user_id: "5f2d9c44-71e8-4c39-b1a4-8e63f0a1d927",
   };
 
   test("accepts a fully-specified row", () => {
@@ -48,6 +48,11 @@ describe("corsAllowedOriginRowSchema", () => {
 
   test("rejects unknown keys (strict)", () => {
     const row = { ...validRow, unexpected: "extra" };
+    expect(corsAllowedOriginRowSchema.safeParse(row).success).toBe(false);
+  });
+
+  test("rejects a non-UUID created_by_user_id", () => {
+    const row = { ...validRow, created_by_user_id: "user-123" };
     expect(corsAllowedOriginRowSchema.safeParse(row).success).toBe(false);
   });
 
