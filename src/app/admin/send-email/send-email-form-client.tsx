@@ -25,7 +25,7 @@ import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
-import { getAppId } from "@/lib/getAppId";
+import { useMailAppId } from "@/contexts/MailAppIdContext";
 import type { SendEmailRequestBody } from "@schemavaults/send-email";
 import sendEmail from "@/lib/client-mail-db-actions/sendEmail";
 import JsonCodeEditor from "./JsonCodeEditor";
@@ -112,6 +112,7 @@ export default function SendEmailFormClient({
 }: SendEmailFormClientProps): ReactElement {
   const { toast } = useToast();
   const auth = useAuth();
+  const appId = useMailAppId();
 
   const {
     register,
@@ -187,7 +188,7 @@ export default function SendEmailFormClient({
       setPreviewError(null);
       try {
         const accessToken = await authClient.acquireAccessToken({
-          audience: getAppId(),
+          audience: appId,
         });
         const response = await fetch(`/api/admin/templates/preview`, {
           method: "POST",
@@ -312,7 +313,7 @@ export default function SendEmailFormClient({
     if (formData.dryRun) body.dryRun = true;
 
     try {
-      await sendEmail(body, authClient);
+      await sendEmail(body, authClient, appId);
     } catch (e: unknown) {
       console.error("Failed to send email: ", e);
       toast({

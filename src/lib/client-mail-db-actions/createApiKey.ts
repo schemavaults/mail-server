@@ -1,4 +1,4 @@
-import { getAppId } from "@/lib/getAppId";
+import type { ApiServerId } from "@schemavaults/app-definitions";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
 
 export interface CreatedApiKey {
@@ -14,9 +14,10 @@ export interface CreatedApiKey {
 export async function createApiKey(
   input: { name: string },
   auth: ISchemaVaultsAuthClient,
+  app_id: ApiServerId,
 ): Promise<CreatedApiKey> {
   const accessToken = await auth.acquireAccessToken({
-    audience: getAppId(),
+    audience: app_id,
   });
   const response = await fetch(`/api/admin/api-keys`, {
     method: "POST",

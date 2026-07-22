@@ -1,12 +1,13 @@
-import { getAppId } from "@/lib/getAppId";
+import type { ApiServerId } from "@schemavaults/app-definitions";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
 import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
 
 export async function listApiKeys(
   auth: ISchemaVaultsAuthClient,
+  app_id: ApiServerId,
 ): Promise<readonly ApiKeyRecord[]> {
   const accessToken = await auth.acquireAccessToken({
-    audience: getAppId(),
+    audience: app_id,
   });
   const response = await fetch(`/api/admin/api-keys`, {
     method: "GET",

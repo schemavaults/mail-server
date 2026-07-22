@@ -7,7 +7,7 @@ import { useState, type ReactElement } from "react";
 import useSWR from "swr";
 import AvailableMailingLists from "./available-mailing-lists";
 import type { SchemaVaultsAppEnvironment } from "@schemavaults/app-definitions";
-import { getAppId } from "@/lib/getAppId";
+import { useMailAppId } from "@/contexts/MailAppIdContext";
 import PublicPageFooter from "@/components/PublicPageFooter";
 import { Nav } from "@/components/Nav";
 import {
@@ -33,6 +33,7 @@ export function ListMailingListsPage({
   isAdminPage,
 }: ListMailingListsPageProps): ReactElement {
   const authContext = useAuth();
+  const appId = useMailAppId();
   const admin: boolean = useAdmin();
 
   const query_type = isAdminPage ? "all" : "public";
@@ -51,7 +52,7 @@ export function ListMailingListsPage({
         ) {
           const auth: ISchemaVaultsAuthClient = authContext.client.current;
           const token = await auth.acquireAccessToken({
-            audience: getAppId(),
+            audience: appId,
           });
           return token.token;
         }

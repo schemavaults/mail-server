@@ -21,6 +21,7 @@ import {
   Label,
 } from "@schemavaults/ui";
 import createMailingList from "@/lib/client-mail-db-actions/createMailingList";
+import { useMailAppId } from "@/contexts/MailAppIdContext";
 import {
   useAuth,
   type ISchemaVaultsAuthClient,
@@ -48,6 +49,7 @@ export function NewMailingListDialog({}: NewMailingListDialogProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState<boolean>(false);
   const auth = useAuth();
+  const appId = useMailAppId();
 
   const {
     register,
@@ -75,7 +77,7 @@ export function NewMailingListDialog({}: NewMailingListDialogProps) {
     const authClient: ISchemaVaultsAuthClient = auth.client.current;
 
     try {
-      await createMailingList(formData, authClient);
+      await createMailingList(formData, authClient, appId);
     } catch (e: unknown) {
       console.error("Failed to create new mailing list: ", e);
       toast({

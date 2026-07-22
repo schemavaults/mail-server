@@ -1,4 +1,4 @@
-import { getAppId } from "@/lib/getAppId";
+import type { ApiServerId } from "@schemavaults/app-definitions";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
 
 /**
@@ -9,9 +9,10 @@ export async function addApiKeyAllowlistEntry(
   api_key_id: string,
   mailing_list_id: string,
   auth: ISchemaVaultsAuthClient,
+  app_id: ApiServerId,
 ): Promise<void> {
   const accessToken = await auth.acquireAccessToken({
-    audience: getAppId(),
+    audience: app_id,
   });
   const response = await fetch(
     `/api/admin/api-keys/${encodeURIComponent(api_key_id)}/allowlist`,

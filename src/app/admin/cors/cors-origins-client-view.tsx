@@ -19,6 +19,7 @@ import type { CorsAllowedOrigin } from "@/lib/mail-db/cors-allowed-origins-table
 import listCorsOrigins from "@/lib/client-mail-db-actions/listCorsOrigins";
 import addCorsOrigin from "@/lib/client-mail-db-actions/addCorsOrigin";
 import removeCorsOrigin from "@/lib/client-mail-db-actions/removeCorsOrigin";
+import { useMailAppId } from "@/contexts/MailAppIdContext";
 
 export interface CorsOriginsClientViewProps {
   initialOrigins: readonly CorsAllowedOrigin[];
@@ -33,6 +34,7 @@ export default function CorsOriginsClientView({
 }: CorsOriginsClientViewProps): ReactElement {
   const { toast } = useToast();
   const auth = useAuth();
+  const appId = useMailAppId();
   const [origins, setOrigins] =
     useState<readonly CorsAllowedOrigin[]>(initialOrigins);
 
@@ -50,7 +52,7 @@ export default function CorsOriginsClientView({
 
   async function refreshOrigins(authClient: ISchemaVaultsAuthClient) {
     try {
-      const next = await listCorsOrigins(authClient);
+      const next = await listCorsOrigins(authClient, appId);
       setOrigins(next);
     } catch (e: unknown) {
       console.error("Failed to refresh allowed CORS origins: ", e);
@@ -84,6 +86,7 @@ export default function CorsOriginsClientView({
       await addCorsOrigin(
         description.length > 0 ? { origin, description } : { origin },
         authClient,
+        appId,
       );
       setNewOrigin("");
       setNewDescription("");
@@ -120,7 +123,7 @@ export default function CorsOriginsClientView({
 
     setRemovingOriginId(target.cors_origin_id);
     try {
-      await removeCorsOrigin(target.cors_origin_id, authClient);
+      await removeCorsOrigin(target.cors_origin_id, authClient, appId);
       toast({
         title: "Origin removed",
         description: `Cross-origin requests from ${target.origin} are no longer allowed.`,

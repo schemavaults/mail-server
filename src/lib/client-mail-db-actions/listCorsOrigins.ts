@@ -1,12 +1,13 @@
-import { getAppId } from "@/lib/getAppId";
+import type { ApiServerId } from "@schemavaults/app-definitions";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
 import type { CorsAllowedOrigin } from "@/lib/mail-db/cors-allowed-origins-table";
 
 export async function listCorsOrigins(
   auth: ISchemaVaultsAuthClient,
+  app_id: ApiServerId,
 ): Promise<readonly CorsAllowedOrigin[]> {
   const accessToken = await auth.acquireAccessToken({
-    audience: getAppId(),
+    audience: app_id,
   });
   const response = await fetch(`/api/admin/cors-origins`, {
     method: "GET",

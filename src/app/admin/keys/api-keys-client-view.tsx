@@ -32,6 +32,7 @@ import revokeApiKey from "@/lib/client-mail-db-actions/revokeApiKey";
 import addApiKeyAllowlistEntry from "@/lib/client-mail-db-actions/addApiKeyAllowlistEntry";
 import removeApiKeyAllowlistEntry from "@/lib/client-mail-db-actions/removeApiKeyAllowlistEntry";
 import getApiKeyAllowlist from "@/lib/client-mail-db-actions/getApiKeyAllowlist";
+import { useMailAppId } from "@/contexts/MailAppIdContext";
 
 export interface ApiKeysClientViewProps {
   initialApiKeys: readonly ApiKeyRecord[];
@@ -57,6 +58,7 @@ export default function ApiKeysClientView({
 }: ApiKeysClientViewProps): ReactElement {
   const { toast } = useToast();
   const auth = useAuth();
+  const appId = useMailAppId();
   const [apiKeys, setApiKeys] =
     useState<readonly ApiKeyRecord[]>(initialApiKeys);
   const [allowlistsByKeyId, setAllowlistsByKeyId] = useState<
@@ -86,7 +88,7 @@ export default function ApiKeysClientView({
 
   async function refreshKeys(authClient: ISchemaVaultsAuthClient) {
     try {
-      const next = await listApiKeys(authClient);
+      const next = await listApiKeys(authClient, appId);
       setApiKeys(next);
     } catch (e: unknown) {
       console.error("Failed to refresh API keys: ", e);
@@ -115,7 +117,7 @@ export default function ApiKeysClientView({
 
     setCreating(true);
     try {
-      const created = await createApiKey({ name }, authClient);
+      const created = await createApiKey({ name }, authClient, appId);
       setRevealedKey(created);
       setCreateOpen(false);
       setNewKeyName("");
@@ -151,7 +153,7 @@ export default function ApiKeysClientView({
     }
     setRevoking(true);
     try {
-      await revokeApiKey(revokeTarget.api_key_id, authClient);
+      await revokeApiKey(revokeTarget.api_key_id, authClient, appId);
       toast({
         title: "API key revoked",
         description: `'${revokeTarget.name}' can no longer be used to send email.`,
@@ -177,7 +179,7 @@ export default function ApiKeysClientView({
     const authClient = getAuthClient();
     if (!authClient) return;
     try {
-      const fresh = await getApiKeyAllowlist(key.api_key_id, authClient);
+      const fresh = await getApiKeyAllowlist(key.api_key_id, authClient, appId);
       setAllowlistsByKeyId((prev) => ({
         ...prev,
         [key.api_key_id]: fresh,
@@ -208,6 +210,7 @@ export default function ApiKeysClientView({
           key.api_key_id,
           mailingListId,
           authClient,
+          appId,
         );
         setAllowlistsByKeyId((prev) => {
           const current = prev[key.api_key_id] ?? [];
@@ -222,6 +225,7 @@ export default function ApiKeysClientView({
           key.api_key_id,
           mailingListId,
           authClient,
+          appId,
         );
         setAllowlistsByKeyId((prev) => {
           const current = prev[key.api_key_id] ?? [];
