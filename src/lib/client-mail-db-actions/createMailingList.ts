@@ -1,5 +1,5 @@
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
-import { SCHEMAVAULTS_MAIL_APP_ID } from "@/lib/schemavaults-apps";
+import { getAppId } from "@/lib/getAppId";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
 
 export async function createMailingList(
@@ -7,7 +7,7 @@ export async function createMailingList(
   auth: ISchemaVaultsAuthClient,
 ): Promise<string> {
   const mailServerBackendAccessToken = await auth.acquireAccessToken({
-    audience: SCHEMAVAULTS_MAIL_APP_ID,
+    audience: getAppId(),
   });
   const response = await fetch(`/api/mailing-lists`, {
     method: "POST",

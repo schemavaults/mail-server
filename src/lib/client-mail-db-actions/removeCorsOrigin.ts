@@ -1,21 +1,24 @@
 import { getAppId } from "@/lib/getAppId";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
-import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
 
-export async function listApiKeys(
+export async function removeCorsOrigin(
+  cors_origin_id: string,
   auth: ISchemaVaultsAuthClient,
-): Promise<readonly ApiKeyRecord[]> {
+): Promise<void> {
   const accessToken = await auth.acquireAccessToken({
     audience: getAppId(),
   });
-  const response = await fetch(`/api/admin/api-keys`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${accessToken.token}`,
+  const response = await fetch(
+    `/api/admin/cors-origins/${encodeURIComponent(cors_origin_id)}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${accessToken.token}`,
+      },
     },
-  });
+  );
   if (!response.ok || response.status !== 200) {
-    throw new Error("Error response while trying to list API keys!");
+    throw new Error("Error response while trying to remove allowed CORS origin!");
   }
   const body = await response.json();
   if (typeof body !== "object" || !body) {
@@ -24,10 +27,6 @@ export async function listApiKeys(
   if (!("success" in body) || !body.success) {
     throw new Error("Failure indicated in response body!");
   }
-  if (!("data" in body) || !Array.isArray(body.data)) {
-    throw new Error("Expected an array under 'data' in response body!");
-  }
-  return body.data as readonly ApiKeyRecord[];
 }
 
-export default listApiKeys;
+export default removeCorsOrigin;

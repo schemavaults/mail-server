@@ -1,4 +1,4 @@
-import { SCHEMAVAULTS_MAIL_API_SERVER_ID } from "@/lib/schemavaults-apps";
+import { getAppId } from "@/lib/getAppId";
 import {
   withAdminApiRouteGuard as _withAdminApiRouteGuard,
   withAdminServerComponentRouteGuard as _withAdminServerComponentRouteGuard,
@@ -33,7 +33,7 @@ export async function withAdminApiRouteGuard(
         route_guard_type: "admin",
         custom_is_authorized_check: async (opts) =>
           opts.user.admin ? true : false,
-        api_server_id: SCHEMAVAULTS_MAIL_API_SERVER_ID,
+        api_server_id: getAppId(),
         required_organization: getAuthServerOwnerOrganizationId(),
       },
     );
@@ -59,7 +59,7 @@ export async function withAdminServerComponentRouteGuard(
       route_guard_type: "admin",
       custom_is_authorized_check: async (opts) =>
         opts.user.admin ? true : false,
-      api_server_id: SCHEMAVAULTS_MAIL_API_SERVER_ID,
+      api_server_id: getAppId(),
       required_organization: getAuthServerOwnerOrganizationId(),
     },
   );

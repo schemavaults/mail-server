@@ -1,21 +1,21 @@
 import { getAppId } from "@/lib/getAppId";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
-import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
+import type { CorsAllowedOrigin } from "@/lib/mail-db/cors-allowed-origins-table";
 
-export async function listApiKeys(
+export async function listCorsOrigins(
   auth: ISchemaVaultsAuthClient,
-): Promise<readonly ApiKeyRecord[]> {
+): Promise<readonly CorsAllowedOrigin[]> {
   const accessToken = await auth.acquireAccessToken({
     audience: getAppId(),
   });
-  const response = await fetch(`/api/admin/api-keys`, {
+  const response = await fetch(`/api/admin/cors-origins`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${accessToken.token}`,
     },
   });
   if (!response.ok || response.status !== 200) {
-    throw new Error("Error response while trying to list API keys!");
+    throw new Error("Error response while trying to list allowed CORS origins!");
   }
   const body = await response.json();
   if (typeof body !== "object" || !body) {
@@ -27,7 +27,7 @@ export async function listApiKeys(
   if (!("data" in body) || !Array.isArray(body.data)) {
     throw new Error("Expected an array under 'data' in response body!");
   }
-  return body.data as readonly ApiKeyRecord[];
+  return body.data as readonly CorsAllowedOrigin[];
 }
 
-export default listApiKeys;
+export default listCorsOrigins;

@@ -54,7 +54,11 @@ Copy `.env.example` to `.env.local`. Key variables:
 
 ## Database
 
-Schema is managed via migrations (see `src/lib/mail-db/migrations/`). Type definitions live in `src/lib/mail-db/`. Three tables:
+Schema is managed via migrations (see `src/lib/mail-db/migrations/`). Type definitions live in `src/lib/mail-db/`. Tables:
 - **MAILING_LISTS** — id, name, description, public flag, created_at
 - **SUBSCRIBERS** — mailing_list_id (FK), email, subscribe_time
 - **UNSUBSCRIBE_RECORDS** — mailing_list_id (FK), email, unsubscribe_time
+- **API_KEYS** — hashed API keys for programmatic access to `/api/send`
+- **API_KEY_MAILING_LIST_ALLOWLISTS** — restricts an API key to specific mailing lists
+- **PENDING_SUBSCRIPTIONS** — double-opt-in confirmation tokens awaiting confirmation
+- **CORS_ALLOWED_ORIGINS** — web origins allowed to make cross-origin requests to public API routes (managed at `/admin/cors`)

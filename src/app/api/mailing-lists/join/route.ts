@@ -11,8 +11,11 @@ import { applyCorsHeaders, corsPreflightResponse } from "@/lib/cors";
 
 const CONFIRMATION_TTL_MS = 24 * 60 * 60 * 1000;
 
-function badRequest(req: NextRequest, message: string): NextResponse {
-  return applyCorsHeaders(
+async function badRequest(
+  req: NextRequest,
+  message: string,
+): Promise<NextResponse> {
+  return await applyCorsHeaders(
     req,
     NextResponse.json(
       {
@@ -26,8 +29,10 @@ function badRequest(req: NextRequest, message: string): NextResponse {
   );
 }
 
-function pendingConfirmationResponse(req: NextRequest): NextResponse {
-  return applyCorsHeaders(
+async function pendingConfirmationResponse(
+  req: NextRequest,
+): Promise<NextResponse> {
+  return await applyCorsHeaders(
     req,
     NextResponse.json(
       {
@@ -43,19 +48,22 @@ function pendingConfirmationResponse(req: NextRequest): NextResponse {
 }
 
 export async function OPTIONS(req: NextRequest): Promise<NextResponse> {
-  return corsPreflightResponse(req);
+  return await corsPreflightResponse(req);
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const raw_json_body = await req.json();
   if (typeof raw_json_body !== "object" || !raw_json_body) {
-    return badRequest(req, "Expected request to have JSON body.");
+    return await badRequest(req, "Expected request to have JSON body.");
   }
 
   const parsed_body =
     await joinMailingListRequestBodySchema.safeParseAsync(raw_json_body);
   if (!parsed_body.success) {
-    return badRequest(req, "Failed to parse request body to join mailing list!");
+    return await badRequest(
+      req,
+      "Failed to parse request body to join mailing list!",
+    );
   }
   const { email, mailing_list_id } = parsed_body.data;
 
@@ -67,7 +75,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const list = await mailRegistry.getMailingList(mailing_list_id);
 
     if (await mailRegistry.isAlreadySubscribed(mailing_list_id, email)) {
-      return pendingConfirmationResponse(req);
+      return await pendingConfirmationResponse(req);
     }
 
     const { plaintext, hash } = await generateConfirmationToken();
@@ -105,7 +113,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   } catch (e: unknown) {
     console.error("Failed to start mailing list subscription:", e);
-    return applyCorsHeaders(
+    return await applyCorsHeaders(
       req,
       NextResponse.json(
         {
@@ -119,5 +127,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  return pendingConfirmationResponse(req);
+  return await pendingConfirmationResponse(req);
 }
