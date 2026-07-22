@@ -1,6 +1,6 @@
 {
   "name": "@schemavaults/mail-server",
-  "version": "0.0.99",
+  "version": "0.0.100",
   "description": "Manages the SchemaVaults mailing list, sending to the list, mail templates, and sending transactional emails.",
   "type": "module",
   "private": true,
@@ -41,6 +41,7 @@
   "scripts": {
     "dev:mail": "email dev --dir ./src/email-templates --port 5347",
     "dev:app": "bun run auth-codegen && PORT=5346 SCHEMAVAULTS_APP_ENVIRONMENT=development NEXT_PUBLIC_SCHEMAVAULTS_APP_ENVIRONMENT=development next dev",
+    "dev": "bun run dev:app",
     "build": "bun run auth-codegen && SCHEMAVAULTS_APP_ENVIRONMENT=production NEXT_PUBLIC_SCHEMAVAULTS_APP_ENVIRONMENT=production next build",
     "auth-codegen": "bunx @schemavaults/auth-server-sdk codegen",
     "build:migrations": "bunx @schemavaults/dbh build-db-migrations ./src/lib/mail-db/migrations --outdir ./dist/migrations --sql-module ./src/lib/mail-db/sql.ts --sql-outdir ./dist/",
