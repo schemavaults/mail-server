@@ -47,7 +47,7 @@
     "migrate:development": "bun run build:migrations && npx @schemavaults/dbh migrate ./dist/migrations --environment development --env-file .env.development",
     "migrate:test": "bun run build:migrations && npx @schemavaults/dbh migrate ./dist/migrations --environment test --env-file .env.test",
     "migrate:production": "bun run build:migrations && npx @schemavaults/dbh migrate ./dist/migrations --environment production --env-file .env.production",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "bun test",
     "skills:install": "/bin/bash ./.claude/hooks/install-send-email-skills.sh"
   },

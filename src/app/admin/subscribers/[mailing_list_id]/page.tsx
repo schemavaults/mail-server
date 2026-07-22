@@ -10,9 +10,7 @@ import { connection } from "next/server";
 
 export default async function SubscribersPage({
   params,
-}: {
-  params: Promise<{ mailing_list_id: string }>;
-}): Promise<ReactElement> {
+}: PageProps<"/admin/subscribers/[mailing_list_id]">): Promise<ReactElement> {
   await connection();
 
   const { mailing_list_id } = await params;

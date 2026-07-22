@@ -20,7 +20,7 @@ interface ErrorResponse {
 
 export async function DELETE(
   req: NextRequest,
-  ctx: { params: Promise<{ api_key_id: string }> },
+  ctx: RouteContext<"/api/admin/api-keys/[api_key_id]">,
 ): Promise<NextResponse> {
   const { api_key_id: rawApiKeyId } = await ctx.params;
 

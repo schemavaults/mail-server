@@ -20,7 +20,7 @@ interface ErrorResponse {
 
 export async function DELETE(
   req: NextRequest,
-  ctx: { params: Promise<{ cors_origin_id: string }> },
+  ctx: RouteContext<"/api/admin/cors-origins/[cors_origin_id]">,
 ): Promise<NextResponse> {
   const { cors_origin_id: rawCorsOriginId } = await ctx.params;
 
