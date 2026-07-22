@@ -12,19 +12,24 @@ import {
 import { getDebugState } from "@/lib/getDebugState";
 import { MailAppIdProvider } from "@/contexts/MailAppIdContext";
 import { CoreWebAppUrlProvider } from "@/contexts/CoreWebAppUrlContext";
+import { BrandingProvider } from "@/contexts/BrandingContext";
+import type { BrandConfig } from "@/lib/branding";
 
 export interface ClientAppLogicProvidersProps extends PropsWithChildren {
   environment: SchemaVaultsAppEnvironment;
   /** Resolved server-side by getAppId() and passed down from the root layout. */
   app_id: ApiServerId;
-  /** Resolved server-side from BRAND_URL in the root layout. */
-  core_web_app_url: string;
+  /**
+   * White-label brand configuration, resolved server-side from BRAND_*
+   * environment variables in the root layout.
+   */
+  branding: BrandConfig;
 }
 
 export function ClientAppLogicProviders({
   environment,
   app_id,
-  core_web_app_url,
+  branding,
   children,
 }: ClientAppLogicProvidersProps): ReactElement {
   const router = useRouter();
@@ -38,28 +43,30 @@ export function ClientAppLogicProviders({
   }
 
   return (
-    <CoreWebAppUrlProvider url={core_web_app_url}>
-      <MailAppIdProvider app_id={app_id}>
-        <AuthProvider
-          app_id={app_id}
-          authed_on_unauthed_redirect_uri="/"
-          unauthed_on_authed_redirect_uri="/auth/login"
-          default_audiences={[app_id] as const satisfies AppId[]}
-          debug={debug}
-          environment={environment}
-          successful_logout_redirect_uri="/"
-          successful_authentication_redirect_uri="/"
-          autoreacquire_access_tokens
-          authorize_uri="/auth/authorize"
-          authMiddlewareRules={(defaultAuthMiddlewareRules) => ({
-            ...defaultAuthMiddlewareRules,
-            api: [...defaultAuthMiddlewareRules["api"], ["api"]],
-            admin: [...defaultAuthMiddlewareRules["admin"], ["admin"]],
-          })}
-        >
-          {children}
-        </AuthProvider>
-      </MailAppIdProvider>
-    </CoreWebAppUrlProvider>
+    <BrandingProvider branding={branding}>
+      <CoreWebAppUrlProvider url={branding.url}>
+        <MailAppIdProvider app_id={app_id}>
+          <AuthProvider
+            app_id={app_id}
+            authed_on_unauthed_redirect_uri="/"
+            unauthed_on_authed_redirect_uri="/auth/login"
+            default_audiences={[app_id] as const satisfies AppId[]}
+            debug={debug}
+            environment={environment}
+            successful_logout_redirect_uri="/"
+            successful_authentication_redirect_uri="/"
+            autoreacquire_access_tokens
+            authorize_uri="/auth/authorize"
+            authMiddlewareRules={(defaultAuthMiddlewareRules) => ({
+              ...defaultAuthMiddlewareRules,
+              api: [...defaultAuthMiddlewareRules["api"], ["api"]],
+              admin: [...defaultAuthMiddlewareRules["admin"], ["admin"]],
+            })}
+          >
+            {children}
+          </AuthProvider>
+        </MailAppIdProvider>
+      </CoreWebAppUrlProvider>
+    </BrandingProvider>
   );
 }

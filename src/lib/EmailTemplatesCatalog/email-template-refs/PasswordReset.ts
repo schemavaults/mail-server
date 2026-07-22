@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 
 interface PasswordResetProps {
   resetLink: string;
@@ -52,7 +53,8 @@ export class PasswordReset extends EmailTemplatesCatalogEntry<PasswordResetProps
   public async renderPlainTextVersion(
     props: PasswordResetProps,
   ): Promise<string> {
-    return `We received a request to reset your password.\n\nReset your password: ${props.resetLink}\n\nThis link will expire in ${props.expiresInMinutes} minutes. If you did not request a password reset, you can safely ignore this email.`;
+    const brand = getEmailBrand();
+    return `We received a request to reset your ${brand.productName} password.\n\nReset your password: ${props.resetLink}\n\nThis link will expire in ${props.expiresInMinutes} minutes. If you did not request a password reset, you can safely ignore this email.`;
   }
 }
 

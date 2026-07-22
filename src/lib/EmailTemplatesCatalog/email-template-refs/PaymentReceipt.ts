@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type {
   PaymentReceiptEmailProps,
   PaymentReceiptLineItem,
@@ -118,14 +119,15 @@ export class PaymentReceipt extends EmailTemplatesCatalogEntry<PaymentReceiptEma
   public async renderPlainTextVersion(
     props: PaymentReceiptEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const greetingName: string =
       typeof props.recipientName === "string" && props.recipientName.length > 0
         ? props.recipientName
@@ -166,7 +168,7 @@ export class PaymentReceipt extends EmailTemplatesCatalogEntry<PaymentReceiptEma
     } else if (periodEnd) {
       lines.push(`Billing period: ${periodEnd}`);
     }
-    const brand =
+    const cardBrand =
       typeof props.paymentMethodBrand === "string" &&
       props.paymentMethodBrand.length > 0
         ? props.paymentMethodBrand
@@ -176,10 +178,10 @@ export class PaymentReceipt extends EmailTemplatesCatalogEntry<PaymentReceiptEma
       props.paymentMethodLast4.length > 0
         ? props.paymentMethodLast4
         : undefined;
-    if (brand && last4) {
-      lines.push(`Payment method: ${brand} ending in ${last4}`);
-    } else if (brand) {
-      lines.push(`Payment method: ${brand}`);
+    if (cardBrand && last4) {
+      lines.push(`Payment method: ${cardBrand} ending in ${last4}`);
+    } else if (cardBrand) {
+      lines.push(`Payment method: ${cardBrand}`);
     } else if (last4) {
       lines.push(`Payment method: Card ending in ${last4}`);
     }

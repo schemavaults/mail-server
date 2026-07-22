@@ -6,6 +6,7 @@ import {
   Home,
   KeyRound,
   LayoutDashboard,
+  Palette,
   Send,
   ShieldAlert,
   type LucideIcon,
@@ -52,6 +53,11 @@ export const ADMIN_LINKS: readonly AdminLink[] = [
     href: "/admin/cors",
     label: "Manage allowed CORS origins",
     icon: Globe,
+  },
+  {
+    href: "/admin/branding",
+    label: "Customize branding (logo & favicon)",
+    icon: Palette,
   },
 ];
 

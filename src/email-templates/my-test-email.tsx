@@ -11,11 +11,11 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties, so the token hex values are inlined here.
-const BRAND_BLUE = "#60a5fa";
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral palette values. Email clients don't resolve CSS custom properties,
+// so concrete hex values are inlined here; the accent colors come from the
+// configured brand accent (see ./brand.ts) inside the component.
 const FOREGROUND = "#0b1220";
 const MUTED_FOREGROUND = "#64748b";
 const BORDER = "#e2e8f0";
@@ -30,7 +30,11 @@ export default function TestEmail(props: { name: string }): ReactElement {
     throw new Error("Missing 'name' in props to fill in template!");
   }
 
-  const productName = "SchemaVaults";
+  const brand = getEmailBrand();
+  const BRAND_BLUE = brand.colors.accent;
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
+  const productName: string = brand.productName;
 
   return (
     <Html>
@@ -107,7 +111,7 @@ export default function TestEmail(props: { name: string }): ReactElement {
 
           <Section style={{ padding: "16px 32px 24px 32px" }}>
             <Button
-              href="https://schemavaults.com"
+              href={brand.url}
               style={{
                 backgroundColor: BRAND_BLUE_DARK,
                 borderRadius: "8px",

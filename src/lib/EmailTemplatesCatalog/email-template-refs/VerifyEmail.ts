@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 
 interface VerifyEmailProps {
   url: string;
@@ -51,11 +52,12 @@ export class VerifyEmail extends EmailTemplatesCatalogEntry<VerifyEmailProps> {
   public async renderPlainTextVersion(
     props: VerifyEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const greeting =
       typeof props.welcomeMessage === "string" &&
       props.welcomeMessage.length > 0
         ? props.welcomeMessage
-        : "Welcome! Please verify your email address to get started.";
+        : `Welcome to ${brand.productName}! Please verify your email address to get started.`;
     return `${greeting}\n\nVerify your email: ${props.url}\n\nIf you did not create an account, you can safely ignore this email.`;
   }
 }

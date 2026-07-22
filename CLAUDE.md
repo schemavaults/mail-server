@@ -37,12 +37,15 @@ This is a **Next.js 16 App Router** mail server application in the SchemaVaults 
 - `POST /api/mailing-lists/join` — subscribe to a mailing list
 - `POST /api/mailing-lists/unsubscribe` — unsubscribe from a mailing list
 - `POST /api/admin/init-db-tables` — initialize database schema (admin only)
+- `GET /api/branding/[asset_kind]` — serve the uploaded logo/favicon (public; falls back to bundled defaults in `public/media/`)
+- `PUT|DELETE /api/admin/branding/[asset_kind]` — upload/remove a custom logo or favicon (admin only; managed at `/admin/branding`)
 
 ### Key Patterns
 - **Admin guards**: API routes use `withAdminApiRouteGuard`, server components use `withAdminServerComponentRouteGuard` — both check `user.admin`
 - **Email template catalog**: `src/email-templates/catalog.ts` exports a registry mapping template names to React components; the `/api/send` route resolves templates by name and renders them with provided props
 - **Database migrations**: Migration files live in `src/lib/mail-db/migrations/` as TypeScript, numbered sequentially (`00000-`, `00001-`, …). Each exports `up`/`down` functions taking a `Kysely<any>` instance. Raw SQL uses the `sql` tag re-exported from `src/lib/mail-db/sql.ts`. Migrations are compiled via `@schemavaults/dbh` to `dist/migrations/` before running. Per-environment env files (`.env.development`, `.env.test`, `.env.production`) provide DB credentials
 - **Auth codegen**: Auth routes under `src/app/auth/` are auto-generated and gitignored; always run `bun run auth-codegen` (or use `dev:app`/`build` which do it automatically)
+- **White-label branding**: All brand identity (name, URLs, support email, colors, footer links, mail sender) is configured via `BRAND_*` / `MAIL_FROM_*` environment variables (see `.env.example`). `src/email-templates/brand.ts` exports `getEmailBrand()` used by every email template as the fallback for brand-related props — never hardcode a brand name in template copy. `src/lib/branding.ts` exposes the fuller `getBrandConfig()` threaded to client components via `BrandingContext` (use the `useBranding()` hook, or `<BrandWordmark />` for the gradient wordmark). Custom logo/favicon uploads live in the BRANDING_ASSETS table and are served from `/api/branding/*`
 
 ## Environment Setup
 
@@ -62,3 +65,4 @@ Schema is managed via migrations (see `src/lib/mail-db/migrations/`). Type defin
 - **API_KEY_MAILING_LIST_ALLOWLISTS** — restricts an API key to specific mailing lists
 - **PENDING_SUBSCRIPTIONS** — double-opt-in confirmation tokens awaiting confirmation
 - **CORS_ALLOWED_ORIGINS** — web origins allowed to make cross-origin requests to public API routes (managed at `/admin/cors`)
+- **BRANDING_ASSETS** — admin-uploaded white-label assets (logo, favicon) stored base64-encoded (managed at `/admin/branding`)

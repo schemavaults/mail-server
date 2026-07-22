@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 
 export class MyTestEmail extends EmailTemplatesCatalogEntry<{ name: string }> {
   public id = "my-test-email" as const satisfies string;
@@ -37,7 +38,8 @@ export class MyTestEmail extends EmailTemplatesCatalogEntry<{ name: string }> {
   public async renderPlainTextVersion(props: {
     name: string;
   }): Promise<string> {
-    return `Hello ${props.name}!`;
+    const brand = getEmailBrand();
+    return `Hello ${props.name} — this is a ${brand.productName} test email.`;
   }
 }
 

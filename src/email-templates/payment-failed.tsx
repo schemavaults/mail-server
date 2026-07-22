@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface PaymentFailedEmailProps {
   recipientName?: string;
@@ -30,10 +31,9 @@ export interface PaymentFailedEmailProps {
   supportEmail?: string;
 }
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties or oklch(), so the token values are inlined as hex.
-// BRAND_RED is the SchemaVaults destructive/alert color, used throughout to convey payment failure urgency.
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral palette and semantic status colors for this template. Email clients
+// don't resolve CSS custom properties or oklch(), so the values are inlined as hex.
+// BRAND_RED is the destructive/alert color, used throughout to convey payment failure urgency.
 const BRAND_RED = "#dc2626";
 const BRAND_RED_DARK = "#991b1b";
 const FOREGROUND = "#0b1220";
@@ -74,14 +74,17 @@ export default function PaymentFailedEmail(
     );
   }
 
+  const brand = getEmailBrand();
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
   const productName: string =
     typeof props.productName === "string" && props.productName.length > 0
       ? props.productName
-      : "SchemaVaults";
+      : brand.productName;
   const supportEmail: string =
     typeof props.supportEmail === "string" && props.supportEmail.length > 0
       ? props.supportEmail
-      : "support@schemavaults.com";
+      : brand.supportEmail;
   const greetingName: string =
     typeof props.recipientName === "string" && props.recipientName.length > 0
       ? props.recipientName
@@ -462,7 +465,7 @@ PaymentFailedEmail.PreviewProps = {
   amountDue: "$29.00 USD",
   attemptedAt: "May 6, 2026 14:23 UTC",
   updatePaymentMethodUrl:
-    "https://schemavaults.com/billing/payment-method?token=example-token",
+    "https://mail.example.com/billing/payment-method?token=example-token",
   planName: "Pro Monthly",
   paymentMethodBrand: "Visa",
   paymentMethodLast4: "4242",
@@ -472,7 +475,4 @@ PaymentFailedEmail.PreviewProps = {
   nextRetryAt: "May 9, 2026",
   gracePeriodEndsAt: "May 13, 2026",
   invoiceNumber: "INV-2026-04821",
-  invoiceUrl: "https://schemavaults.com/billing/invoices/INV-2026-04821",
-  productName: "SchemaVaults",
-  supportEmail: "support@schemavaults.com",
 } satisfies PaymentFailedEmailProps;

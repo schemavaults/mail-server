@@ -11,16 +11,16 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface VerifyEmailProps {
   url: string;
   welcomeMessage?: string;
 }
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties, so the token hex values are inlined here.
-const BRAND_BLUE = "#60a5fa";
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral palette tokens. Email clients don't resolve CSS custom properties,
+// so concrete hex values are inlined here; the brand accent colors come from
+// the configured brand inside the component.
 const FOREGROUND = "#0b1220";
 const MUTED_FOREGROUND = "#64748b";
 const BORDER = "#e2e8f0";
@@ -37,8 +37,12 @@ export default function VerifyEmail(props: VerifyEmailProps): ReactElement {
     throw new Error("Missing required props for VerifyEmail template!");
   }
 
-  const productName = "SchemaVaults";
-  const supportEmail = "support@schemavaults.com";
+  const brand = getEmailBrand();
+  const BRAND_BLUE = brand.colors.accent;
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
+  const productName: string = brand.productName;
+  const supportEmail: string = brand.supportEmail;
   const greeting: string =
     typeof props.welcomeMessage === "string" && props.welcomeMessage.length > 0
       ? props.welcomeMessage
@@ -202,6 +206,5 @@ export default function VerifyEmail(props: VerifyEmailProps): ReactElement {
 }
 
 VerifyEmail.PreviewProps = {
-  url: "https://schemavaults.com/verify?token=sample-token",
-  welcomeMessage: "Welcome to SchemaVaults!",
+  url: "https://example.com/verify?token=sample-token",
 } satisfies VerifyEmailProps;

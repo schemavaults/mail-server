@@ -1,13 +1,14 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { WelcomeEmailProps } from "@/email-templates/welcome";
 
 export class Welcome extends EmailTemplatesCatalogEntry<WelcomeEmailProps> {
   public id = "welcome" as const satisfies string;
 
   public description =
-    "Onboarding welcome email sent after account creation. Uses SchemaVaults brand colors with a hero header, CTA button, and quick-start bullet list. Props: { name: string, productName?: string, ctaUrl?: string, ctaLabel?: string, highlights?: string[], supportEmail?: string }" as const satisfies string;
+    "Onboarding welcome email sent after account creation. Uses the configured brand colors with a hero header, CTA button, and quick-start bullet list. Props: { name: string, productName?: string, ctaUrl?: string, ctaLabel?: string, highlights?: string[], supportEmail?: string }" as const satisfies string;
 
   public validateProps(val: unknown): val is WelcomeEmailProps {
     if (typeof val !== "object" || !val) {
@@ -69,14 +70,15 @@ export class Welcome extends EmailTemplatesCatalogEntry<WelcomeEmailProps> {
   public async renderPlainTextVersion(
     props: WelcomeEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const ctaUrl: string =
       typeof props.ctaUrl === "string" && props.ctaUrl.length > 0
         ? props.ctaUrl
-        : "https://schemavaults.com";
+        : brand.url;
     const ctaLabel: string =
       typeof props.ctaLabel === "string" && props.ctaLabel.length > 0
         ? props.ctaLabel
@@ -85,14 +87,14 @@ export class Welcome extends EmailTemplatesCatalogEntry<WelcomeEmailProps> {
       Array.isArray(props.highlights) && props.highlights.length > 0
         ? props.highlights
         : [
-            "Browse curated schemas in the SchemaVaults library",
-            "Vault your own schemas to share with your team",
-            "Plug the schemas into your pipeline via the SchemaVaults SDK",
+            "Explore your dashboard and set up your workspace",
+            "Invite your team to collaborate",
+            "Connect your tools and integrations",
           ];
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
 
     const lines: string[] = [
       `Welcome, ${props.name}.`,

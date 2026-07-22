@@ -1,13 +1,14 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { ApiKeyCreatedEmailProps } from "@/email-templates/api-key-created";
 
 export class ApiKeyCreated extends EmailTemplatesCatalogEntry<ApiKeyCreatedEmailProps> {
   public id = "api-key-created" as const satisfies string;
 
   public description =
-    "Transactional email sent when a new API key is issued on a user's account. Uses SchemaVaults brand gradient header, a dark code-style 'Key identifier' panel showing a masked key (prefix + last-4, never the full secret), an optional 'Scopes granted' callout, a metadata table (key name, created by, created at, IP, location, expiration), a primary 'Manage API keys' CTA, and a prominent red alert with an optional 'Revoke this key' button for unrecognized issuances. Props: { keyName: string, manageKeysUrl: string, userName?: string, keyPrefix?: string, keyLastFour?: string, scopes?: string[], createdAt?: string, createdByName?: string, createdByEmail?: string, ipAddress?: string, location?: string, expiresAt?: string, revokeKeyUrl?: string, productName?: string, supportEmail?: string }" as const satisfies string;
+    "Transactional email sent when a new API key is issued on a user's account. Uses the configured brand gradient header, a dark code-style 'Key identifier' panel showing a masked key (prefix + last-4, never the full secret), an optional 'Scopes granted' callout, a metadata table (key name, created by, created at, IP, location, expiration), a primary 'Manage API keys' CTA, and a prominent red alert with an optional 'Revoke this key' button for unrecognized issuances. Props: { keyName: string, manageKeysUrl: string, userName?: string, keyPrefix?: string, keyLastFour?: string, scopes?: string[], createdAt?: string, createdByName?: string, createdByEmail?: string, ipAddress?: string, location?: string, expiresAt?: string, revokeKeyUrl?: string, productName?: string, supportEmail?: string }" as const satisfies string;
 
   public validateProps(val: unknown): val is ApiKeyCreatedEmailProps {
     if (typeof val !== "object" || !val) {
@@ -89,14 +90,15 @@ export class ApiKeyCreated extends EmailTemplatesCatalogEntry<ApiKeyCreatedEmail
   public async renderPlainTextVersion(
     props: ApiKeyCreatedEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const greetingName: string =
       typeof props.userName === "string" && props.userName.length > 0
         ? props.userName

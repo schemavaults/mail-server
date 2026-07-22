@@ -1,13 +1,14 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { MailingListConfirmationEmailProps } from "@/email-templates/mailing-list-confirmation";
 
 export class MailingListConfirmation extends EmailTemplatesCatalogEntry<MailingListConfirmationEmailProps> {
   public id = "mailing-list-confirmation" as const satisfies string;
 
   public description =
-    "Double opt-in mailing list subscription confirmation. Sent after a user requests to join a mailing list (POST /api/mailing-lists/join) so they can verify their address before any list traffic is delivered. GDPR / CAN-SPAM friendly. Uses SchemaVaults brand gradient header, optional 'About this list' callout, a metadata table (mailing list, email, expiration), and a primary CTA to confirm with a visible fallback link. Props: { mailingListName: string, confirmationUrl: string, mailingListDescription?: string, subscriberEmail?: string, expiresAt?: string, senderOrganization?: string, productName?: string, supportEmail?: string }" as const satisfies string;
+    "Double opt-in mailing list subscription confirmation. Sent after a user requests to join a mailing list (POST /api/mailing-lists/join) so they can verify their address before any list traffic is delivered. GDPR / CAN-SPAM friendly. Uses the configured brand gradient header, optional 'About this list' callout, a metadata table (mailing list, email, expiration), and a primary CTA to confirm with a visible fallback link. Props: { mailingListName: string, confirmationUrl: string, mailingListDescription?: string, subscriberEmail?: string, expiresAt?: string, senderOrganization?: string, productName?: string, supportEmail?: string }" as const satisfies string;
 
   public validateProps(
     val: unknown,
@@ -66,14 +67,15 @@ export class MailingListConfirmation extends EmailTemplatesCatalogEntry<MailingL
   public async renderPlainTextVersion(
     props: MailingListConfirmationEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const senderOrganization: string =
       typeof props.senderOrganization === "string" &&
       props.senderOrganization.length > 0

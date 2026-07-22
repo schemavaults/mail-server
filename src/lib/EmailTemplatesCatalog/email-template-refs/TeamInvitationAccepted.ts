@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { TeamInvitationAcceptedEmailProps } from "@/email-templates/team-invitation-accepted";
 
 export class TeamInvitationAccepted extends EmailTemplatesCatalogEntry<TeamInvitationAcceptedEmailProps> {
@@ -64,14 +65,15 @@ export class TeamInvitationAccepted extends EmailTemplatesCatalogEntry<TeamInvit
   public async renderPlainTextVersion(
     props: TeamInvitationAcceptedEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const accepterLine: string =
       typeof props.accepterEmail === "string" &&
       props.accepterEmail.length > 0

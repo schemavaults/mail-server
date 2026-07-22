@@ -1,13 +1,14 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { TrialEndingEmailProps } from "@/email-templates/trial-ending";
 
 export class TrialEnding extends EmailTemplatesCatalogEntry<TrialEndingEmailProps> {
   public id = "trial-ending" as const satisfies string;
 
   public description =
-    "Trial-ending reminder email sent before a free or paid trial expires. Uses an amber/warning gradient header (mirroring the @schemavaults/theme `--warning` token), a 'days left' countdown pill, a metadata table (current plan, trial end, upgrade plan price), an optional 'features at risk' callout listing what the user will lose, a primary upgrade CTA, and an optional billing-management link. Props: { daysRemaining: number, trialEndsAt: string, upgradeUrl: string, recipientName?: string, currentPlan?: string, upgradePlanName?: string, upgradePlanPrice?: string, manageBillingUrl?: string, featuresAtRisk?: string[], productName?: string, supportEmail?: string }" as const satisfies string;
+    "Trial-ending reminder email sent before a free or paid trial expires. Uses an amber/warning gradient header (mirroring the theme's `--warning` token), a 'days left' countdown pill, a metadata table (current plan, trial end, upgrade plan price), an optional 'features at risk' callout listing what the user will lose, a primary upgrade CTA, and an optional billing-management link. Props: { daysRemaining: number, trialEndsAt: string, upgradeUrl: string, recipientName?: string, currentPlan?: string, upgradePlanName?: string, upgradePlanPrice?: string, manageBillingUrl?: string, featuresAtRisk?: string[], productName?: string, supportEmail?: string }" as const satisfies string;
 
   public validateProps(val: unknown): val is TrialEndingEmailProps {
     if (typeof val !== "object" || !val) {
@@ -93,14 +94,15 @@ export class TrialEnding extends EmailTemplatesCatalogEntry<TrialEndingEmailProp
   public async renderPlainTextVersion(
     props: TrialEndingEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const greetingName: string =
       typeof props.recipientName === "string" && props.recipientName.length > 0
         ? props.recipientName

@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { SecurityAlertEmailProps } from "@/email-templates/security-alert";
 
 const VALID_EVENT_TYPES: readonly string[] = [
@@ -14,7 +15,7 @@ export class SecurityAlert extends EmailTemplatesCatalogEntry<SecurityAlertEmail
   public id = "security-alert" as const satisfies string;
 
   public description =
-    "Security notification email (new sign-in, new device, password change, or new API key). Styled with SchemaVaults brand colors: blue gradient header, red-accented call-to-action and alert strip. Props: { name: string, eventType?: 'new-sign-in' | 'password-changed' | 'new-api-key' | 'new-device', device?: string, browser?: string, location?: string, ipAddress?: string, eventTime?: string, secureAccountUrl?: string, productName?: string, supportEmail?: string }" as const satisfies string;
+    "Security notification email (new sign-in, new device, password change, or new API key). Styled with the configured brand colors: gradient header, red-accented call-to-action and alert strip. Props: { name: string, eventType?: 'new-sign-in' | 'password-changed' | 'new-api-key' | 'new-device', device?: string, browser?: string, location?: string, ipAddress?: string, eventTime?: string, secureAccountUrl?: string, productName?: string, supportEmail?: string }" as const satisfies string;
 
   public validateProps(val: unknown): val is SecurityAlertEmailProps {
     if (typeof val !== "object" || !val) {
@@ -78,19 +79,20 @@ export class SecurityAlert extends EmailTemplatesCatalogEntry<SecurityAlertEmail
   public async renderPlainTextVersion(
     props: SecurityAlertEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const secureAccountUrl: string =
       typeof props.secureAccountUrl === "string" &&
       props.secureAccountUrl.length > 0
         ? props.secureAccountUrl
-        : "https://schemavaults.com/account/security";
+        : `${brand.url}/account/security`;
     const eventType: NonNullable<SecurityAlertEmailProps["eventType"]> =
       props.eventType ?? "new-sign-in";
 

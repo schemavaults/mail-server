@@ -1,13 +1,14 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { PaymentFailedEmailProps } from "@/email-templates/payment-failed";
 
 export class PaymentFailed extends EmailTemplatesCatalogEntry<PaymentFailedEmailProps> {
   public id = "payment-failed" as const satisfies string;
 
   public description =
-    "Payment failure / dunning email sent when a recurring or one-off charge against the customer's saved payment method is declined. Uses the SchemaVaults brand-red alert gradient header, a 'Reason' callout panel showing the decline reason, a metadata table (amount, attempted at, plan, payment method, invoice, decline code), an optional 'What happens next' panel with retry and grace-period dates, and a primary CTA to update the payment method. Props: { amountDue: string, attemptedAt: string, updatePaymentMethodUrl: string, recipientName?: string, planName?: string, paymentMethodBrand?: string, paymentMethodLast4?: string, failureReason?: string, failureCode?: string, nextRetryAt?: string, gracePeriodEndsAt?: string, invoiceNumber?: string, invoiceUrl?: string, productName?: string, supportEmail?: string }" as const satisfies string;
+    "Payment failure / dunning email sent when a recurring or one-off charge against the customer's saved payment method is declined. Uses a red alert gradient header, a 'Reason' callout panel showing the decline reason, a metadata table (amount, attempted at, plan, payment method, invoice, decline code), an optional 'What happens next' panel with retry and grace-period dates, and a primary CTA to update the payment method. Props: { amountDue: string, attemptedAt: string, updatePaymentMethodUrl: string, recipientName?: string, planName?: string, paymentMethodBrand?: string, paymentMethodLast4?: string, failureReason?: string, failureCode?: string, nextRetryAt?: string, gracePeriodEndsAt?: string, invoiceNumber?: string, invoiceUrl?: string, productName?: string, supportEmail?: string }" as const satisfies string;
 
   public validateProps(val: unknown): val is PaymentFailedEmailProps {
     if (typeof val !== "object" || !val) {
@@ -72,14 +73,15 @@ export class PaymentFailed extends EmailTemplatesCatalogEntry<PaymentFailedEmail
   public async renderPlainTextVersion(
     props: PaymentFailedEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const greetingName: string =
       typeof props.recipientName === "string" &&
       props.recipientName.length > 0

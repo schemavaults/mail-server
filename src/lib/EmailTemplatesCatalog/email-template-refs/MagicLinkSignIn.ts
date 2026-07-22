@@ -1,13 +1,14 @@
 import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getEmailBrand } from "@/email-templates/brand";
 import type { MagicLinkSignInEmailProps } from "@/email-templates/magic-link-sign-in";
 
 export class MagicLinkSignIn extends EmailTemplatesCatalogEntry<MagicLinkSignInEmailProps> {
   public id = "magic-link-sign-in" as const satisfies string;
 
   public description =
-    "Passwordless magic-link sign-in email sent when a user requests to sign in via email. Features a SchemaVaults brand-blue gradient header, a primary 'Sign in' CTA button, a copy-paste fallback URL, an optional one-time code panel for environments where the link cannot be clicked, an optional sign-in attempt context table (requested time, device, browser, location, IP), and a security footer with a 'didn't request this' reassurance. Props: { magicLinkUrl: string, recipientEmail?: string, recipientName?: string, oneTimeCode?: string, expiresInMinutes?: number, device?: string, browser?: string, location?: string, ipAddress?: string, requestedAt?: string, productName?: string, supportEmail?: string }" as const satisfies string;
+    "Passwordless magic-link sign-in email sent when a user requests to sign in via email. Features a gradient header in the configured brand colors, a primary 'Sign in' CTA button, a copy-paste fallback URL, an optional one-time code panel for environments where the link cannot be clicked, an optional sign-in attempt context table (requested time, device, browser, location, IP), and a security footer with a 'didn't request this' reassurance. Props: { magicLinkUrl: string, recipientEmail?: string, recipientName?: string, oneTimeCode?: string, expiresInMinutes?: number, device?: string, browser?: string, location?: string, ipAddress?: string, requestedAt?: string, productName?: string, supportEmail?: string }" as const satisfies string;
 
   public validateProps(val: unknown): val is MagicLinkSignInEmailProps {
     if (typeof val !== "object" || !val) {
@@ -72,14 +73,15 @@ export class MagicLinkSignIn extends EmailTemplatesCatalogEntry<MagicLinkSignInE
   public async renderPlainTextVersion(
     props: MagicLinkSignInEmailProps,
   ): Promise<string> {
+    const brand = getEmailBrand();
     const productName: string =
       typeof props.productName === "string" && props.productName.length > 0
         ? props.productName
-        : "SchemaVaults";
+        : brand.productName;
     const supportEmail: string =
       typeof props.supportEmail === "string" && props.supportEmail.length > 0
         ? props.supportEmail
-        : "support@schemavaults.com";
+        : brand.supportEmail;
     const recipientName: string =
       typeof props.recipientName === "string" && props.recipientName.length > 0
         ? props.recipientName

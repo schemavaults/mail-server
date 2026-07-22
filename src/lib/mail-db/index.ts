@@ -2,6 +2,12 @@ export type { MailDatabase } from "./mail-database-type";
 export { MailingListRegistry } from "./MailingListRegistry";
 export { MailKeysRegistry } from "./MailKeysRegistry";
 export { CorsOriginsRegistry } from "./CorsOriginsRegistry";
+export { BrandingAssetsRegistry } from "./BrandingAssetsRegistry";
+export type {
+  BrandingAsset,
+  BrandingAssetKind,
+  BrandingAssetMetadata,
+} from "./branding-assets-table";
 export type {
   CorsAllowedOrigin,
   NewCorsAllowedOrigin,

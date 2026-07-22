@@ -11,16 +11,15 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface PasswordResetEmailProps {
   resetLink: string;
   expiresInMinutes: number;
 }
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties, so the token hex values are inlined here.
-const BRAND_BLUE = "#60a5fa";
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral palette and semantic alert colors for this template. Email clients
+// don't resolve CSS custom properties, so the hex values are inlined here.
 const BRAND_RED = "#dc2626";
 const BRAND_RED_DARK = "#b91c1c";
 const FOREGROUND = "#0b1220";
@@ -42,8 +41,12 @@ export default function PasswordResetEmail(
     throw new Error("Missing required props for PasswordResetEmail template!");
   }
 
-  const productName = "SchemaVaults";
-  const supportEmail = "support@schemavaults.com";
+  const brand = getEmailBrand();
+  const BRAND_BLUE = brand.colors.accent;
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
+  const productName: string = brand.productName;
+  const supportEmail: string = brand.supportEmail;
 
   return (
     <Html>
@@ -228,6 +231,6 @@ export default function PasswordResetEmail(
 }
 
 PasswordResetEmail.PreviewProps = {
-  resetLink: "https://schemavaults.com/reset?token=sample-token",
+  resetLink: "https://example.com/reset?token=sample-token",
   expiresInMinutes: 30,
 } satisfies PasswordResetEmailProps;

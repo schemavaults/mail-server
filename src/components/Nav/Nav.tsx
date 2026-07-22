@@ -10,8 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Separator,
-  Wordmark,
 } from "@schemavaults/ui";
+import { BrandWordmark } from "@/components/BrandWordmark";
 import { useAdmin, useCurrentUser } from "@schemavaults/auth-react-provider";
 import { useCoreWebAppUrl } from "@/contexts/CoreWebAppUrlContext";
 import { ADMIN_LINKS } from "@/lib/admin-links";
@@ -52,7 +52,7 @@ export function Nav({ title, backHref, children }: NavProps): ReactElement {
 
         <a href={coreWebAppUrl}>
           <h1 className={cn(headerFontSizeClassName)}>
-            <Wordmark />
+            <BrandWordmark />
           </h1>
         </a>
 

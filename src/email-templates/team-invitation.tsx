@@ -11,6 +11,7 @@ import {
   Text,
 } from "@react-email/components";
 import type { ReactElement } from "react";
+import { getEmailBrand } from "./brand";
 
 export interface TeamInvitationEmailProps {
   inviteeName?: string;
@@ -25,10 +26,9 @@ export interface TeamInvitationEmailProps {
   supportEmail?: string;
 }
 
-// Mirrors @schemavaults/theme brand tokens (see node_modules/@schemavaults/theme/globals.css).
-// Email clients don't resolve CSS custom properties, so the token hex values are inlined here.
-const BRAND_BLUE = "#60a5fa";
-const BRAND_BLUE_DARK = "#2563eb";
+// Neutral palette tokens. Email clients don't resolve CSS custom properties,
+// so concrete hex values are inlined here; the brand accent colors come from
+// the configured brand inside the component.
 const FOREGROUND = "#0b1220";
 const MUTED_FOREGROUND = "#64748b";
 const BORDER = "#e2e8f0";
@@ -64,14 +64,18 @@ export default function TeamInvitationEmail(
     );
   }
 
+  const brand = getEmailBrand();
+  const BRAND_BLUE = brand.colors.accent;
+  const BRAND_BLUE_DARK = brand.colors.accentDark;
+
   const productName: string =
     typeof props.productName === "string" && props.productName.length > 0
       ? props.productName
-      : "SchemaVaults";
+      : brand.productName;
   const supportEmail: string =
     typeof props.supportEmail === "string" && props.supportEmail.length > 0
       ? props.supportEmail
-      : "support@schemavaults.com";
+      : brand.supportEmail;
   const greetingName: string =
     typeof props.inviteeName === "string" && props.inviteeName.length > 0
       ? props.inviteeName
@@ -354,9 +358,6 @@ TeamInvitationEmail.PreviewProps = {
   teamDescription:
     "The data platform team at Acme — we publish and curate schemas for the event pipeline.",
   role: "Editor",
-  acceptInviteUrl:
-    "https://schemavaults.com/invitations/accept?token=example-token",
+  acceptInviteUrl: "https://example.com/invitations/accept?token=example-token",
   expiresAt: "Apr 27, 2026 17:00 UTC",
-  productName: "SchemaVaults",
-  supportEmail: "support@schemavaults.com",
 } satisfies TeamInvitationEmailProps;

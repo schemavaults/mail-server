@@ -9,6 +9,7 @@ import EmailTemplatesCatalog, {
 } from "@/lib/EmailTemplatesCatalog";
 import type { ReactNode } from "react";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
+import { getDefaultMailFrom } from "@/lib/branding";
 import { type SendEmailRequestBody } from "@schemavaults/send-email";
 
 type TemplateMessageDef<T extends EmailTemplateId> =
@@ -74,8 +75,7 @@ export async function sendEmailFromTemplate<T extends EmailTemplateId>(
     template_props as any,
   );
 
-  const from: string =
-    options.from ?? "SchemaVaults <noreply@schemavaults.com>";
+  const from: string = options.from ?? getDefaultMailFrom();
 
   if (options.dryRun === true) {
     return null;
