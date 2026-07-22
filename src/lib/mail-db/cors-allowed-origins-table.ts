@@ -22,13 +22,22 @@ export const corsOriginValueSchema = z
     }
   }, "Must be a web origin of the form scheme://host[:port] with no path or trailing slash.");
 
-export const corsAllowedOriginRowSchema = z.object({
-  cors_origin_id: z.string().uuid(),
-  origin: corsOriginValueSchema,
-  description: z.string().max(255).nullable(),
-  created_at: z.number().nonnegative(),
-  created_by_user_id: z.string().min(1),
-});
+export const corsAllowedOriginRowSchema = z
+  .object({
+    cors_origin_id: z.string().uuid(),
+    origin: corsOriginValueSchema,
+    description: z.string().max(255).nullable(),
+    created_at: z.number().nonnegative(),
+    created_by_user_id: z.string().min(1),
+  })
+  .strict()
+  .required({
+    cors_origin_id: true,
+    origin: true,
+    description: true,
+    created_at: true,
+    created_by_user_id: true,
+  });
 
 export type CorsAllowedOriginsTable = z.infer<
   typeof corsAllowedOriginRowSchema
