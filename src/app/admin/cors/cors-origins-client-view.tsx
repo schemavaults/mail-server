@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { useState, useTransition, type ReactElement } from "react";
 import {
   Button,
   cn,
@@ -40,7 +40,7 @@ export default function CorsOriginsClientView({
 
   const [newOrigin, setNewOrigin] = useState<string>("");
   const [newDescription, setNewDescription] = useState<string>("");
-  const [adding, setAdding] = useState<boolean>(false);
+  const [isAddingOrigin, startAddOriginTransition] = useTransition();
   const [removingOriginId, setRemovingOriginId] = useState<string | null>(
     null,
   );
@@ -59,7 +59,7 @@ export default function CorsOriginsClientView({
     }
   }
 
-  async function handleAdd() {
+  function handleAdd() {
     const origin = newOrigin.trim();
     if (origin.length < 1) {
       toast({
@@ -80,34 +80,36 @@ export default function CorsOriginsClientView({
       return;
     }
 
-    setAdding(true);
-    try {
-      const description = newDescription.trim();
-      await addCorsOrigin(
-        description.length > 0 ? { origin, description } : { origin },
-        authClient,
-        appId,
-      );
-      setNewOrigin("");
-      setNewDescription("");
-      toast({
-        title: "Origin allowed",
-        description: `Cross-origin requests from ${origin} are now allowed.`,
-      });
-      await refreshOrigins(authClient);
-    } catch (e: unknown) {
-      console.error("Failed to add allowed CORS origin: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to add origin",
-        description:
-          e instanceof Error
-            ? e.message
-            : "An unknown error occurred while adding the origin.",
-      });
-    } finally {
-      setAdding(false);
-    }
+    // Async transition: isAddingOrigin stays true until this action settles,
+    // so no manual pending-state bookkeeping is needed. Errors are caught to
+    // surface a toast instead of the nearest error boundary.
+    startAddOriginTransition(async () => {
+      try {
+        const description = newDescription.trim();
+        await addCorsOrigin(
+          description.length > 0 ? { origin, description } : { origin },
+          authClient,
+          appId,
+        );
+        setNewOrigin("");
+        setNewDescription("");
+        toast({
+          title: "Origin allowed",
+          description: `Cross-origin requests from ${origin} are now allowed.`,
+        });
+        await refreshOrigins(authClient);
+      } catch (e: unknown) {
+        console.error("Failed to add allowed CORS origin: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to add origin",
+          description:
+            e instanceof Error
+              ? e.message
+              : "An unknown error occurred while adding the origin.",
+        });
+      }
+    });
   }
 
   async function handleRemove(target: CorsAllowedOrigin) {
@@ -205,8 +207,8 @@ export default function CorsOriginsClientView({
                 onChange={(e) => setNewDescription(e.target.value)}
               />
             </div>
-            <Button onClick={handleAdd} disabled={adding}>
-              {adding ? "Adding…" : "Allow origin"}
+            <Button onClick={handleAdd} disabled={isAddingOrigin}>
+              {isAddingOrigin ? "Adding…" : "Allow origin"}
             </Button>
           </div>
 
