@@ -62,6 +62,22 @@ export function getBrandConfig(): BrandConfig {
 }
 
 /**
+ * Whether the homepage should display the public mailing list directory.
+ * Configured via HOMEPAGE_SHOW_MAILING_LISTS; defaults to enabled so an
+ * unconfigured deployment keeps its previous behavior. Deployments that use
+ * this app solely as an email template/sender (not as a mailing list
+ * management tool) can set it to "false" — the homepage then renders a
+ * minimal branded landing page instead of the mailing list directory.
+ */
+export function isHomepageMailingListDirectoryEnabled(): boolean {
+  const value = readEnv("HOMEPAGE_SHOW_MAILING_LISTS");
+  if (!value) {
+    return true;
+  }
+  return !["false", "0", "no", "off"].includes(value.trim().toLowerCase());
+}
+
+/**
  * Default From: header for outbound mail, e.g. `Acme <noreply@acme.com>`.
  * Configured via MAIL_FROM_ADDRESS and MAIL_FROM_NAME (the latter defaults
  * to the brand name).
