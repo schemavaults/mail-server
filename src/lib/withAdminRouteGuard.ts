@@ -1,7 +1,4 @@
-import {
-  SCHEMAVAULTS_MAIL_SERVER,
-  type ApiServerId,
-} from "@schemavaults/app-definitions";
+import { getAppId } from "@/lib/getAppId";
 import {
   withAdminApiRouteGuard as _withAdminApiRouteGuard,
   withAdminServerComponentRouteGuard as _withAdminServerComponentRouteGuard,
@@ -9,7 +6,7 @@ import {
   type IBaseProtectedAdminApiRouteInputs,
   type TProtectedAdminPageServerComponent,
   type IBaseProtectedAdminServerComponentPageProps,
-  SCHEMAVAULTS_ORGANIZATION_ID,
+  getAuthServerOwnerOrganizationId,
 } from "@schemavaults/auth-server-sdk";
 import { type NextRequest, NextResponse } from "next/server";
 import { ServerlessDatabase } from "./ServerlessDatabase";
@@ -36,8 +33,8 @@ export async function withAdminApiRouteGuard(
         route_guard_type: "admin",
         custom_is_authorized_check: async (opts) =>
           opts.user.admin ? true : false,
-        api_server_id: SCHEMAVAULTS_MAIL_SERVER.api_server_id,
-        required_organization: SCHEMAVAULTS_ORGANIZATION_ID,
+        api_server_id: getAppId(),
+        required_organization: getAuthServerOwnerOrganizationId(),
       },
     );
 
@@ -62,8 +59,8 @@ export async function withAdminServerComponentRouteGuard(
       route_guard_type: "admin",
       custom_is_authorized_check: async (opts) =>
         opts.user.admin ? true : false,
-      api_server_id: SCHEMAVAULTS_MAIL_SERVER.api_server_id,
-      required_organization: SCHEMAVAULTS_ORGANIZATION_ID,
+      api_server_id: getAppId(),
+      required_organization: getAuthServerOwnerOrganizationId(),
     },
   );
 }

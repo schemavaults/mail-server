@@ -2,6 +2,7 @@
 
 import {
   BookTemplate,
+  Globe,
   Home,
   KeyRound,
   LayoutDashboard,
@@ -46,6 +47,11 @@ export const ADMIN_LINKS: readonly AdminLink[] = [
     href: "/admin/keys",
     label: "Manage API keys",
     icon: KeyRound,
+  },
+  {
+    href: "/admin/cors",
+    label: "Manage allowed CORS origins",
+    icon: Globe,
   },
 ];
 

@@ -45,7 +45,7 @@ function isFkViolation(e: unknown): boolean {
 
 export async function GET(
   req: NextRequest,
-  ctx: { params: Promise<{ api_key_id: string }> },
+  ctx: RouteContext<"/api/admin/api-keys/[api_key_id]/allowlist">,
 ): Promise<NextResponse> {
   const { api_key_id: rawApiKeyId } = await ctx.params;
 
@@ -82,7 +82,7 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  ctx: { params: Promise<{ api_key_id: string }> },
+  ctx: RouteContext<"/api/admin/api-keys/[api_key_id]/allowlist">,
 ): Promise<NextResponse> {
   const { api_key_id: rawApiKeyId } = await ctx.params;
 
@@ -143,7 +143,7 @@ export async function POST(
 
 export async function DELETE(
   req: NextRequest,
-  ctx: { params: Promise<{ api_key_id: string }> },
+  ctx: RouteContext<"/api/admin/api-keys/[api_key_id]/allowlist">,
 ): Promise<NextResponse> {
   const { api_key_id: rawApiKeyId } = await ctx.params;
 

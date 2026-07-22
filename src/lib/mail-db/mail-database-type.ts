@@ -1,5 +1,6 @@
 import type { ApiKeyMailingListAllowlistsTable } from "./api-key-mailing-list-allowlists-table";
 import type { ApiKeysTable } from "./api-keys-table";
+import type { CorsAllowedOriginsTable } from "./cors-allowed-origins-table";
 import type { MailingListSubscriberTable } from "./mailing-list-subscriber-table";
 import type { MailingListUnsubscribeTable } from "./mailing-list-unsubscribe-record-table";
 import type { MailingListsTable } from "./mailing-lists-table";
@@ -12,4 +13,5 @@ export type MailDatabase = {
   api_keys: ApiKeysTable;
   api_key_mailing_list_allowlists: ApiKeyMailingListAllowlistsTable;
   pending_subscriptions: PendingSubscriptionsTable;
+  cors_allowed_origins: CorsAllowedOriginsTable;
 };

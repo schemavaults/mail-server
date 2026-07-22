@@ -1,6 +1,11 @@
 export type { MailDatabase } from "./mail-database-type";
 export { MailingListRegistry } from "./MailingListRegistry";
 export { MailKeysRegistry } from "./MailKeysRegistry";
+export { CorsOriginsRegistry } from "./CorsOriginsRegistry";
+export type {
+  CorsAllowedOrigin,
+  NewCorsAllowedOrigin,
+} from "./cors-allowed-origins-table";
 export type { MailingListSubscriber } from "./mailing-list-subscriber-table";
 export type { MailingListUnsubscribeRecord } from "./mailing-list-unsubscribe-record-table";
 export type { ApiKey, ApiKeyRecord, NewApiKey } from "./api-keys-table";

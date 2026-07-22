@@ -6,8 +6,10 @@ import { ClientAppLogicProviders } from "./client-app-logic-providers";
 import { ClientAppVisualsProvider } from "./client-app-visuals-provider";
 import {
   getAppEnvironment,
+  type ApiServerId,
   type SchemaVaultsAppEnvironment,
 } from "@schemavaults/app-definitions";
+import { getAppId } from "@/lib/getAppId";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,6 +19,23 @@ export const metadata: Metadata = {
 };
 
 const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
+const app_id: ApiServerId = getAppId();
+
+/**
+ * URL of the brand's main web app, configured via the BRAND_URL environment
+ * variable (scheme optional; https is assumed when omitted).
+ */
+function resolveCoreWebAppUrl(): string {
+  const configured = process.env.BRAND_URL;
+  if (typeof configured === "string" && configured.length > 0) {
+    return new URL(
+      configured.includes("://") ? configured : `https://${configured}`,
+    ).origin;
+  }
+  return "https://schemavaults.com";
+}
+
+const core_web_app_url: string = resolveCoreWebAppUrl();
 
 /** GLOBAL LAYOUT */
 export default function RootLayout({ children }: { children: ReactNode }) {
@@ -29,7 +48,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body
         className={`${inter.className} w-screen flex flex-col grow min-h-full h-full`}
       >
-        <ClientAppLogicProviders environment={environment}>
+        <ClientAppLogicProviders
+          environment={environment}
+          app_id={app_id}
+          core_web_app_url={core_web_app_url}
+        >
           <ClientAppVisualsProvider>{children}</ClientAppVisualsProvider>
         </ClientAppLogicProviders>
       </body>

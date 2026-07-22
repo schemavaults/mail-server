@@ -4,9 +4,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
-import { MailKeysRegistry } from "@/lib/mail-db/MailKeysRegistry";
+import { CorsOriginsRegistry } from "@/lib/mail-db/CorsOriginsRegistry";
 
-const apiKeyIdSchema = z.string().uuid();
+const corsOriginIdSchema = z.string().uuid();
 
 interface SuccessResponse {
   success: true;
@@ -20,34 +20,34 @@ interface ErrorResponse {
 
 export async function DELETE(
   req: NextRequest,
-  ctx: RouteContext<"/api/admin/api-keys/[api_key_id]">,
+  ctx: RouteContext<"/api/admin/cors-origins/[cors_origin_id]">,
 ): Promise<NextResponse> {
-  const { api_key_id: rawApiKeyId } = await ctx.params;
+  const { cors_origin_id: rawCorsOriginId } = await ctx.params;
 
   const protected_route = await withAdminApiRouteGuard(
     async function DELETE_handler(): Promise<NextResponse> {
-      const parsed = apiKeyIdSchema.safeParse(rawApiKeyId);
+      const parsed = corsOriginIdSchema.safeParse(rawCorsOriginId);
       if (!parsed.success) {
         return NextResponse.json(
           {
             success: false,
-            message: "Invalid api_key_id; must be a valid UUID.",
+            message: "Invalid cors_origin_id; must be a valid UUID.",
           } satisfies ErrorResponse,
           { status: 400 },
         );
       }
-      const api_key_id = parsed.data;
+      const cors_origin_id = parsed.data;
 
       try {
         await using dbh = ServerlessDatabase.getAsyncResource();
-        const registry = new MailKeysRegistry(dbh);
-        await registry.revokeApiKey(api_key_id);
+        const registry = new CorsOriginsRegistry(dbh);
+        await registry.removeOrigin(cors_origin_id);
       } catch (e: unknown) {
-        console.error("Failed to revoke API key: ", e);
+        console.error("Failed to remove allowed CORS origin: ", e);
         return NextResponse.json(
           {
             success: false,
-            message: "Failed to revoke API key!",
+            message: "Failed to remove allowed CORS origin!",
           } satisfies ErrorResponse,
           { status: 500 },
         );
@@ -56,7 +56,7 @@ export async function DELETE(
       return NextResponse.json(
         {
           success: true,
-          message: `Successfully revoked API key with ID: '${api_key_id}'.`,
+          message: `Successfully removed allowed CORS origin with ID: '${cors_origin_id}'.`,
         } satisfies SuccessResponse,
         { status: 200 },
       );

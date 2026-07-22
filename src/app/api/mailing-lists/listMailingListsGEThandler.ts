@@ -9,7 +9,7 @@ import {
   type IRouteGuard,
 } from "@schemavaults/auth-server-sdk";
 import type { PotentiallyValidTokenSource } from "@schemavaults/auth-common";
-import { SCHEMAVAULTS_MAIL_SERVER } from "@schemavaults/app-definitions";
+import { getAppId } from "@/lib/getAppId";
 
 export async function listMailingListsGEThandler(
   req: NextRequest,
@@ -38,7 +38,7 @@ export async function listMailingListsGEThandler(
   }).createGuardFromTokenSources(
     "admin",
     token_sources,
-    SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+    getAppId(),
   );
 
   const isAdmin: boolean =

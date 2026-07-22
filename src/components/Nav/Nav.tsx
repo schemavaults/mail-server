@@ -12,12 +12,8 @@ import {
   Separator,
   Wordmark,
 } from "@schemavaults/ui";
-import {
-  useAdmin,
-  useAppEnvironment,
-  useCurrentUser,
-} from "@schemavaults/auth-react-provider";
-import getSchemaVaultsCoreWebAppUrl from "@/lib/getSchemaVaultsCoreWebAppUrl";
+import { useAdmin, useCurrentUser } from "@schemavaults/auth-react-provider";
+import { useCoreWebAppUrl } from "@/contexts/CoreWebAppUrlContext";
 import { ADMIN_LINKS } from "@/lib/admin-links";
 import { ArrowLeft, ChevronDown, LogOut } from "lucide-react";
 import Link from "next/link";
@@ -29,7 +25,7 @@ export type NavProps = PropsWithChildren<{
 }>;
 
 export function Nav({ title, backHref, children }: NavProps): ReactElement {
-  const environment = useAppEnvironment();
+  const coreWebAppUrl = useCoreWebAppUrl();
   const user = useCurrentUser();
   const admin = useAdmin();
   const headerFontSizeClassName: string = "text-xl md:text-2xl";
@@ -54,7 +50,7 @@ export function Nav({ title, backHref, children }: NavProps): ReactElement {
           </Link>
         )}
 
-        <a href={getSchemaVaultsCoreWebAppUrl(environment)}>
+        <a href={coreWebAppUrl}>
           <h1 className={cn(headerFontSizeClassName)}>
             <Wordmark />
           </h1>

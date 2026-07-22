@@ -1,12 +1,13 @@
-import { SCHEMAVAULTS_MAIL_APP_DEFINITION } from "@schemavaults/app-definitions";
+import type { ApiServerId } from "@schemavaults/app-definitions";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
 
 export async function revokeApiKey(
   api_key_id: string,
   auth: ISchemaVaultsAuthClient,
+  app_id: ApiServerId,
 ): Promise<void> {
   const accessToken = await auth.acquireAccessToken({
-    audience: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+    audience: app_id,
   });
   const response = await fetch(
     `/api/admin/api-keys/${encodeURIComponent(api_key_id)}`,

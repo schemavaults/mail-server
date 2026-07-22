@@ -11,7 +11,7 @@ export const apiKeyTableRowSchema = z.object({
   key_hash: z.string().min(1),
   key_prefix: z.string().min(1),
   created_at: z.number().nonnegative(),
-  created_by_user_id: z.string().min(1),
+  created_by_user_id: z.string().uuid(),
   last_used_at: z.number().nonnegative().nullable(),
   revoked_at: z.number().nonnegative().nullable(),
 });

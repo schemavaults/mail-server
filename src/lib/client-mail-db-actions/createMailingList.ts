@@ -1,13 +1,14 @@
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
-import { SCHEMAVAULTS_MAIL_APP_DEFINITION } from "@schemavaults/app-definitions";
+import type { ApiServerId } from "@schemavaults/app-definitions";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
 
 export async function createMailingList(
   mailing_list: Omit<MailingListDefinition, "mailing_list_id" | "created_at">,
   auth: ISchemaVaultsAuthClient,
+  app_id: ApiServerId,
 ): Promise<string> {
   const mailServerBackendAccessToken = await auth.acquireAccessToken({
-    audience: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+    audience: app_id,
   });
   const response = await fetch(`/api/mailing-lists`, {
     method: "POST",

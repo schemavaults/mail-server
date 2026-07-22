@@ -18,7 +18,7 @@ export class ServerlessDatabase
     });
   }
 
-  public async [Symbol.asyncDispose](): Promise<void> {
+  public override async [Symbol.asyncDispose](): Promise<void> {
     return this.destroy();
   }
 
