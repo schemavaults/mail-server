@@ -25,7 +25,7 @@ import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
-import { SCHEMAVAULTS_MAIL_APP_DEFINITION } from "@schemavaults/app-definitions";
+import { SCHEMAVAULTS_MAIL_APP_ID } from "@/lib/schemavaults-apps";
 import type { SendEmailRequestBody } from "@schemavaults/send-email";
 import sendEmail from "@/lib/client-mail-db-actions/sendEmail";
 import JsonCodeEditor from "./JsonCodeEditor";
@@ -187,7 +187,7 @@ export default function SendEmailFormClient({
       setPreviewError(null);
       try {
         const accessToken = await authClient.acquireAccessToken({
-          audience: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+          audience: SCHEMAVAULTS_MAIL_APP_ID,
         });
         const response = await fetch(`/api/admin/templates/preview`, {
           method: "POST",

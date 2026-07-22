@@ -1,4 +1,4 @@
-import { SCHEMAVAULTS_MAIL_APP_DEFINITION } from "@schemavaults/app-definitions";
+import { SCHEMAVAULTS_MAIL_APP_ID } from "@/lib/schemavaults-apps";
 import type { ISchemaVaultsAuthClient } from "@schemavaults/auth-react-provider";
 
 export interface CreatedApiKey {
@@ -16,7 +16,7 @@ export async function createApiKey(
   auth: ISchemaVaultsAuthClient,
 ): Promise<CreatedApiKey> {
   const accessToken = await auth.acquireAccessToken({
-    audience: SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
+    audience: SCHEMAVAULTS_MAIL_APP_ID,
   });
   const response = await fetch(`/api/admin/api-keys`, {
     method: "POST",

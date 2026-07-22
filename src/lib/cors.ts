@@ -3,21 +3,20 @@ import "server-only";
 import { type NextRequest, NextResponse } from "next/server";
 import {
   getAppEnvironment,
-  getHardcodedClientWebAppDomain,
-  SCHEMAVAULTS_MAIL_APP_DEFINITION,
-  SCHEMAVAULTS_WEB,
   type SchemaVaultsAppEnvironment,
 } from "@schemavaults/app-definitions";
+import {
+  getClientWebAppDomain,
+  SCHEMAVAULTS_MAIL_APP_ID,
+  SCHEMAVAULTS_WEB_APP_ID,
+} from "@/lib/schemavaults-apps";
 
 function buildAllowedOrigins(
   environment: SchemaVaultsAppEnvironment,
 ): readonly string[] {
   return [
-    getHardcodedClientWebAppDomain(SCHEMAVAULTS_WEB.app_id, environment),
-    getHardcodedClientWebAppDomain(
-      SCHEMAVAULTS_MAIL_APP_DEFINITION.app_id,
-      environment,
-    ),
+    getClientWebAppDomain(SCHEMAVAULTS_WEB_APP_ID, environment),
+    getClientWebAppDomain(SCHEMAVAULTS_MAIL_APP_ID, environment),
   ];
 }
 

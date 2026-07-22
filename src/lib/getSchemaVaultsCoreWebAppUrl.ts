@@ -1,14 +1,16 @@
 import {
   getAppEnvironment,
-  getHardcodedClientWebAppDomain,
-  SCHEMAVAULTS_WEB,
   type SchemaVaultsAppEnvironment,
 } from "@schemavaults/app-definitions";
+import {
+  getClientWebAppDomain,
+  SCHEMAVAULTS_WEB_APP_ID,
+} from "@/lib/schemavaults-apps";
 
 export function getSchemaVaultsCoreWebAppUrl(
   environment: SchemaVaultsAppEnvironment = getAppEnvironment(),
 ): string {
-  return getHardcodedClientWebAppDomain(SCHEMAVAULTS_WEB.app_id, environment);
+  return getClientWebAppDomain(SCHEMAVAULTS_WEB_APP_ID, environment);
 }
 
 export default getSchemaVaultsCoreWebAppUrl;

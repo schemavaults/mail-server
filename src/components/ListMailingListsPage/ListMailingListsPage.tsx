@@ -6,10 +6,8 @@ import { cn, LoadingPage, Separator } from "@schemavaults/ui";
 import { useState, type ReactElement } from "react";
 import useSWR from "swr";
 import AvailableMailingLists from "./available-mailing-lists";
-import {
-  SCHEMAVAULTS_MAIL_SERVER,
-  type SchemaVaultsAppEnvironment,
-} from "@schemavaults/app-definitions";
+import type { SchemaVaultsAppEnvironment } from "@schemavaults/app-definitions";
+import { SCHEMAVAULTS_MAIL_API_SERVER_ID } from "@/lib/schemavaults-apps";
 import PublicPageFooter from "@/components/PublicPageFooter";
 import { Nav } from "@/components/Nav";
 import {
@@ -53,7 +51,7 @@ export function ListMailingListsPage({
         ) {
           const auth: ISchemaVaultsAuthClient = authContext.client.current;
           const token = await auth.acquireAccessToken({
-            audience: SCHEMAVAULTS_MAIL_SERVER.api_server_id,
+            audience: SCHEMAVAULTS_MAIL_API_SERVER_ID,
           });
           return token.token;
         }
