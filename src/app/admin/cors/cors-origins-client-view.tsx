@@ -29,6 +29,58 @@ function formatTimestamp(value: number): string {
   return new Date(value).toLocaleString();
 }
 
+interface CorsOriginRowProps {
+  origin: CorsAllowedOrigin;
+  /** Must never reject — the parent surfaces failures via toast. */
+  onRemove: (target: CorsAllowedOrigin) => Promise<void>;
+}
+
+/**
+ * Each row owns an async transition so pending state is tracked per row and
+ * multiple origins can be removed concurrently.
+ */
+function CorsOriginRow({
+  origin,
+  onRemove,
+}: CorsOriginRowProps): ReactElement {
+  const [isRemoving, startRemoveTransition] = useTransition();
+
+  return (
+    <li
+      className={cn(
+        "flex flex-row flex-wrap gap-2",
+        "items-center justify-between",
+        "rounded-md border p-3",
+      )}
+    >
+      <div className="flex flex-col gap-1">
+        <span className="font-mono text-sm">{origin.origin}</span>
+        {origin.description ? (
+          <span className="text-sm text-muted-foreground">
+            {origin.description}
+          </span>
+        ) : null}
+        <span className="text-xs text-muted-foreground">
+          Added {formatTimestamp(origin.created_at)}
+        </span>
+      </div>
+      <Button
+        variant="destructive"
+        onClick={() =>
+          startRemoveTransition(async () => {
+            await onRemove(origin);
+          })
+        }
+        disabled={isRemoving}
+        aria-label={`Remove allowed origin ${origin.origin}`}
+      >
+        <Trash2 className="h-4 w-4" />
+        {isRemoving ? "Removing…" : "Remove"}
+      </Button>
+    </li>
+  );
+}
+
 export default function CorsOriginsClientView({
   initialOrigins,
 }: CorsOriginsClientViewProps): ReactElement {
@@ -41,9 +93,6 @@ export default function CorsOriginsClientView({
   const [newOrigin, setNewOrigin] = useState<string>("");
   const [newDescription, setNewDescription] = useState<string>("");
   const [isAddingOrigin, startAddOriginTransition] = useTransition();
-  const [removingOriginId, setRemovingOriginId] = useState<string | null>(
-    null,
-  );
 
   function getAuthClient(): ISchemaVaultsAuthClient | null {
     if (!auth.ready || !auth.client.current) return null;
@@ -112,7 +161,9 @@ export default function CorsOriginsClientView({
     });
   }
 
-  async function handleRemove(target: CorsAllowedOrigin) {
+  // Awaited by each row's remove transition; catches everything so the
+  // returned promise never rejects into the row's transition.
+  async function handleRemove(target: CorsAllowedOrigin): Promise<void> {
     const authClient = getAuthClient();
     if (!authClient) {
       toast({
@@ -123,7 +174,6 @@ export default function CorsOriginsClientView({
       return;
     }
 
-    setRemovingOriginId(target.cors_origin_id);
     try {
       await removeCorsOrigin(target.cors_origin_id, authClient, appId);
       toast({
@@ -141,8 +191,6 @@ export default function CorsOriginsClientView({
             ? e.message
             : "An unknown error occurred while removing the origin.",
       });
-    } finally {
-      setRemovingOriginId(null);
     }
   }
 
@@ -221,37 +269,11 @@ export default function CorsOriginsClientView({
           ) : (
             <ul className="flex flex-col gap-2">
               {origins.map((origin) => (
-                <li
+                <CorsOriginRow
                   key={origin.cors_origin_id}
-                  className={cn(
-                    "flex flex-row flex-wrap gap-2",
-                    "items-center justify-between",
-                    "rounded-md border p-3",
-                  )}
-                >
-                  <div className="flex flex-col gap-1">
-                    <span className="font-mono text-sm">{origin.origin}</span>
-                    {origin.description ? (
-                      <span className="text-sm text-muted-foreground">
-                        {origin.description}
-                      </span>
-                    ) : null}
-                    <span className="text-xs text-muted-foreground">
-                      Added {formatTimestamp(origin.created_at)}
-                    </span>
-                  </div>
-                  <Button
-                    variant="destructive"
-                    onClick={() => handleRemove(origin)}
-                    disabled={removingOriginId === origin.cors_origin_id}
-                    aria-label={`Remove allowed origin ${origin.origin}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {removingOriginId === origin.cors_origin_id
-                      ? "Removing…"
-                      : "Remove"}
-                  </Button>
-                </li>
+                  origin={origin}
+                  onRemove={handleRemove}
+                />
               ))}
             </ul>
           )}
