@@ -1,3 +1,4 @@
+import "server-only";
 import "@schemavaults/theme/globals.css";
 import { type ReactNode } from "react";
 import { Inter } from "next/font/google";
@@ -9,6 +10,7 @@ import {
   type ApiServerId,
   type SchemaVaultsAppEnvironment,
 } from "@schemavaults/app-definitions";
+import { getSchemaVaultsAuthServerUrl } from "@schemavaults/auth-server-sdk";
 import { getAppId } from "@/lib/getAppId";
 import { getBrandConfig, type BrandConfig } from "@/lib/branding";
 
@@ -43,6 +45,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <ClientAppLogicProviders
           environment={environment}
           app_id={app_id}
+          auth_server_url={getSchemaVaultsAuthServerUrl()}
           branding={branding}
         >
           <ClientAppVisualsProvider>{children}</ClientAppVisualsProvider>

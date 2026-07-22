@@ -2,7 +2,6 @@
 
 import type { PropsWithChildren, ReactElement } from "react";
 import AuthProvider from "./auth/auth-provider";
-import { usePathname, useRouter } from "next/navigation";
 import {
   schemaVaultsAppEnvironmentSchema,
   type ApiServerId,
@@ -19,6 +18,8 @@ export interface ClientAppLogicProvidersProps extends PropsWithChildren {
   environment: SchemaVaultsAppEnvironment;
   /** Resolved server-side by getAppId() and passed down from the root layout. */
   app_id: ApiServerId;
+  /** Resolved server-side by getSchemaVaultsAuthServerUrl() and passed down from the root layout. */
+  auth_server_url: string;
   /**
    * White-label brand configuration, resolved server-side from BRAND_*
    * environment variables in the root layout.
@@ -29,11 +30,10 @@ export interface ClientAppLogicProvidersProps extends PropsWithChildren {
 export function ClientAppLogicProviders({
   environment,
   app_id,
+  auth_server_url,
   branding,
   children,
 }: ClientAppLogicProvidersProps): ReactElement {
-  const router = useRouter();
-  const path: string = usePathname();
   const debug: boolean = getDebugState(environment);
 
   if (!schemaVaultsAppEnvironmentSchema.safeParse(environment).success) {
@@ -48,6 +48,7 @@ export function ClientAppLogicProviders({
         <MailAppIdProvider app_id={app_id}>
           <AuthProvider
             app_id={app_id}
+            auth_server_url={auth_server_url}
             authed_on_unauthed_redirect_uri="/"
             unauthed_on_authed_redirect_uri="/auth/login"
             default_audiences={[app_id] as const satisfies AppId[]}
