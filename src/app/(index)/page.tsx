@@ -5,6 +5,8 @@ import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry } from "@/lib/mail-db";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
 import MailServerHomepageClientView from "@/components/ListMailingListsPage";
+import MailServerLandingPage from "@/components/MailServerLandingPage";
+import { isHomepageMailingListDirectoryEnabled } from "@/lib/branding";
 import {
   getAppEnvironment,
   type SchemaVaultsAppEnvironment,
@@ -13,6 +15,10 @@ import {
 const environment: SchemaVaultsAppEnvironment = getAppEnvironment();
 
 async function IndexPage(): Promise<ReactElement> {
+  if (!isHomepageMailingListDirectoryEnabled()) {
+    return <MailServerLandingPage />;
+  }
+
   let mailingLists: readonly MailingListDefinition[];
   try {
     await using dbh = ServerlessDatabase.getAsyncResource();
