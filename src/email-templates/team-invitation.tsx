@@ -187,8 +187,8 @@ export default function TeamInvitationEmail(
             >
               <strong>{props.inviterName}</strong> has invited you to
               collaborate on <strong>{props.teamName}</strong> in{" "}
-              {productName}. Accept the invitation to share schemas, manage
-              vaults, and build together.
+              {productName}. Accept the invitation to join the team and start
+              collaborating.
             </Text>
           </Section>
 

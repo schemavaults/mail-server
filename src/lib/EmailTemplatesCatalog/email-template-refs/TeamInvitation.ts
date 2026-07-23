@@ -91,7 +91,7 @@ export class TeamInvitation extends EmailTemplatesCatalogEntry<TeamInvitationEma
       "",
       `Hi ${greetingName},`,
       "",
-      `${props.inviterName} has invited you to collaborate on ${props.teamName} in ${productName}. Accept the invitation to share schemas, manage vaults, and build together.`,
+      `${props.inviterName} has invited you to collaborate on ${props.teamName} in ${productName}. Accept the invitation to join the team and start collaborating.`,
       "",
     ];
 
