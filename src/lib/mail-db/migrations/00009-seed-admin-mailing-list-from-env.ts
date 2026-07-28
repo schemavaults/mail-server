@@ -1,4 +1,11 @@
-// 00002-admin-mailing-list.ts
+// 00009-seed-admin-mailing-list-from-env.ts
+//
+// The admin mailing list row seeded by 00002 used hardcoded name/description
+// values. The name and description are now configurable via the
+// ADMIN_MAILING_LIST_NAME / ADMIN_MAILING_LIST_DESCRIPTION environment
+// variables (see src/lib/admin-mailing-list.ts). This migration reconciles an
+// already-seeded row with those env vars: if the admin mailing list row exists,
+// its name/description are updated to the currently-configured values.
 //
 // NOTE: The constants and env-var fallback logic below are intentionally
 // inlined and MUST stay in sync with src/lib/admin-mailing-list.ts. They are
@@ -33,24 +40,19 @@ function getAdminMailingListDescription(): string {
 export async function up(db: Kysely<any>): Promise<void> {
   const name = getAdminMailingListName();
   const description = getAdminMailingListDescription();
-  const created_at = Date.now();
   await sql`
-    INSERT INTO MAILING_LISTS (mailing_list_id, name, description, public, created_at)
-    VALUES (
-      ${ADMIN_MAILING_LIST_ID}::uuid,
-      ${name},
-      ${description},
-      FALSE,
-      ${created_at}
-    )
-    ON CONFLICT (mailing_list_id) DO NOTHING;
+    UPDATE MAILING_LISTS
+    SET name = ${name}, description = ${description}
+    WHERE mailing_list_id = ${ADMIN_MAILING_LIST_ID}::uuid;
   `.execute(db);
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
-  // subscribers/unsubscribe_records cascade via FK (see 00001)
+  // Revert to the original hardcoded values seeded by 00002.
   await sql`
-    DELETE FROM MAILING_LISTS
+    UPDATE MAILING_LISTS
+    SET name = ${DEFAULT_ADMIN_MAILING_LIST_NAME},
+        description = ${DEFAULT_ADMIN_MAILING_LIST_DESCRIPTION}
     WHERE mailing_list_id = ${ADMIN_MAILING_LIST_ID}::uuid;
   `.execute(db);
 }
