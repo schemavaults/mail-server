@@ -58,9 +58,8 @@ const STAR_RATINGS: readonly number[] = [1, 2, 3, 4, 5];
 
 /**
  * Builds the href for an individual star. Without `ratingQueryParam` every
- * star points at the survey URL unchanged; with it, the clicked score is
- * appended as a query parameter (preserving any existing query string and
- * keeping the fragment last).
+ * star points at the survey URL unchanged; with it, the clicked score is set
+ * as a query parameter on the survey URL.
  */
 export function buildStarHref(
   surveyUrl: string,
@@ -70,13 +69,16 @@ export function buildStarHref(
   if (typeof ratingQueryParam !== "string" || ratingQueryParam.length === 0) {
     return surveyUrl;
   }
-  const fragmentIndex: number = surveyUrl.indexOf("#");
-  const base: string =
-    fragmentIndex === -1 ? surveyUrl : surveyUrl.slice(0, fragmentIndex);
-  const fragment: string =
-    fragmentIndex === -1 ? "" : surveyUrl.slice(fragmentIndex);
-  const separator: string = base.includes("?") ? "&" : "?";
-  return `${base}${separator}${encodeURIComponent(ratingQueryParam)}=${rating}${fragment}`;
+  let url: URL;
+  try {
+    url = new URL(surveyUrl);
+  } catch {
+    // Not a parseable absolute URL (e.g. a relative path). Point the star at
+    // the survey unchanged rather than emitting a mangled href.
+    return surveyUrl;
+  }
+  url.searchParams.set(ratingQueryParam, String(rating));
+  return url.toString();
 }
 
 export default function FollowUpSurveyEmail(
