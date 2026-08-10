@@ -1,4 +1,5 @@
 import ApiKeyCreatedEmail from "@/email-templates/api-key-created";
+import DataExportReadyEmail from "@/email-templates/data-export-ready";
 import FollowUpSurveyEmail from "@/email-templates/follow-up-survey";
 import MagicLinkSignInEmail from "@/email-templates/magic-link-sign-in";
 import MailingListConfirmationEmail from "@/email-templates/mailing-list-confirmation";
@@ -29,6 +30,7 @@ import type { EmailTemplateId } from "./EmailTemplatesCatalog";
  */
 export const sampleEmailTemplateProps = {
   "api-key-created": ApiKeyCreatedEmail.PreviewProps,
+  "data-export-ready": DataExportReadyEmail.PreviewProps,
   "follow-up-survey": FollowUpSurveyEmail.PreviewProps,
   "magic-link-sign-in": MagicLinkSignInEmail.PreviewProps,
   "mailing-list-confirmation": MailingListConfirmationEmail.PreviewProps,
