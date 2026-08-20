@@ -4,8 +4,6 @@ import {
   loadMailTransportConfig,
   type MailTransportConfig,
 } from "./loadMailTransportConfig";
-import ResendMailTransport from "./ResendMailTransport";
-import SmtpMailTransport from "./SmtpMailTransport";
 import type { IMailTransport } from "./types";
 
 /**
@@ -14,17 +12,25 @@ import type { IMailTransport } from "./types";
  * load — so requests that don't actually deliver mail (e.g. dryRun sends)
  * work without any transport configured.
  *
+ * Transport implementations are loaded via dynamic import so only the
+ * selected transport's SDK (the Resend client or nodemailer) is ever loaded
+ * into the server bundle's module graph at runtime.
+ *
  * @throws {MailTransportConfigError} on missing/malformed transport config
  */
-export function loadMailTransport(
+export async function loadMailTransport(
   env: Record<string, string | undefined> = process.env,
-): IMailTransport {
+): Promise<IMailTransport> {
   const config: MailTransportConfig = loadMailTransportConfig(env);
   switch (config.kind) {
-    case "resend":
+    case "resend": {
+      const { ResendMailTransport } = await import("./ResendMailTransport");
       return new ResendMailTransport(config.apiKey);
-    case "smtp":
+    }
+    case "smtp": {
+      const { SmtpMailTransport } = await import("./SmtpMailTransport");
       return new SmtpMailTransport(config);
+    }
   }
 }
 

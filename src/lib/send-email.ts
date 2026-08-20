@@ -14,7 +14,7 @@ export async function sendEmail(
   options: ISendEmailOptions,
   transport?: IMailTransport,
 ): Promise<ISendEmailResult> {
-  const mailTransport: IMailTransport = transport ?? loadMailTransport();
+  const mailTransport: IMailTransport = transport ?? (await loadMailTransport());
   return await mailTransport.send(options);
 }
 
