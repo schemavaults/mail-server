@@ -1,19 +1,21 @@
 import "server-only";
 
 import {
-  Resend,
-  type CreateEmailOptions,
-  type CreateEmailResponse,
-} from "resend";
-import loadResendApiKey from "@/lib/ResendApiKey";
+  loadMailTransport,
+  type IMailTransport,
+  type IMailTransportSendOptions,
+  type IMailTransportSendResult,
+} from "@/lib/mail-transport";
 
-export type ISendEmailOptions = CreateEmailOptions;
+export type ISendEmailOptions = IMailTransportSendOptions;
+export type ISendEmailResult = IMailTransportSendResult;
 
 export async function sendEmail(
   options: ISendEmailOptions,
-  resend: Resend = new Resend(loadResendApiKey()),
-): Promise<CreateEmailResponse> {
-  return await resend.emails.send(options);
+  transport?: IMailTransport,
+): Promise<ISendEmailResult> {
+  const mailTransport: IMailTransport = transport ?? loadMailTransport();
+  return await mailTransport.send(options);
 }
 
 export default sendEmail;

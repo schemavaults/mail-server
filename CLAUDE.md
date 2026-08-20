@@ -24,7 +24,7 @@ bun run migrate:production     # Build & run migrations against production DB (.
 This is a **Next.js 16 App Router** mail server application in the SchemaVaults ecosystem. It manages mailing lists and sends transactional emails.
 
 ### Core Stack
-- **Resend** — email sending service
+- **Resend / SMTP (nodemailer)** — configurable outbound mail transports
 - **react-email** — email templates as React components
 - **Kysely + Neon PostgreSQL** — type-safe query builder over serverless Postgres
 - **Zod** — request body validation on all API routes
@@ -42,6 +42,7 @@ This is a **Next.js 16 App Router** mail server application in the SchemaVaults 
 
 ### Key Patterns
 - **Admin guards**: API routes use `withAdminApiRouteGuard`, server components use `withAdminServerComponentRouteGuard` — both check `user.admin`
+- **Mail transports**: `src/lib/mail-transport/` defines the `IMailTransport` interface with two implementations — Resend API and raw SMTP via nodemailer — selected per deployment by the `MAIL_TRANSPORT` env var (`resend` is the default; `smtp` reads the `SMTP_*` vars). All sends go through `sendEmail()` / `sendEmailFromTemplate()` in `src/lib/`, which resolve the transport lazily at send time (`loadMailTransport()`); transports receive only rendered `html`/`text` (react-email templates are rendered via `@react-email/render` before the transport is involved) and throw on delivery failure. One transport per deployment, no fallback
 - **Email template catalog**: `src/email-templates/catalog.ts` exports a registry mapping template names to React components; the `/api/send` route resolves templates by name and renders them with provided props
 - **Database migrations**: Migration files live in `src/lib/mail-db/migrations/` as TypeScript, numbered sequentially (`00000-`, `00001-`, …). Each exports `up`/`down` functions taking a `Kysely<any>` instance. Raw SQL uses the `sql` tag re-exported from `src/lib/mail-db/sql.ts`. Migrations are compiled via `@schemavaults/dbh` to `dist/migrations/` before running. Per-environment env files (`.env.development`, `.env.test`, `.env.production`) provide DB credentials
 - **Auth codegen**: Auth routes under `src/app/auth/` are auto-generated and gitignored; always run `bun run auth-codegen` (or use `dev:app`/`build` which do it automatically)
@@ -51,7 +52,9 @@ This is a **Next.js 16 App Router** mail server application in the SchemaVaults 
 
 Copy `.env.example` to `.env.local`. Key variables:
 - `POSTGRES_URL` / `POSTGRES_URL_NON_POOLING` — Neon database connection strings
-- `RESEND_API_KEY` — Resend email service key
+- `MAIL_TRANSPORT` — outbound mail transport: `resend` (default) or `smtp`
+- `RESEND_API_KEY` — Resend email service key (required when `MAIL_TRANSPORT=resend`)
+- `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` — SMTP relay settings (read when `MAIL_TRANSPORT=smtp`)
 - `SCHEMAVAULTS_AUTH_JWKS_ACCESS_PRIVATE_KEY` — JWT private key for auth
 - `SCHEMAVAULTS_GITHUB_PACKAGE_REGISTRY_TOKEN` — required for installing `@schemavaults/*` packages from GitHub npm registry
 

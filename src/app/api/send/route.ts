@@ -6,7 +6,6 @@ import { createSendEmailRequestBodySchema } from "@schemavaults/send-email";
 import sendEmailFromTemplate from "@/lib/send-email-from-template";
 import DefaultMailSenderAddress from "@/lib/DefaultMailSenderAddress";
 import sendEmail from "@/lib/send-email";
-import type { CreateEmailResponse } from "resend";
 import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
 import {
   emailTemplateIdSchema,
@@ -23,9 +22,10 @@ import { MailingListRegistry, MailKeysRegistry } from "@/lib/mail-db";
 const sendEmailRequestBodySchema = createSendEmailRequestBodySchema(true);
 const uuidSchema = z.string().uuid();
 
-// Resend's API caps `to` recipients per send call. Keep in sync with the
-// limit enforced by the Resend service.
-const MAX_RESEND_RECIPIENTS = 50;
+// Cap on `to` recipients per send call, applied to every transport. Matches
+// the limit the Resend API enforces per call; SMTP sends keep the same cap so
+// mailing-list behavior is identical regardless of the configured transport.
+const MAX_RECIPIENTS_PER_SEND = 50;
 
 function badRequest(message: string = "Invalid request"): NextResponse {
   return NextResponse.json(
@@ -203,9 +203,9 @@ async function handleSendEmailRequest(
         if (recipients.length === 0) {
           return badRequest("Mailing list has no active subscribers.");
         }
-        if (recipients.length > MAX_RESEND_RECIPIENTS) {
+        if (recipients.length > MAX_RECIPIENTS_PER_SEND) {
           return badRequest(
-            `Mailing list has more than ${MAX_RESEND_RECIPIENTS} active subscribers; Resend per-call limit exceeded.`,
+            `Mailing list has more than ${MAX_RECIPIENTS_PER_SEND} active subscribers; per-send recipient limit exceeded.`,
           );
         }
 
@@ -232,7 +232,8 @@ async function handleSendEmailRequest(
     bcc: sendEmailOpts.bcc ?? undefined,
   };
 
-  let result: CreateEmailResponse | null;
+  // Transports throw on delivery failure (see IMailTransport), so any
+  // non-thrown return here means the send was accepted.
   try {
     if ("template_id" in sendEmailOpts.message) {
       const parsed_template_id = await emailTemplateIdSchema.safeParseAsync(
@@ -243,7 +244,7 @@ async function handleSendEmailRequest(
       }
       const template_id: EmailTemplateId = parsed_template_id.data;
 
-      result = await sendEmailFromTemplate({
+      await sendEmailFromTemplate({
         ...baseEmailOpts,
         message: {
           template_id,
@@ -252,21 +253,11 @@ async function handleSendEmailRequest(
         dryRun,
       });
     } else if (!dryRun) {
-      result = await sendEmail({
+      await sendEmail({
         ...baseEmailOpts,
         text: sendEmailOpts.message.text,
         html: sendEmailOpts.message.html,
       });
-    } else {
-      result = null;
-    }
-
-    if (result !== null && result.error) {
-      console.error(
-        "Received error response from attempt to send email: ",
-        result.error,
-      );
-      throw result.error;
     }
   } catch (e: unknown) {
     if (e instanceof BadEmailTemplatePropsError) {
