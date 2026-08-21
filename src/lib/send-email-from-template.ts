@@ -1,8 +1,8 @@
 import "server-only";
 
-import { Resend, type CreateEmailResponse } from "resend";
-import loadResendApiKey from "@/lib/ResendApiKey";
-import sendEmail from "@/lib/send-email";
+import { render } from "@react-email/render";
+import sendEmail, { type ISendEmailResult } from "@/lib/send-email";
+import type { IMailTransport } from "@/lib/mail-transport";
 import EmailTemplatesCatalog, {
   isValidTemplateId,
   type EmailTemplateId,
@@ -22,8 +22,8 @@ export type ISendEmailFromTemplateOptions<T extends EmailTemplateId> =
 
 export async function sendEmailFromTemplate<T extends EmailTemplateId>(
   options: ISendEmailFromTemplateOptions<T>,
-  resend: Resend = new Resend(loadResendApiKey()),
-): Promise<CreateEmailResponse | null> {
+  transport?: IMailTransport,
+): Promise<ISendEmailResult | null> {
   if (typeof options.message !== "object") {
     throw new TypeError("Expected 'message' to be an object!");
   }
@@ -71,6 +71,11 @@ export async function sendEmailFromTemplate<T extends EmailTemplateId>(
     template_props as any,
   );
 
+  // Render to an HTML string here rather than handing the React node to the
+  // transport: the SMTP transport has no notion of React, so transports only
+  // ever see html/text.
+  const html: string = await render(rendered);
+
   const text: string = await template.renderPlainTextVersion(
     template_props as any,
   );
@@ -83,13 +88,16 @@ export async function sendEmailFromTemplate<T extends EmailTemplateId>(
 
   return await sendEmail(
     {
-      ...options,
+      to: options.to,
+      cc: options.cc ?? undefined,
+      bcc: options.bcc ?? undefined,
+      replyTo: options.replyTo ?? undefined,
       subject,
-      react: rendered,
+      html,
       text,
       from,
     },
-    resend,
+    transport,
   );
 }
 
