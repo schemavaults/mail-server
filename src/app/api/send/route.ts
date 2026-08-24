@@ -20,6 +20,7 @@ import {
   extractEmailAddress,
   senderMatchesAllowlist,
 } from "@/lib/api-keys/sender-scope";
+import { evaluateAudienceScope } from "@/lib/api-keys/audience-scope";
 import {
   isMailTransportKind,
   loadMailTransportsAvailability,
@@ -106,30 +107,24 @@ interface SendAuthContext {
 }
 
 /**
- * Flattens an optional cc/bcc value into a list of addresses.
- */
-function toAddressList(value: string | string[] | undefined): string[] {
-  if (value === undefined) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
-/**
  * Shared send-email logic. Used by both authentication paths (API key and
  * admin JWT) so the validation, template rendering, and dispatch behavior
  * stays identical regardless of how the caller authenticated.
  *
- * When `auth.apiKeyId` is set, the route enforces the key's scopes. Each
- * scope dimension with zero configured entries leaves the key unrestricted
- * on that dimension:
+ * When `auth.apiKeyId` is set, the route enforces the key's scopes. The
+ * transport and sender dimensions are unrestricted when they have zero
+ * configured entries:
  * - transports: the resolved transport (explicit `transport` property, or
  *   the deployment default) must be in the key's allowed transports.
  * - senders: `from` (after default fallback) and `replyTo` must match the
  *   key's allowed sender entries (exact address or `*@domain`).
- * - audience: mailing-list and individual-recipient entries form ONE
- *   combined allowlist. A key with any entry of either kind may only pass a
- *   single allowlisted mailing list UUID in `to`, or individual addresses
- *   that are all allowlisted; cc/bcc addresses must be allowlisted
- *   individuals too.
+ * The audience dimension is the exception: it is never implicitly
+ * unrestricted. A key may send to any recipient ONLY when its
+ * `allow_any_audience` flag is set; otherwise its mailing-list and
+ * individual-recipient entries form ONE combined allowlist (a single
+ * allowlisted mailing list UUID in `to`, or individual addresses that are all
+ * allowlisted; cc/bcc addresses must be allowlisted individuals too), and a
+ * key with no entries at all may not send to anyone.
  */
 async function handleSendEmailRequest(
   req: NextRequest,
@@ -236,49 +231,25 @@ async function handleSendEmailRequest(
           }
         }
 
-        // Audience scope: mailing lists + individual recipients form one
-        // combined allowlist; any entry of either kind restricts the key.
-        const audienceRestricted: boolean =
-          scopes.allowedMailingListIds.length > 0 ||
-          scopes.allowedRecipientEmails.length > 0;
-        if (audienceRestricted) {
-          const allowedRecipients = new Set<string>(
-            scopes.allowedRecipientEmails.map((email) => email.toLowerCase()),
-          );
-
-          // cc/bcc addresses must all be allowlisted individuals.
-          const copiedAddresses: string[] = [
-            ...toAddressList(sendEmailOpts.cc),
-            ...toAddressList(sendEmailOpts.bcc),
-          ];
-          for (const address of copiedAddresses) {
-            if (!allowedRecipients.has(address.trim().toLowerCase())) {
-              return forbidden(
-                `This API key is not permitted to cc/bcc '${address}'.`,
-              );
-            }
-          }
-
-          if (toIsUuid) {
-            // `to` is a mailing list: it must be in the allowlist.
-            const mailingListId: string = to as string;
-            if (!scopes.allowedMailingListIds.includes(mailingListId)) {
-              return forbidden(
-                "This API key is not permitted to send to that mailing list.",
-              );
-            }
-          } else {
-            // `to` is one or more individual addresses: all must be
-            // allowlisted.
-            const toAddresses: string[] = Array.isArray(to) ? to : [to];
-            for (const address of toAddresses) {
-              if (!allowedRecipients.has(address.trim().toLowerCase())) {
-                return forbidden(
-                  `This API key is not permitted to send to '${address}'.`,
-                );
-              }
-            }
-          }
+        // Audience scope: sending to any recipient requires the key's
+        // explicit `allow_any_audience` flag. Without it, the mailing-list +
+        // individual-recipient entries form one combined allowlist, and a key
+        // with no entries may not send to anyone.
+        const audienceDecision = evaluateAudienceScope(
+          {
+            allowAnyAudience: scopes.allowAnyAudience,
+            allowedMailingListIds: scopes.allowedMailingListIds,
+            allowedRecipientEmails: scopes.allowedRecipientEmails,
+          },
+          {
+            to,
+            toIsMailingListId: toIsUuid,
+            cc: sendEmailOpts.cc ?? undefined,
+            bcc: sendEmailOpts.bcc ?? undefined,
+          },
+        );
+        if (!audienceDecision.allowed) {
+          return forbidden(audienceDecision.message);
         }
       }
 

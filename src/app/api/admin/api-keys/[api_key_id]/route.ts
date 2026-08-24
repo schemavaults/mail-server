@@ -9,16 +9,32 @@ import { apiKeyNameSchema } from "@/lib/api-keys/api-key-name";
 import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
 
 const apiKeyIdSchema = z.string().uuid();
-const renameApiKeyBodySchema = z.object({
-  name: apiKeyNameSchema,
-});
+
+/**
+ * PATCH body. `name` renames the key (its ID, secret and scopes are
+ * untouched); `allow_any_audience` toggles the key's permission to send to
+ * ANY recipient, which is off for every newly created key. At least one field
+ * must be present, and both may be sent together.
+ */
+const updateApiKeyBodySchema = z
+  .object({
+    name: apiKeyNameSchema.optional(),
+    allow_any_audience: z.boolean().optional(),
+  })
+  .refine(
+    (body) => body.name !== undefined || body.allow_any_audience !== undefined,
+    {
+      message:
+        "Nothing to update; expected 'name' and/or 'allow_any_audience'.",
+    },
+  );
 
 interface SuccessResponse {
   success: true;
   message: string;
 }
 
-interface RenameSuccessResponse {
+interface UpdateSuccessResponse {
   success: true;
   data: ApiKeyRecord;
   message: string;
@@ -96,10 +112,11 @@ export async function PATCH(
       }
       const api_key_id = parsed.data;
 
-      let name: string;
+      let name: string | undefined;
+      let allow_any_audience: boolean | undefined;
       try {
         const body = await req.json();
-        const parsedBody = renameApiKeyBodySchema.safeParse(body);
+        const parsedBody = updateApiKeyBodySchema.safeParse(body);
         if (!parsedBody.success) {
           return NextResponse.json(
             {
@@ -111,8 +128,9 @@ export async function PATCH(
           );
         }
         name = parsedBody.data.name;
+        allow_any_audience = parsedBody.data.allow_any_audience;
       } catch (e: unknown) {
-        console.error("Failed to parse rename-api-key request body: ", e);
+        console.error("Failed to parse update-api-key request body: ", e);
         return NextResponse.json(
           {
             success: false,
@@ -122,26 +140,38 @@ export async function PATCH(
         );
       }
 
-      let renamed: ApiKeyRecord | null;
+      let updated: ApiKeyRecord | null = null;
       try {
         await using dbh = ServerlessDatabase.getAsyncResource();
         const registry = new MailKeysRegistry(dbh);
-        // Renaming only touches the NAME column — the key's ID, secret hash
-        // and scope entries are untouched, so existing integrations keep
+        // Renaming only touches the NAME column, and the audience switch only
+        // touches ALLOW_ANY_AUDIENCE — the key's ID, secret hash and scope
+        // entries are untouched either way, so existing integrations keep
         // working.
-        renamed = await registry.renameApiKey(api_key_id, name);
+        if (name !== undefined) {
+          updated = await registry.renameApiKey(api_key_id, name);
+        }
+        // A null result from the rename above means there is no active key
+        // with this ID, so skip the audience update and fall through to 404.
+        const keyExists: boolean = name === undefined || updated !== null;
+        if (allow_any_audience !== undefined && keyExists) {
+          updated = await registry.setAllowAnyAudience(
+            api_key_id,
+            allow_any_audience,
+          );
+        }
       } catch (e: unknown) {
-        console.error("Failed to rename API key: ", e);
+        console.error("Failed to update API key: ", e);
         return NextResponse.json(
           {
             success: false,
-            message: "Failed to rename API key!",
+            message: "Failed to update API key!",
           } satisfies ErrorResponse,
           { status: 500 },
         );
       }
 
-      if (!renamed) {
+      if (!updated) {
         return NextResponse.json(
           {
             success: false,
@@ -151,12 +181,22 @@ export async function PATCH(
         );
       }
 
+      const changes: string[] = [];
+      if (name !== undefined) changes.push(`renamed it to '${updated.name}'`);
+      if (allow_any_audience !== undefined) {
+        changes.push(
+          allow_any_audience
+            ? "allowed it to send to any recipient"
+            : "restricted it to its allowlisted audience",
+        );
+      }
+
       return NextResponse.json(
         {
           success: true,
-          data: renamed,
-          message: `Successfully renamed API key to '${renamed.name}'.`,
-        } satisfies RenameSuccessResponse,
+          data: updated,
+          message: `Successfully updated API key: ${changes.join(" and ")}.`,
+        } satisfies UpdateSuccessResponse,
         { status: 200 },
       );
     },

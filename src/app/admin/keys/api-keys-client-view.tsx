@@ -39,6 +39,7 @@ import createApiKey, {
 import listApiKeys from "@/lib/client-mail-db-actions/listApiKeys";
 import renameApiKey from "@/lib/client-mail-db-actions/renameApiKey";
 import revokeApiKey from "@/lib/client-mail-db-actions/revokeApiKey";
+import setApiKeyAllowAnyAudience from "@/lib/client-mail-db-actions/setApiKeyAllowAnyAudience";
 import addApiKeyAllowlistEntry from "@/lib/client-mail-db-actions/addApiKeyAllowlistEntry";
 import removeApiKeyAllowlistEntry from "@/lib/client-mail-db-actions/removeApiKeyAllowlistEntry";
 import getApiKeyAllowlist from "@/lib/client-mail-db-actions/getApiKeyAllowlist";
@@ -52,7 +53,13 @@ import { allowedSenderEntrySchema } from "@/lib/api-keys/sender-scope";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
 import { z } from "zod";
 
-/** One API key's scope lists. Empty list = unrestricted on that dimension. */
+/**
+ * One API key's scope lists. On the sender and transport dimensions an empty
+ * list means unrestricted. The audience lists work the other way around: they
+ * are the ONLY audience a key can reach unless its `allow_any_audience` flag
+ * (on the key record itself) is set, so an empty audience means the key
+ * cannot send to anyone.
+ */
 export interface ApiKeyScopesState {
   mailingLists: string[];
   recipients: string[];
@@ -88,11 +95,24 @@ function formatTimestamp(value: number | null): string {
   return new Date(value).toLocaleString();
 }
 
-function describeAudiences(scopes: ApiKeyScopesState): string {
+function describeAudiences(
+  key: ApiKeyRecord,
+  scopes: ApiKeyScopesState,
+): string {
+  if (key.allow_any_audience) return "Audience: any recipient";
   const count = scopes.mailingLists.length + scopes.recipients.length;
-  if (count === 0) return "Audience: unrestricted (any recipient)";
+  if (count === 0) return "Audience: none configured — cannot send";
   if (count === 1) return "Audience: restricted to 1 entry";
   return `Audience: restricted to ${count} entries`;
+}
+
+/** True when a key has no way to reach anyone yet. */
+function hasNoAudience(key: ApiKeyRecord, scopes: ApiKeyScopesState): boolean {
+  return (
+    !key.allow_any_audience &&
+    scopes.mailingLists.length === 0 &&
+    scopes.recipients.length === 0
+  );
 }
 
 function describeSenders(scopes: ApiKeyScopesState): string {
@@ -140,6 +160,7 @@ export default function ApiKeysClientView({
     null,
   );
   const [togglingAudience, startAudienceTransition] = useTransition();
+  const [togglingAnyAudience, startAnyAudienceTransition] = useTransition();
   const [newRecipient, setNewRecipient] = useState<string>("");
   const [mutatingRecipient, startRecipientTransition] = useTransition();
 
@@ -150,6 +171,16 @@ export default function ApiKeysClientView({
   const [transportsTarget, setTransportsTarget] =
     useState<ApiKeyRecord | null>(null);
   const [togglingTransport, startTransportTransition] = useTransition();
+
+  // The audiences dialog renders the key's live record (the audience switch
+  // lives on the row itself) rather than the snapshot captured when it was
+  // opened, so a toggle or a background refresh is reflected immediately.
+  const audiencesKey: ApiKeyRecord | null =
+    audiencesTarget === null
+      ? null
+      : (apiKeys.find(
+          (entry) => entry.api_key_id === audiencesTarget.api_key_id,
+        ) ?? audiencesTarget);
 
   function getAuthClient(): ISchemaVaultsAuthClient | null {
     if (!auth.ready || !auth.client.current) return null;
@@ -213,7 +244,9 @@ export default function ApiKeysClientView({
         setRevealedKey(created);
         setCreateOpen(false);
         setNewKeyName("");
-        // New keys start with empty scopes (unrestricted on every dimension).
+        // New keys start with empty scopes: unrestricted on the sender and
+        // transport dimensions, but with no audience at all until an admin
+        // configures one.
         setScopesByKeyId((prev) => ({
           ...prev,
           [created.api_key_id]: EMPTY_SCOPES,
@@ -326,11 +359,51 @@ export default function ApiKeysClientView({
       const [mailingLists, recipients] = await Promise.all([
         getApiKeyAllowlist(key.api_key_id, authClient, appId),
         getApiKeyScopeEntries(key.api_key_id, "recipients", authClient, appId),
+        // Also re-read the key rows, which carry the allow-any-recipient
+        // switch shown at the top of this dialog.
+        refreshKeys(authClient),
       ]);
       patchScopes(key.api_key_id, () => ({ mailingLists, recipients }));
     } catch (e: unknown) {
       console.error("Failed to refresh audience allowlist: ", e);
     }
+  }
+
+  function handleToggleAllowAnyAudience(
+    key: ApiKeyRecord,
+    nextChecked: boolean,
+  ): void {
+    const authClient = requireAuthClient();
+    if (!authClient) return;
+    startAnyAudienceTransition(async () => {
+      try {
+        const updated = await setApiKeyAllowAnyAudience(
+          key.api_key_id,
+          nextChecked,
+          authClient,
+          appId,
+        );
+        setApiKeys((prev) =>
+          prev.map((entry) =>
+            entry.api_key_id === updated.api_key_id ? updated : entry,
+          ),
+        );
+        // Keep the open dialog's snapshot in sync with the saved record.
+        setAudiencesTarget((current) =>
+          current && current.api_key_id === updated.api_key_id
+            ? updated
+            : current,
+        );
+      } catch (e: unknown) {
+        console.error("Failed to update API key audience access: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to update audience access",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
+      }
+    });
   }
 
   function handleToggleAudience(
@@ -642,11 +715,14 @@ export default function ApiKeysClientView({
           <p className="text-sm text-muted-foreground">
             API keys can be used as bearer tokens against{" "}
             <code className="font-mono">/api/send</code>. The plaintext value is
-            shown only once at creation time. Each key can be scoped on three
+            shown only once at creation time. Each key is scoped on three
             independent dimensions — <strong>audiences</strong> (mailing lists
             and individual recipients), <strong>senders</strong> (allowed from
-            addresses), and <strong>transports</strong> — and is unrestricted
-            on any dimension with no entries configured.
+            addresses), and <strong>transports</strong>. Senders and transports
+            are unrestricted with no entries configured. Audiences are not: a
+            key reaches only its allowlisted audience entries — nobody at all
+            until one is configured — unless it is explicitly granted access to
+            any recipient.
           </p>
 
           {apiKeys.length === 0 ? (
@@ -662,7 +738,9 @@ export default function ApiKeysClientView({
                   scopes.mailingLists.length > 0 ||
                   scopes.recipients.length > 0 ||
                   scopes.senders.length > 0 ||
-                  scopes.transports.length > 0;
+                  scopes.transports.length > 0 ||
+                  !key.allow_any_audience;
+                const noAudience = hasNoAudience(key, scopes);
                 return (
                   <li
                     key={key.api_key_id}
@@ -692,9 +770,16 @@ export default function ApiKeysClientView({
                             : "text-muted-foreground",
                         )}
                       >
-                        {describeAudiences(scopes)} · {describeSenders(scopes)}{" "}
-                        · {describeTransports(scopes)}
+                        {describeAudiences(key, scopes)} ·{" "}
+                        {describeSenders(scopes)} · {describeTransports(scopes)}
                       </p>
+                      {noAudience && (
+                        <p className="text-xs text-destructive">
+                          This key cannot send to anyone yet. Use{" "}
+                          <strong>Audiences</strong> to allowlist a mailing
+                          list or recipient, or to allow any recipient.
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <Button
@@ -831,6 +916,12 @@ export default function ApiKeysClientView({
               </div>
             </div>
           )}
+          <p className="text-xs text-muted-foreground">
+            This key cannot send to anyone yet — new keys start with no
+            audience. Open <strong>Audiences</strong> to allowlist the mailing
+            lists and recipients it may reach, or to allow it to send to any
+            recipient.
+          </p>
           <DialogFooter>
             <Button onClick={() => setRevealedKey(null)}>Done</Button>
           </DialogFooter>
@@ -937,7 +1028,7 @@ export default function ApiKeysClientView({
 
       {/* Manage audiences dialog */}
       <Dialog
-        open={audiencesTarget !== null}
+        open={audiencesKey !== null}
         onOpenChange={(open) => {
           if (!open) setAudiencesTarget(null);
         }}
@@ -948,19 +1039,52 @@ export default function ApiKeysClientView({
             <DialogDescription>
               Select the mailing lists and individual recipients this API key
               is permitted to send to. Mailing lists and individual recipients
-              form one combined allowlist: leave both empty to allow sending
-              to any recipient. Restricted keys may only cc/bcc allowlisted
-              individual recipients.
+              form one combined allowlist, and a key with an empty allowlist
+              may not send to anyone — sending to arbitrary addresses requires
+              explicitly allowing any recipient below. Allowlisted keys may
+              only cc/bcc allowlisted individual recipients.
             </DialogDescription>
           </DialogHeader>
-          {audiencesTarget && (
+          {audiencesKey && (
             <div className="space-y-3 mt-2">
               <div>
-                <p className="text-sm font-medium">{audiencesTarget.name}</p>
+                <p className="text-sm font-medium">{audiencesKey.name}</p>
                 <p className="text-xs font-mono text-muted-foreground">
-                  {audiencesTarget.key_prefix}…
+                  {audiencesKey.key_prefix}…
                 </p>
               </div>
+              <Separator decorative orientation="horizontal" className="w-full" />
+              <div className="flex items-start gap-3 p-2 rounded-md border">
+                <Checkbox
+                  id="audience-allow-any"
+                  checked={audiencesKey.allow_any_audience}
+                  disabled={togglingAnyAudience}
+                  onCheckedChange={(value) =>
+                    handleToggleAllowAnyAudience(audiencesKey, value === true)
+                  }
+                />
+                <Label
+                  htmlFor="audience-allow-any"
+                  className="flex flex-col gap-0.5 cursor-pointer"
+                >
+                  <span className="text-sm font-medium">
+                    Allow sending to any recipient
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Lets this key send to any address or mailing list. The
+                    allowlists below are ignored while this is on.
+                  </span>
+                </Label>
+              </div>
+              {hasNoAudience(
+                audiencesKey,
+                getScopes(audiencesKey.api_key_id),
+              ) && (
+                <p className="text-xs text-destructive">
+                  This key currently has no audience, so every send it attempts
+                  is rejected.
+                </p>
+              )}
               <Separator decorative orientation="horizontal" className="w-full" />
               <p className="text-sm font-medium">Mailing lists</p>
               {allMailingLists.length === 0 ? (
@@ -970,7 +1094,7 @@ export default function ApiKeysClientView({
               ) : (
                 <ul className="flex flex-col gap-2 max-h-60 overflow-y-auto">
                   {allMailingLists.map((list) => {
-                    const scopes = getScopes(audiencesTarget.api_key_id);
+                    const scopes = getScopes(audiencesKey.api_key_id);
                     const checked = scopes.mailingLists.includes(
                       list.mailing_list_id,
                     );
@@ -985,7 +1109,7 @@ export default function ApiKeysClientView({
                           disabled={togglingAudience}
                           onCheckedChange={(value) =>
                             handleToggleAudience(
-                              audiencesTarget,
+                              audiencesKey,
                               list.mailing_list_id,
                               value === true,
                             )
@@ -1020,27 +1144,27 @@ export default function ApiKeysClientView({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      handleAddRecipient(audiencesTarget);
+                      handleAddRecipient(audiencesKey);
                     }
                   }}
                   disabled={mutatingRecipient}
                 />
                 <Button
                   variant="secondary"
-                  onClick={() => handleAddRecipient(audiencesTarget)}
+                  onClick={() => handleAddRecipient(audiencesKey)}
                   disabled={mutatingRecipient}
                 >
                   Add
                 </Button>
               </div>
-              {getScopes(audiencesTarget.api_key_id).recipients.length ===
+              {getScopes(audiencesKey.api_key_id).recipients.length ===
               0 ? (
                 <p className="text-xs text-muted-foreground">
                   No individual recipients allowlisted for this key.
                 </p>
               ) : (
                 <ul className="flex flex-col gap-1 max-h-40 overflow-y-auto">
-                  {getScopes(audiencesTarget.api_key_id).recipients.map(
+                  {getScopes(audiencesKey.api_key_id).recipients.map(
                     (email) => (
                       <li
                         key={email}
@@ -1051,7 +1175,7 @@ export default function ApiKeysClientView({
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            handleRemoveRecipient(audiencesTarget, email)
+                            handleRemoveRecipient(audiencesKey, email)
                           }
                           disabled={mutatingRecipient}
                           aria-label={`Remove ${email}`}

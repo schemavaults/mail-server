@@ -66,6 +66,10 @@ export class MailKeysRegistry {
           : typeof row.revoked_at === "number"
             ? row.revoked_at
             : Number.parseInt(row.revoked_at as unknown as string),
+      // Drivers may hand BOOLEAN columns back as `t`/`true` strings; a key
+      // whose flag is missing or unrecognized is treated as NOT allowed to
+      // send to any audience (fail closed).
+      allow_any_audience: parseBooleanColumn(row.allow_any_audience),
     };
   }
 
@@ -101,6 +105,10 @@ export class MailKeysRegistry {
       created_by_user_id: input.created_by_user_id,
       last_used_at: null,
       revoked_at: null,
+      // New keys can reach nobody until an admin configures their audience —
+      // either by allowlisting mailing lists/recipients or by explicitly
+      // granting access to any recipient. See migration 00011.
+      allow_any_audience: false,
     };
 
     const parsed = apiKeyTableRowSchema.safeParse(newRow);
@@ -176,6 +184,42 @@ export class MailKeysRegistry {
     return this.toRecord(this.parseRow(row as ApiKey));
   }
 
+  /**
+   * Sets whether an API key may send to ANY recipient. Turning this on makes
+   * the key's audience allowlists irrelevant; turning it off falls back to
+   * those allowlists, which — when empty — means the key may send to nobody.
+   * Returns the updated record, or null when no active (non-revoked) key with
+   * that ID exists.
+   */
+  public async setAllowAnyAudience(
+    api_key_id: string,
+    allow_any_audience: boolean,
+  ): Promise<ApiKeyRecord | null> {
+    const row = await this.db
+      .updateTable("api_keys")
+      .set({ allow_any_audience })
+      .where("api_key_id", "=", api_key_id)
+      .where("revoked_at", "is", null)
+      .returningAll()
+      .executeTakeFirst();
+    if (!row) return null;
+    return this.toRecord(this.parseRow(row as ApiKey));
+  }
+
+  /**
+   * Returns whether this API key is permitted to send to any recipient.
+   * False (fail closed) when the key does not exist.
+   */
+  public async isAllowedAnyAudience(api_key_id: string): Promise<boolean> {
+    const row = await this.db
+      .selectFrom("api_keys")
+      .select("allow_any_audience")
+      .where("api_key_id", "=", api_key_id)
+      .executeTakeFirst();
+    if (!row) return false;
+    return parseBooleanColumn(row.allow_any_audience);
+  }
+
   public async revokeApiKey(api_key_id: string): Promise<void> {
     const revoked_at = Date.now();
     await this.db
@@ -197,10 +241,10 @@ export class MailKeysRegistry {
 
   /**
    * Returns the mailing list IDs this API key is permitted to send to.
-   * An empty array means the key is unrestricted (legacy behavior — can
-   * send to any recipient or mailing list). A non-empty array means the
-   * key is scoped: it may ONLY pass one of these mailing list UUIDs in
-   * the `to` field on `/api/send`, and cc/bcc are forbidden.
+   * Together with listAllowedRecipientEmails these form ONE combined
+   * audience allowlist, which applies unless the key has `allow_any_audience`
+   * set. A key with no entries of either kind and no `allow_any_audience`
+   * may not send to anyone.
    */
   public async listAllowedMailingListIds(
     api_key_id: string,
@@ -294,8 +338,8 @@ export class MailKeysRegistry {
   /**
    * Returns the individual (one-off) recipient emails this API key may
    * target in to/cc/bcc. Together with listAllowedMailingListIds these form
-   * ONE combined audience allowlist: a row in either restricts the key's
-   * audience as a whole.
+   * ONE combined audience allowlist, consulted unless the key has
+   * `allow_any_audience` set.
    */
   public async listAllowedRecipientEmails(
     api_key_id: string,
@@ -382,22 +426,25 @@ export class MailKeysRegistry {
   }
 
   /**
-   * Fetches all four scope lists for a key in parallel — the shape `/api/send`
+   * Fetches every scope value for a key in parallel — the shape `/api/send`
    * needs to enforce the key's restrictions on a single request.
    */
   public async getApiKeyScopes(api_key_id: string): Promise<ApiKeyScopes> {
     const [
+      allowAnyAudience,
       allowedMailingListIds,
       allowedRecipientEmails,
       allowedSenders,
       allowedTransportIds,
     ] = await Promise.all([
+      this.isAllowedAnyAudience(api_key_id),
       this.listAllowedMailingListIds(api_key_id),
       this.listAllowedRecipientEmails(api_key_id),
       this.listAllowedSenders(api_key_id),
       this.listAllowedTransportIds(api_key_id),
     ]);
     return {
+      allowAnyAudience,
       allowedMailingListIds,
       allowedRecipientEmails,
       allowedSenders,
@@ -407,11 +454,29 @@ export class MailKeysRegistry {
 }
 
 /**
- * All of one API key's scope lists. On every dimension, an empty list means
- * the key is unrestricted on that dimension; the mailing-list and
- * recipient-email lists together form one combined audience allowlist.
+ * Coerces a BOOLEAN column into a real boolean, failing closed on anything
+ * unrecognized. Postgres drivers normally hand these back as booleans, but
+ * `t`/`true` strings show up depending on the driver and query path.
+ */
+function parseBooleanColumn(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "t";
+  }
+  return false;
+}
+
+/**
+ * All of one API key's scope values. On the sender and transport dimensions,
+ * an empty list means the key is unrestricted there. The audience dimension
+ * works the other way around: the mailing-list and recipient-email lists form
+ * one combined allowlist, and only `allowAnyAudience` lifts it — a key with
+ * neither reaches nobody.
  */
 export interface ApiKeyScopes {
+  /** Explicit "may send to any recipient" switch. */
+  allowAnyAudience: boolean;
   allowedMailingListIds: string[];
   allowedRecipientEmails: string[];
   allowedSenders: string[];
