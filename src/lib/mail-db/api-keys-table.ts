@@ -14,6 +14,15 @@ export const apiKeyTableRowSchema = z.object({
   created_by_user_id: z.string().uuid(),
   last_used_at: z.number().nonnegative().nullable(),
   revoked_at: z.number().nonnegative().nullable(),
+  /**
+   * When true, this key may send to ANY recipient and its audience
+   * allowlists (mailing lists + individual recipients) are ignored. When
+   * false — the default for every newly created key — the key may only send
+   * to its allowlisted audience entries, and a key with no entries may send
+   * to nobody. Keys that predate migration 00011 were grandfathered to true
+   * if they had no allowlist entries at the time.
+   */
+  allow_any_audience: z.boolean(),
 });
 
 export type ApiKeysTable = z.infer<typeof apiKeyTableRowSchema>;
