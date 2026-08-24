@@ -11,11 +11,15 @@ export type {
 } from "./types";
 export {
   loadMailTransportConfig,
+  loadDefaultMailTransportKind,
+  loadMailTransportsAvailability,
+  isMailTransportKind,
   MAIL_TRANSPORT_KINDS,
   DEFAULT_MAIL_TRANSPORT,
   DEFAULT_SMTP_PORT,
   type MailTransportKind,
   type MailTransportConfig,
+  type IMailTransportsAvailability,
   type IResendTransportConfig,
   type ISmtpTransportConfig,
 } from "./loadMailTransportConfig";

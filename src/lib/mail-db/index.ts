@@ -20,6 +20,18 @@ export type {
   NewApiKeyMailingListAllowlistRow,
 } from "./api-key-mailing-list-allowlists-table";
 export type {
+  ApiKeyAllowedSenderRow,
+  NewApiKeyAllowedSenderRow,
+} from "./api-key-allowed-senders-table";
+export type {
+  ApiKeyRecipientAllowlistRow,
+  NewApiKeyRecipientAllowlistRow,
+} from "./api-key-recipient-allowlists-table";
+export type {
+  ApiKeyAllowedTransportRow,
+  NewApiKeyAllowedTransportRow,
+} from "./api-key-allowed-transports-table";
+export type {
   PendingSubscription,
   NewPendingSubscription,
 } from "./pending-subscriptions-table";

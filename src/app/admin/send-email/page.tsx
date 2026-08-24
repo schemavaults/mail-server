@@ -3,7 +3,10 @@ import "server-only";
 import type { ReactElement } from "react";
 import { withAdminServerComponentRouteGuard } from "@/lib/withAdminRouteGuard";
 import { EmailTemplatesCatalog } from "@/lib/EmailTemplatesCatalog";
-import SendEmailFormClient from "./send-email-form-client";
+import { loadMailTransportsAvailability } from "@/lib/mail-transport";
+import SendEmailFormClient, {
+  type SendEmailTransportOption,
+} from "./send-email-form-client";
 import { connection } from "next/server";
 
 export default async function SendEmailPage(): Promise<ReactElement> {
@@ -17,7 +20,24 @@ export default async function SendEmailPage(): Promise<ReactElement> {
           return { id, description: instance.description };
         }),
       );
-      return <SendEmailFormClient templates={templates} />;
+
+      // Configured transports for the form's transport picker. When the
+      // availability can't be resolved (bad MAIL_TRANSPORT), render the form
+      // without a picker rather than failing the whole page.
+      let transports: SendEmailTransportOption[] = [];
+      try {
+        const availability = loadMailTransportsAvailability();
+        transports = availability.configured.map((id) => ({
+          id,
+          is_default: availability.defaultTransport === id,
+        }));
+      } catch (e: unknown) {
+        console.error("Failed to resolve mail transport availability: ", e);
+      }
+
+      return (
+        <SendEmailFormClient templates={templates} transports={transports} />
+      );
     },
   );
 }

@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Palette,
   Send,
+  Server,
   ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
@@ -53,6 +54,11 @@ export const ADMIN_LINKS: readonly AdminLink[] = [
     href: "/admin/cors",
     label: "Manage allowed CORS origins",
     icon: Globe,
+  },
+  {
+    href: "/admin/transports",
+    label: "View mail transports",
+    icon: Server,
   },
   {
     href: "/admin/branding",
