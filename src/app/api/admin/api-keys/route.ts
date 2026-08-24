@@ -6,12 +6,10 @@ import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailKeysRegistry } from "@/lib/mail-db/MailKeysRegistry";
 import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
+import { apiKeyNameSchema } from "@/lib/api-keys/api-key-name";
 
 const createApiKeyBodySchema = z.object({
-  name: z
-    .string()
-    .min(1, "Name is required.")
-    .max(64, "Name must be 64 characters or fewer."),
+  name: apiKeyNameSchema,
 });
 
 interface ListApiKeysSuccessResponse {

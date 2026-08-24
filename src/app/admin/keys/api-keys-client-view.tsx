@@ -20,7 +20,16 @@ import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
-import { AtSign, Copy, KeyRound, Server, Trash2, Users, X } from "lucide-react";
+import {
+  AtSign,
+  Copy,
+  KeyRound,
+  Pencil,
+  Server,
+  Trash2,
+  Users,
+  X,
+} from "lucide-react";
 import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
 import { Nav } from "@/components/Nav";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
@@ -28,6 +37,7 @@ import createApiKey, {
   type CreatedApiKey,
 } from "@/lib/client-mail-db-actions/createApiKey";
 import listApiKeys from "@/lib/client-mail-db-actions/listApiKeys";
+import renameApiKey from "@/lib/client-mail-db-actions/renameApiKey";
 import revokeApiKey from "@/lib/client-mail-db-actions/revokeApiKey";
 import addApiKeyAllowlistEntry from "@/lib/client-mail-db-actions/addApiKeyAllowlistEntry";
 import removeApiKeyAllowlistEntry from "@/lib/client-mail-db-actions/removeApiKeyAllowlistEntry";
@@ -37,6 +47,7 @@ import {
   getApiKeyScopeEntries,
   removeApiKeyScopeEntry,
 } from "@/lib/client-mail-db-actions/apiKeyScopes";
+import { apiKeyNameSchema } from "@/lib/api-keys/api-key-name";
 import { allowedSenderEntrySchema } from "@/lib/api-keys/sender-scope";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
 import { z } from "zod";
@@ -117,6 +128,10 @@ export default function ApiKeysClientView({
   const [creating, startCreateTransition] = useTransition();
 
   const [revealedKey, setRevealedKey] = useState<CreatedApiKey | null>(null);
+
+  const [renameTarget, setRenameTarget] = useState<ApiKeyRecord | null>(null);
+  const [renameName, setRenameName] = useState<string>("");
+  const [renaming, startRenameTransition] = useTransition();
 
   const [revokeTarget, setRevokeTarget] = useState<ApiKeyRecord | null>(null);
   const [revoking, startRevokeTransition] = useTransition();
@@ -209,6 +224,65 @@ export default function ApiKeysClientView({
         toast({
           variant: "destructive",
           title: "Failed to create API key",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
+      }
+    });
+  }
+
+  function handleOpenRename(key: ApiKeyRecord): void {
+    setRenameTarget(key);
+    setRenameName(key.name);
+  }
+
+  function handleConfirmRename(): void {
+    if (!renameTarget) return;
+    const parsed = apiKeyNameSchema.safeParse(renameName);
+    if (!parsed.success) {
+      toast({
+        variant: "destructive",
+        title: "Invalid name",
+        description:
+          parsed.error.issues[0]?.message ??
+          "Please give your API key a name between 1 and 64 characters.",
+      });
+      return;
+    }
+    const name = parsed.data;
+    if (name === renameTarget.name) {
+      setRenameTarget(null);
+      return;
+    }
+    const authClient = requireAuthClient();
+    if (!authClient) return;
+    const target = renameTarget;
+    startRenameTransition(async () => {
+      try {
+        const updated = await renameApiKey(
+          target.api_key_id,
+          name,
+          authClient,
+          appId,
+        );
+        // The key's ID and secret are unchanged — only the label — so patch
+        // the row in place rather than re-keying any local state.
+        setApiKeys((prev) =>
+          prev.map((entry) =>
+            entry.api_key_id === updated.api_key_id ? updated : entry,
+          ),
+        );
+        toast({
+          title: "API key renamed",
+          description: `'${target.name}' is now called '${updated.name}'.`,
+        });
+        setRenameTarget(null);
+        setRenameName("");
+      } catch (e: unknown) {
+        console.error("Failed to rename API key: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to rename API key",
           description:
             e instanceof Error ? e.message : "An unknown error has occurred!",
         });
@@ -626,6 +700,15 @@ export default function ApiKeysClientView({
                       <Button
                         variant="secondary"
                         size="sm"
+                        onClick={() => handleOpenRename(key)}
+                        className="flex items-center gap-2"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Rename
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => handleOpenAudiences(key)}
                         className="flex items-center gap-2"
                       >
@@ -750,6 +833,62 @@ export default function ApiKeysClientView({
           )}
           <DialogFooter>
             <Button onClick={() => setRevealedKey(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename dialog */}
+      <Dialog
+        open={renameTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRenameTarget(null);
+            setRenameName("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename API key</DialogTitle>
+            <DialogDescription>
+              Only the key&apos;s label changes — its ID, secret and scopes
+              stay the same, so anything already using this key keeps working.
+            </DialogDescription>
+          </DialogHeader>
+          {renameTarget && (
+            <div className="space-y-3 mt-2">
+              <p className="text-xs font-mono text-muted-foreground">
+                {renameTarget.key_prefix}…
+              </p>
+              <div className="space-y-2">
+                <Label htmlFor="rename-api-key-name">Name</Label>
+                <Input
+                  id="rename-api-key-name"
+                  placeholder="e.g. prod cron job"
+                  value={renameName}
+                  onChange={(e) => setRenameName(e.target.value)}
+                  maxLength={64}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !renaming) handleConfirmRename();
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setRenameTarget(null);
+                setRenameName("");
+              }}
+              disabled={renaming}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleConfirmRename} disabled={renaming}>
+              {renaming ? "Saving…" : "Save"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
