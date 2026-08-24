@@ -40,6 +40,8 @@ This is a **Next.js 16 App Router** mail server application in the SchemaVaults 
 - `GET /api/branding/[asset_kind]` — serve the uploaded logo/favicon (public; falls back to bundled defaults in `public/media/`)
 - `PUT|DELETE /api/admin/branding/[asset_kind]` — upload/remove a custom logo or favicon (admin only; managed at `/admin/branding`)
 - `GET /api/admin/transports` — list mail transports with configured/default status (admin only; shown at `/admin/transports`)
+- `GET|POST /api/admin/api-keys` — list/create API keys (admin only; the plaintext token is returned exactly once on create)
+- `PATCH|DELETE /api/admin/api-keys/[api_key_id]` — rename (label only; the key ID, secret and scopes are unchanged) or revoke an API key (admin only)
 - `GET|POST|DELETE /api/admin/api-keys/[api_key_id]/allowlist|senders|recipients|transports` — manage one API key's scope entries (admin only; managed at `/admin/keys`)
 
 ### Key Patterns

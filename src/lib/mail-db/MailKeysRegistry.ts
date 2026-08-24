@@ -9,6 +9,7 @@ import {
   type ApiKeyRecord,
 } from "./api-keys-table";
 import type { ApiKeyAllowedTransportRow } from "./api-key-allowed-transports-table";
+import { apiKeyNameSchema } from "@/lib/api-keys/api-key-name";
 import { generateApiKey } from "@/lib/api-keys/generateApiKey";
 import { hashApiKey } from "@/lib/api-keys/hashApiKey";
 
@@ -77,10 +78,14 @@ export class MailKeysRegistry {
   public async createApiKey(
     input: CreateApiKeyInput,
   ): Promise<CreateApiKeyResult> {
-    const name = input.name.trim();
-    if (name.length < 1 || name.length > 64) {
-      throw new Error("API key name must be between 1 and 64 characters.");
+    const parsedName = apiKeyNameSchema.safeParse(input.name);
+    if (!parsedName.success) {
+      throw new Error(
+        parsedName.error.issues[0]?.message ??
+          "API key name must be between 1 and 64 characters.",
+      );
     }
+    const name = parsedName.data;
 
     const { plaintext, display_prefix } = generateApiKey();
     const key_hash = await hashApiKey(plaintext);
@@ -137,6 +142,35 @@ export class MailKeysRegistry {
       .selectAll()
       .where("key_hash", "=", key_hash)
       .where("revoked_at", "is", null)
+      .executeTakeFirst();
+    if (!row) return null;
+    return this.toRecord(this.parseRow(row as ApiKey));
+  }
+
+  /**
+   * Renames an existing API key. The key's ID, secret and scopes are left
+   * untouched — only the human-facing label changes, so integrations holding
+   * the plaintext token keep working. Returns the updated record, or null
+   * when no active (non-revoked) key with that ID exists.
+   */
+  public async renameApiKey(
+    api_key_id: string,
+    name: string,
+  ): Promise<ApiKeyRecord | null> {
+    const parsedName = apiKeyNameSchema.safeParse(name);
+    if (!parsedName.success) {
+      throw new Error(
+        parsedName.error.issues[0]?.message ??
+          "API key name must be between 1 and 64 characters.",
+      );
+    }
+
+    const row = await this.db
+      .updateTable("api_keys")
+      .set({ name: parsedName.data })
+      .where("api_key_id", "=", api_key_id)
+      .where("revoked_at", "is", null)
+      .returningAll()
       .executeTakeFirst();
     if (!row) return null;
     return this.toRecord(this.parseRow(row as ApiKey));
