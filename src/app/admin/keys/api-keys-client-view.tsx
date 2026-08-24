@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactElement } from "react";
+import { useState, useTransition, type ReactElement } from "react";
 import {
   Button,
   Checkbox,
@@ -114,31 +114,27 @@ export default function ApiKeysClientView({
 
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [newKeyName, setNewKeyName] = useState<string>("");
-  const [creating, setCreating] = useState<boolean>(false);
+  const [creating, startCreateTransition] = useTransition();
 
   const [revealedKey, setRevealedKey] = useState<CreatedApiKey | null>(null);
 
   const [revokeTarget, setRevokeTarget] = useState<ApiKeyRecord | null>(null);
-  const [revoking, setRevoking] = useState<boolean>(false);
+  const [revoking, startRevokeTransition] = useTransition();
 
   const [audiencesTarget, setAudiencesTarget] = useState<ApiKeyRecord | null>(
     null,
   );
-  const [togglingMailingListId, setTogglingMailingListId] = useState<
-    string | null
-  >(null);
+  const [togglingAudience, startAudienceTransition] = useTransition();
   const [newRecipient, setNewRecipient] = useState<string>("");
-  const [mutatingRecipient, setMutatingRecipient] = useState<boolean>(false);
+  const [mutatingRecipient, startRecipientTransition] = useTransition();
 
   const [sendersTarget, setSendersTarget] = useState<ApiKeyRecord | null>(null);
   const [newSender, setNewSender] = useState<string>("");
-  const [mutatingSender, setMutatingSender] = useState<boolean>(false);
+  const [mutatingSender, startSenderTransition] = useTransition();
 
   const [transportsTarget, setTransportsTarget] =
     useState<ApiKeyRecord | null>(null);
-  const [togglingTransportId, setTogglingTransportId] = useState<
-    string | null
-  >(null);
+  const [togglingTransport, startTransportTransition] = useTransition();
 
   function getAuthClient(): ISchemaVaultsAuthClient | null {
     if (!auth.ready || !auth.client.current) return null;
@@ -183,7 +179,7 @@ export default function ApiKeysClientView({
     }
   }
 
-  async function handleCreate() {
+  function handleCreate(): void {
     const name = newKeyName.trim();
     if (name.length < 1) {
       toast({
@@ -196,55 +192,53 @@ export default function ApiKeysClientView({
     const authClient = requireAuthClient();
     if (!authClient) return;
 
-    setCreating(true);
-    try {
-      const created = await createApiKey({ name }, authClient, appId);
-      setRevealedKey(created);
-      setCreateOpen(false);
-      setNewKeyName("");
-      // New keys start with empty scopes (unrestricted on every dimension).
-      setScopesByKeyId((prev) => ({
-        ...prev,
-        [created.api_key_id]: EMPTY_SCOPES,
-      }));
-      await refreshKeys(authClient);
-    } catch (e: unknown) {
-      console.error("Failed to create API key: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to create API key",
-        description:
-          e instanceof Error ? e.message : "An unknown error has occurred!",
-      });
-    } finally {
-      setCreating(false);
-    }
+    startCreateTransition(async () => {
+      try {
+        const created = await createApiKey({ name }, authClient, appId);
+        setRevealedKey(created);
+        setCreateOpen(false);
+        setNewKeyName("");
+        // New keys start with empty scopes (unrestricted on every dimension).
+        setScopesByKeyId((prev) => ({
+          ...prev,
+          [created.api_key_id]: EMPTY_SCOPES,
+        }));
+        await refreshKeys(authClient);
+      } catch (e: unknown) {
+        console.error("Failed to create API key: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to create API key",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
+      }
+    });
   }
 
-  async function handleConfirmRevoke() {
+  function handleConfirmRevoke(): void {
     if (!revokeTarget) return;
     const authClient = requireAuthClient();
     if (!authClient) return;
-    setRevoking(true);
-    try {
-      await revokeApiKey(revokeTarget.api_key_id, authClient, appId);
-      toast({
-        title: "API key revoked",
-        description: `'${revokeTarget.name}' can no longer be used to send email.`,
-      });
-      setRevokeTarget(null);
-      await refreshKeys(authClient);
-    } catch (e: unknown) {
-      console.error("Failed to revoke API key: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to revoke API key",
-        description:
-          e instanceof Error ? e.message : "An unknown error has occurred!",
-      });
-    } finally {
-      setRevoking(false);
-    }
+    startRevokeTransition(async () => {
+      try {
+        await revokeApiKey(revokeTarget.api_key_id, authClient, appId);
+        toast({
+          title: "API key revoked",
+          description: `'${revokeTarget.name}' can no longer be used to send email.`,
+        });
+        setRevokeTarget(null);
+        await refreshKeys(authClient);
+      } catch (e: unknown) {
+        console.error("Failed to revoke API key: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to revoke API key",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
+      }
+    });
   }
 
   async function handleOpenAudiences(key: ApiKeyRecord) {
@@ -265,54 +259,53 @@ export default function ApiKeysClientView({
     }
   }
 
-  async function handleToggleAudience(
+  function handleToggleAudience(
     key: ApiKeyRecord,
     mailingListId: string,
     nextChecked: boolean,
-  ) {
+  ): void {
     const authClient = requireAuthClient();
     if (!authClient) return;
-    setTogglingMailingListId(mailingListId);
-    try {
-      if (nextChecked) {
-        await addApiKeyAllowlistEntry(
-          key.api_key_id,
-          mailingListId,
-          authClient,
-          appId,
-        );
-        patchScopes(key.api_key_id, (current) => ({
-          mailingLists: current.mailingLists.includes(mailingListId)
-            ? current.mailingLists
-            : [...current.mailingLists, mailingListId],
-        }));
-      } else {
-        await removeApiKeyAllowlistEntry(
-          key.api_key_id,
-          mailingListId,
-          authClient,
-          appId,
-        );
-        patchScopes(key.api_key_id, (current) => ({
-          mailingLists: current.mailingLists.filter(
-            (id) => id !== mailingListId,
-          ),
-        }));
+    startAudienceTransition(async () => {
+      try {
+        if (nextChecked) {
+          await addApiKeyAllowlistEntry(
+            key.api_key_id,
+            mailingListId,
+            authClient,
+            appId,
+          );
+          patchScopes(key.api_key_id, (current) => ({
+            mailingLists: current.mailingLists.includes(mailingListId)
+              ? current.mailingLists
+              : [...current.mailingLists, mailingListId],
+          }));
+        } else {
+          await removeApiKeyAllowlistEntry(
+            key.api_key_id,
+            mailingListId,
+            authClient,
+            appId,
+          );
+          patchScopes(key.api_key_id, (current) => ({
+            mailingLists: current.mailingLists.filter(
+              (id) => id !== mailingListId,
+            ),
+          }));
+        }
+      } catch (e: unknown) {
+        console.error("Failed to update API key allowlist: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to update audience",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
       }
-    } catch (e: unknown) {
-      console.error("Failed to update API key allowlist: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to update audience",
-        description:
-          e instanceof Error ? e.message : "An unknown error has occurred!",
-      });
-    } finally {
-      setTogglingMailingListId(null);
-    }
+    });
   }
 
-  async function handleAddRecipient(key: ApiKeyRecord) {
+  function handleAddRecipient(key: ApiKeyRecord): void {
     const parsed = recipientEmailSchema.safeParse(newRecipient);
     if (!parsed.success) {
       toast({
@@ -325,60 +318,58 @@ export default function ApiKeysClientView({
     const email = parsed.data;
     const authClient = requireAuthClient();
     if (!authClient) return;
-    setMutatingRecipient(true);
-    try {
-      await addApiKeyScopeEntry(
-        key.api_key_id,
-        "recipients",
-        email,
-        authClient,
-        appId,
-      );
-      patchScopes(key.api_key_id, (current) => ({
-        recipients: current.recipients.includes(email)
-          ? current.recipients
-          : [...current.recipients, email],
-      }));
-      setNewRecipient("");
-    } catch (e: unknown) {
-      console.error("Failed to add allowed recipient: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to add recipient",
-        description:
-          e instanceof Error ? e.message : "An unknown error has occurred!",
-      });
-    } finally {
-      setMutatingRecipient(false);
-    }
+    startRecipientTransition(async () => {
+      try {
+        await addApiKeyScopeEntry(
+          key.api_key_id,
+          "recipients",
+          email,
+          authClient,
+          appId,
+        );
+        patchScopes(key.api_key_id, (current) => ({
+          recipients: current.recipients.includes(email)
+            ? current.recipients
+            : [...current.recipients, email],
+        }));
+        setNewRecipient("");
+      } catch (e: unknown) {
+        console.error("Failed to add allowed recipient: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to add recipient",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
+      }
+    });
   }
 
-  async function handleRemoveRecipient(key: ApiKeyRecord, email: string) {
+  function handleRemoveRecipient(key: ApiKeyRecord, email: string): void {
     const authClient = requireAuthClient();
     if (!authClient) return;
-    setMutatingRecipient(true);
-    try {
-      await removeApiKeyScopeEntry(
-        key.api_key_id,
-        "recipients",
-        email,
-        authClient,
-        appId,
-      );
-      patchScopes(key.api_key_id, (current) => ({
-        recipients: current.recipients.filter((entry) => entry !== email),
-      }));
-    } catch (e: unknown) {
-      console.error("Failed to remove allowed recipient: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to remove recipient",
-        description:
-          e instanceof Error ? e.message : "An unknown error has occurred!",
-      });
-    } finally {
-      setMutatingRecipient(false);
-    }
+    startRecipientTransition(async () => {
+      try {
+        await removeApiKeyScopeEntry(
+          key.api_key_id,
+          "recipients",
+          email,
+          authClient,
+          appId,
+        );
+        patchScopes(key.api_key_id, (current) => ({
+          recipients: current.recipients.filter((entry) => entry !== email),
+        }));
+      } catch (e: unknown) {
+        console.error("Failed to remove allowed recipient: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to remove recipient",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
+      }
+    });
   }
 
   async function handleOpenSenders(key: ApiKeyRecord) {
@@ -399,7 +390,7 @@ export default function ApiKeysClientView({
     }
   }
 
-  async function handleAddSender(key: ApiKeyRecord) {
+  function handleAddSender(key: ApiKeyRecord): void {
     const parsed = allowedSenderEntrySchema.safeParse(newSender);
     if (!parsed.success) {
       toast({
@@ -413,60 +404,58 @@ export default function ApiKeysClientView({
     const sender = parsed.data;
     const authClient = requireAuthClient();
     if (!authClient) return;
-    setMutatingSender(true);
-    try {
-      await addApiKeyScopeEntry(
-        key.api_key_id,
-        "senders",
-        sender,
-        authClient,
-        appId,
-      );
-      patchScopes(key.api_key_id, (current) => ({
-        senders: current.senders.includes(sender)
-          ? current.senders
-          : [...current.senders, sender],
-      }));
-      setNewSender("");
-    } catch (e: unknown) {
-      console.error("Failed to add allowed sender: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to add sender",
-        description:
-          e instanceof Error ? e.message : "An unknown error has occurred!",
-      });
-    } finally {
-      setMutatingSender(false);
-    }
+    startSenderTransition(async () => {
+      try {
+        await addApiKeyScopeEntry(
+          key.api_key_id,
+          "senders",
+          sender,
+          authClient,
+          appId,
+        );
+        patchScopes(key.api_key_id, (current) => ({
+          senders: current.senders.includes(sender)
+            ? current.senders
+            : [...current.senders, sender],
+        }));
+        setNewSender("");
+      } catch (e: unknown) {
+        console.error("Failed to add allowed sender: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to add sender",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
+      }
+    });
   }
 
-  async function handleRemoveSender(key: ApiKeyRecord, sender: string) {
+  function handleRemoveSender(key: ApiKeyRecord, sender: string): void {
     const authClient = requireAuthClient();
     if (!authClient) return;
-    setMutatingSender(true);
-    try {
-      await removeApiKeyScopeEntry(
-        key.api_key_id,
-        "senders",
-        sender,
-        authClient,
-        appId,
-      );
-      patchScopes(key.api_key_id, (current) => ({
-        senders: current.senders.filter((entry) => entry !== sender),
-      }));
-    } catch (e: unknown) {
-      console.error("Failed to remove allowed sender: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to remove sender",
-        description:
-          e instanceof Error ? e.message : "An unknown error has occurred!",
-      });
-    } finally {
-      setMutatingSender(false);
-    }
+    startSenderTransition(async () => {
+      try {
+        await removeApiKeyScopeEntry(
+          key.api_key_id,
+          "senders",
+          sender,
+          authClient,
+          appId,
+        );
+        patchScopes(key.api_key_id, (current) => ({
+          senders: current.senders.filter((entry) => entry !== sender),
+        }));
+      } catch (e: unknown) {
+        console.error("Failed to remove allowed sender: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to remove sender",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
+      }
+    });
   }
 
   async function handleOpenTransports(key: ApiKeyRecord) {
@@ -486,51 +475,50 @@ export default function ApiKeysClientView({
     }
   }
 
-  async function handleToggleTransport(
+  function handleToggleTransport(
     key: ApiKeyRecord,
     transportId: string,
     nextChecked: boolean,
-  ) {
+  ): void {
     const authClient = requireAuthClient();
     if (!authClient) return;
-    setTogglingTransportId(transportId);
-    try {
-      if (nextChecked) {
-        await addApiKeyScopeEntry(
-          key.api_key_id,
-          "transports",
-          transportId,
-          authClient,
-          appId,
-        );
-        patchScopes(key.api_key_id, (current) => ({
-          transports: current.transports.includes(transportId)
-            ? current.transports
-            : [...current.transports, transportId],
-        }));
-      } else {
-        await removeApiKeyScopeEntry(
-          key.api_key_id,
-          "transports",
-          transportId,
-          authClient,
-          appId,
-        );
-        patchScopes(key.api_key_id, (current) => ({
-          transports: current.transports.filter((id) => id !== transportId),
-        }));
+    startTransportTransition(async () => {
+      try {
+        if (nextChecked) {
+          await addApiKeyScopeEntry(
+            key.api_key_id,
+            "transports",
+            transportId,
+            authClient,
+            appId,
+          );
+          patchScopes(key.api_key_id, (current) => ({
+            transports: current.transports.includes(transportId)
+              ? current.transports
+              : [...current.transports, transportId],
+          }));
+        } else {
+          await removeApiKeyScopeEntry(
+            key.api_key_id,
+            "transports",
+            transportId,
+            authClient,
+            appId,
+          );
+          patchScopes(key.api_key_id, (current) => ({
+            transports: current.transports.filter((id) => id !== transportId),
+          }));
+        }
+      } catch (e: unknown) {
+        console.error("Failed to update allowed transports: ", e);
+        toast({
+          variant: "destructive",
+          title: "Failed to update transports",
+          description:
+            e instanceof Error ? e.message : "An unknown error has occurred!",
+        });
       }
-    } catch (e: unknown) {
-      console.error("Failed to update allowed transports: ", e);
-      toast({
-        variant: "destructive",
-        title: "Failed to update transports",
-        description:
-          e instanceof Error ? e.message : "An unknown error has occurred!",
-      });
-    } finally {
-      setTogglingTransportId(null);
-    }
+    });
   }
 
   async function copyToClipboard(text: string) {
@@ -847,8 +835,6 @@ export default function ApiKeysClientView({
                     const checked = scopes.mailingLists.includes(
                       list.mailing_list_id,
                     );
-                    const isToggling =
-                      togglingMailingListId === list.mailing_list_id;
                     return (
                       <li
                         key={list.mailing_list_id}
@@ -857,7 +843,7 @@ export default function ApiKeysClientView({
                         <Checkbox
                           id={`audience-${list.mailing_list_id}`}
                           checked={checked}
-                          disabled={isToggling}
+                          disabled={togglingAudience}
                           onCheckedChange={(value) =>
                             handleToggleAudience(
                               audiencesTarget,
@@ -895,7 +881,7 @@ export default function ApiKeysClientView({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      void handleAddRecipient(audiencesTarget);
+                      handleAddRecipient(audiencesTarget);
                     }
                   }}
                   disabled={mutatingRecipient}
@@ -980,7 +966,7 @@ export default function ApiKeysClientView({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      void handleAddSender(sendersTarget);
+                      handleAddSender(sendersTarget);
                     }
                   }}
                   disabled={mutatingSender}
@@ -1060,7 +1046,6 @@ export default function ApiKeysClientView({
                 {transportOptions.map((transport) => {
                   const scopes = getScopes(transportsTarget.api_key_id);
                   const checked = scopes.transports.includes(transport.id);
-                  const isToggling = togglingTransportId === transport.id;
                   return (
                     <li
                       key={transport.id}
@@ -1069,7 +1054,7 @@ export default function ApiKeysClientView({
                       <Checkbox
                         id={`transport-${transport.id}`}
                         checked={checked}
-                        disabled={isToggling}
+                        disabled={togglingTransport}
                         onCheckedChange={(value) =>
                           handleToggleTransport(
                             transportsTarget,
