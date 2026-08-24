@@ -8,6 +8,7 @@ import {
   type ApiKey,
   type ApiKeyRecord,
 } from "./api-keys-table";
+import type { ApiKeyAllowedTransportRow } from "./api-key-allowed-transports-table";
 import { generateApiKey } from "@/lib/api-keys/generateApiKey";
 import { hashApiKey } from "@/lib/api-keys/hashApiKey";
 
@@ -213,6 +214,174 @@ export class MailKeysRegistry {
       .where("mailing_list_id", "=", mailing_list_id)
       .execute();
   }
+
+  /**
+   * Returns the sender entries (lowercase email addresses or `*@domain`
+   * wildcards) this API key may use as `from`/`replyTo`. Empty = the key is
+   * unrestricted on the sender dimension.
+   */
+  public async listAllowedSenders(api_key_id: string): Promise<string[]> {
+    const rows = await this.db
+      .selectFrom("api_key_allowed_senders")
+      .select("sender")
+      .where("api_key_id", "=", api_key_id)
+      .execute();
+    return rows.map((row) => row.sender);
+  }
+
+  /** Adds a sender entry to an API key's allowed-senders list. Idempotent. */
+  public async addAllowedSender(
+    api_key_id: string,
+    sender: string,
+  ): Promise<void> {
+    await this.db
+      .insertInto("api_key_allowed_senders")
+      .values({
+        api_key_id,
+        sender: sender.trim().toLowerCase(),
+        created_at: Date.now(),
+      })
+      .onConflict((oc) => oc.columns(["api_key_id", "sender"]).doNothing())
+      .execute();
+  }
+
+  /** Removes a sender entry from an API key's allowed-senders list. Idempotent. */
+  public async removeAllowedSender(
+    api_key_id: string,
+    sender: string,
+  ): Promise<void> {
+    await this.db
+      .deleteFrom("api_key_allowed_senders")
+      .where("api_key_id", "=", api_key_id)
+      .where("sender", "=", sender.trim().toLowerCase())
+      .execute();
+  }
+
+  /**
+   * Returns the individual (one-off) recipient emails this API key may
+   * target in to/cc/bcc. Together with listAllowedMailingListIds these form
+   * ONE combined audience allowlist: a row in either restricts the key's
+   * audience as a whole.
+   */
+  public async listAllowedRecipientEmails(
+    api_key_id: string,
+  ): Promise<string[]> {
+    const rows = await this.db
+      .selectFrom("api_key_recipient_allowlists")
+      .select("email")
+      .where("api_key_id", "=", api_key_id)
+      .execute();
+    return rows.map((row) => row.email);
+  }
+
+  /** Adds an individual recipient email to an API key's audience allowlist. Idempotent. */
+  public async addAllowedRecipientEmail(
+    api_key_id: string,
+    email: string,
+  ): Promise<void> {
+    await this.db
+      .insertInto("api_key_recipient_allowlists")
+      .values({
+        api_key_id,
+        email: email.trim().toLowerCase(),
+        created_at: Date.now(),
+      })
+      .onConflict((oc) => oc.columns(["api_key_id", "email"]).doNothing())
+      .execute();
+  }
+
+  /** Removes an individual recipient email from an API key's audience allowlist. Idempotent. */
+  public async removeAllowedRecipientEmail(
+    api_key_id: string,
+    email: string,
+  ): Promise<void> {
+    await this.db
+      .deleteFrom("api_key_recipient_allowlists")
+      .where("api_key_id", "=", api_key_id)
+      .where("email", "=", email.trim().toLowerCase())
+      .execute();
+  }
+
+  /**
+   * Returns the transport ids ("resend", "smtp") this API key may deliver
+   * through. Empty = the key is unrestricted on the transport dimension.
+   */
+  public async listAllowedTransportIds(api_key_id: string): Promise<string[]> {
+    const rows = await this.db
+      .selectFrom("api_key_allowed_transports")
+      .select("transport_id")
+      .where("api_key_id", "=", api_key_id)
+      .execute();
+    return rows.map((row) => row.transport_id);
+  }
+
+  /** Adds a transport id to an API key's allowed-transports list. Idempotent. */
+  public async addAllowedTransport(
+    api_key_id: string,
+    transport_id: string,
+  ): Promise<void> {
+    await this.db
+      .insertInto("api_key_allowed_transports")
+      .values({
+        api_key_id,
+        transport_id: transport_id.trim().toLowerCase() as ApiKeyAllowedTransportRow["transport_id"],
+        created_at: Date.now(),
+      })
+      .onConflict((oc) => oc.columns(["api_key_id", "transport_id"]).doNothing())
+      .execute();
+  }
+
+  /** Removes a transport id from an API key's allowed-transports list. Idempotent. */
+  public async removeAllowedTransport(
+    api_key_id: string,
+    transport_id: string,
+  ): Promise<void> {
+    await this.db
+      .deleteFrom("api_key_allowed_transports")
+      .where(
+        "transport_id",
+        "=",
+        transport_id.trim().toLowerCase() as ApiKeyAllowedTransportRow["transport_id"],
+      )
+      .where("api_key_id", "=", api_key_id)
+      .execute();
+  }
+
+  /**
+   * Fetches all four scope lists for a key in parallel — the shape `/api/send`
+   * needs to enforce the key's restrictions on a single request.
+   */
+  public async getApiKeyScopes(api_key_id: string): Promise<ApiKeyScopes> {
+    const [
+      allowedMailingListIds,
+      allowedRecipientEmails,
+      allowedSenders,
+      allowedTransportIds,
+    ] = await Promise.all([
+      this.listAllowedMailingListIds(api_key_id),
+      this.listAllowedRecipientEmails(api_key_id),
+      this.listAllowedSenders(api_key_id),
+      this.listAllowedTransportIds(api_key_id),
+    ]);
+    return {
+      allowedMailingListIds,
+      allowedRecipientEmails,
+      allowedSenders,
+      allowedTransportIds,
+    };
+  }
+}
+
+/**
+ * All of one API key's scope lists. On every dimension, an empty list means
+ * the key is unrestricted on that dimension; the mailing-list and
+ * recipient-email lists together form one combined audience allowlist.
+ */
+export interface ApiKeyScopes {
+  allowedMailingListIds: string[];
+  allowedRecipientEmails: string[];
+  allowedSenders: string[];
+  allowedTransportIds: string[];
 }
 
 export default MailKeysRegistry;

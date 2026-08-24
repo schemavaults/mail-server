@@ -20,7 +20,7 @@ import {
   useAuth,
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
-import { Copy, KeyRound, Trash2, Users } from "lucide-react";
+import { AtSign, Copy, KeyRound, Server, Trash2, Users, X } from "lucide-react";
 import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
 import { Nav } from "@/components/Nav";
 import type { MailingListDefinition } from "@/lib/mailing-list-definition";
@@ -32,38 +32,85 @@ import revokeApiKey from "@/lib/client-mail-db-actions/revokeApiKey";
 import addApiKeyAllowlistEntry from "@/lib/client-mail-db-actions/addApiKeyAllowlistEntry";
 import removeApiKeyAllowlistEntry from "@/lib/client-mail-db-actions/removeApiKeyAllowlistEntry";
 import getApiKeyAllowlist from "@/lib/client-mail-db-actions/getApiKeyAllowlist";
+import {
+  addApiKeyScopeEntry,
+  getApiKeyScopeEntries,
+  removeApiKeyScopeEntry,
+} from "@/lib/client-mail-db-actions/apiKeyScopes";
+import { allowedSenderEntrySchema } from "@/lib/api-keys/sender-scope";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
+import { z } from "zod";
+
+/** One API key's scope lists. Empty list = unrestricted on that dimension. */
+export interface ApiKeyScopesState {
+  mailingLists: string[];
+  recipients: string[];
+  senders: string[];
+  transports: string[];
+}
+
+/** One transport this deployment knows about, for the transports dialog. */
+export interface TransportOption {
+  id: string;
+  configured: boolean;
+  is_default: boolean;
+}
 
 export interface ApiKeysClientViewProps {
   initialApiKeys: readonly ApiKeyRecord[];
   allMailingLists: readonly MailingListDefinition[];
-  initialAllowlistsByKeyId: Record<string, string[]>;
+  initialScopesByKeyId: Record<string, ApiKeyScopesState>;
+  transportOptions: TransportOption[];
 }
+
+const EMPTY_SCOPES: ApiKeyScopesState = {
+  mailingLists: [],
+  recipients: [],
+  senders: [],
+  transports: [],
+};
+
+const recipientEmailSchema = z.string().trim().toLowerCase().email();
 
 function formatTimestamp(value: number | null): string {
   if (value === null || value === undefined) return "Never";
   return new Date(value).toLocaleString();
 }
 
-function describeAllowlist(count: number): string {
-  if (count === 0) return "Unrestricted (any recipient)";
-  if (count === 1) return "Restricted to 1 audience";
-  return `Restricted to ${count} audiences`;
+function describeAudiences(scopes: ApiKeyScopesState): string {
+  const count = scopes.mailingLists.length + scopes.recipients.length;
+  if (count === 0) return "Audience: unrestricted (any recipient)";
+  if (count === 1) return "Audience: restricted to 1 entry";
+  return `Audience: restricted to ${count} entries`;
+}
+
+function describeSenders(scopes: ApiKeyScopesState): string {
+  const count = scopes.senders.length;
+  if (count === 0) return "Senders: unrestricted (any from address)";
+  if (count === 1) return "Senders: restricted to 1 entry";
+  return `Senders: restricted to ${count} entries`;
+}
+
+function describeTransports(scopes: ApiKeyScopesState): string {
+  const count = scopes.transports.length;
+  if (count === 0) return "Transports: any configured transport";
+  return `Transports: ${scopes.transports.join(", ")} only`;
 }
 
 export default function ApiKeysClientView({
   initialApiKeys,
   allMailingLists,
-  initialAllowlistsByKeyId,
+  initialScopesByKeyId,
+  transportOptions,
 }: ApiKeysClientViewProps): ReactElement {
   const { toast } = useToast();
   const auth = useAuth();
   const appId = useMailAppId();
   const [apiKeys, setApiKeys] =
     useState<readonly ApiKeyRecord[]>(initialApiKeys);
-  const [allowlistsByKeyId, setAllowlistsByKeyId] = useState<
-    Record<string, string[]>
-  >(initialAllowlistsByKeyId);
+  const [scopesByKeyId, setScopesByKeyId] = useState<
+    Record<string, ApiKeyScopesState>
+  >(initialScopesByKeyId);
 
   const [createOpen, setCreateOpen] = useState<boolean>(false);
   const [newKeyName, setNewKeyName] = useState<string>("");
@@ -80,10 +127,51 @@ export default function ApiKeysClientView({
   const [togglingMailingListId, setTogglingMailingListId] = useState<
     string | null
   >(null);
+  const [newRecipient, setNewRecipient] = useState<string>("");
+  const [mutatingRecipient, setMutatingRecipient] = useState<boolean>(false);
+
+  const [sendersTarget, setSendersTarget] = useState<ApiKeyRecord | null>(null);
+  const [newSender, setNewSender] = useState<string>("");
+  const [mutatingSender, setMutatingSender] = useState<boolean>(false);
+
+  const [transportsTarget, setTransportsTarget] =
+    useState<ApiKeyRecord | null>(null);
+  const [togglingTransportId, setTogglingTransportId] = useState<
+    string | null
+  >(null);
 
   function getAuthClient(): ISchemaVaultsAuthClient | null {
     if (!auth.ready || !auth.client.current) return null;
     return auth.client.current;
+  }
+
+  function requireAuthClient(): ISchemaVaultsAuthClient | null {
+    const authClient = getAuthClient();
+    if (!authClient) {
+      toast({
+        variant: "destructive",
+        title: "Auth not ready",
+        description: "Auth client is not ready yet — please try again.",
+      });
+    }
+    return authClient;
+  }
+
+  function getScopes(api_key_id: string): ApiKeyScopesState {
+    return scopesByKeyId[api_key_id] ?? EMPTY_SCOPES;
+  }
+
+  function patchScopes(
+    api_key_id: string,
+    patch: (current: ApiKeyScopesState) => Partial<ApiKeyScopesState>,
+  ) {
+    setScopesByKeyId((prev) => {
+      const current = prev[api_key_id] ?? EMPTY_SCOPES;
+      return {
+        ...prev,
+        [api_key_id]: { ...current, ...patch(current) },
+      };
+    });
   }
 
   async function refreshKeys(authClient: ISchemaVaultsAuthClient) {
@@ -105,15 +193,8 @@ export default function ApiKeysClientView({
       });
       return;
     }
-    const authClient = getAuthClient();
-    if (!authClient) {
-      toast({
-        variant: "destructive",
-        title: "Auth not ready",
-        description: "Auth client is not ready yet — please try again.",
-      });
-      return;
-    }
+    const authClient = requireAuthClient();
+    if (!authClient) return;
 
     setCreating(true);
     try {
@@ -121,10 +202,10 @@ export default function ApiKeysClientView({
       setRevealedKey(created);
       setCreateOpen(false);
       setNewKeyName("");
-      // New keys start with an empty allowlist (unrestricted).
-      setAllowlistsByKeyId((prev) => ({
+      // New keys start with empty scopes (unrestricted on every dimension).
+      setScopesByKeyId((prev) => ({
         ...prev,
-        [created.api_key_id]: [],
+        [created.api_key_id]: EMPTY_SCOPES,
       }));
       await refreshKeys(authClient);
     } catch (e: unknown) {
@@ -142,15 +223,8 @@ export default function ApiKeysClientView({
 
   async function handleConfirmRevoke() {
     if (!revokeTarget) return;
-    const authClient = getAuthClient();
-    if (!authClient) {
-      toast({
-        variant: "destructive",
-        title: "Auth not ready",
-        description: "Auth client is not ready yet — please try again.",
-      });
-      return;
-    }
+    const authClient = requireAuthClient();
+    if (!authClient) return;
     setRevoking(true);
     try {
       await revokeApiKey(revokeTarget.api_key_id, authClient, appId);
@@ -175,17 +249,19 @@ export default function ApiKeysClientView({
 
   async function handleOpenAudiences(key: ApiKeyRecord) {
     setAudiencesTarget(key);
-    // Refresh this key's allowlist from the server in case it has drifted.
+    setNewRecipient("");
+    // Refresh this key's audience scopes from the server in case they have
+    // drifted.
     const authClient = getAuthClient();
     if (!authClient) return;
     try {
-      const fresh = await getApiKeyAllowlist(key.api_key_id, authClient, appId);
-      setAllowlistsByKeyId((prev) => ({
-        ...prev,
-        [key.api_key_id]: fresh,
-      }));
+      const [mailingLists, recipients] = await Promise.all([
+        getApiKeyAllowlist(key.api_key_id, authClient, appId),
+        getApiKeyScopeEntries(key.api_key_id, "recipients", authClient, appId),
+      ]);
+      patchScopes(key.api_key_id, () => ({ mailingLists, recipients }));
     } catch (e: unknown) {
-      console.error("Failed to refresh allowlist: ", e);
+      console.error("Failed to refresh audience allowlist: ", e);
     }
   }
 
@@ -194,15 +270,8 @@ export default function ApiKeysClientView({
     mailingListId: string,
     nextChecked: boolean,
   ) {
-    const authClient = getAuthClient();
-    if (!authClient) {
-      toast({
-        variant: "destructive",
-        title: "Auth not ready",
-        description: "Auth client is not ready yet — please try again.",
-      });
-      return;
-    }
+    const authClient = requireAuthClient();
+    if (!authClient) return;
     setTogglingMailingListId(mailingListId);
     try {
       if (nextChecked) {
@@ -212,14 +281,11 @@ export default function ApiKeysClientView({
           authClient,
           appId,
         );
-        setAllowlistsByKeyId((prev) => {
-          const current = prev[key.api_key_id] ?? [];
-          if (current.includes(mailingListId)) return prev;
-          return {
-            ...prev,
-            [key.api_key_id]: [...current, mailingListId],
-          };
-        });
+        patchScopes(key.api_key_id, (current) => ({
+          mailingLists: current.mailingLists.includes(mailingListId)
+            ? current.mailingLists
+            : [...current.mailingLists, mailingListId],
+        }));
       } else {
         await removeApiKeyAllowlistEntry(
           key.api_key_id,
@@ -227,13 +293,11 @@ export default function ApiKeysClientView({
           authClient,
           appId,
         );
-        setAllowlistsByKeyId((prev) => {
-          const current = prev[key.api_key_id] ?? [];
-          return {
-            ...prev,
-            [key.api_key_id]: current.filter((id) => id !== mailingListId),
-          };
-        });
+        patchScopes(key.api_key_id, (current) => ({
+          mailingLists: current.mailingLists.filter(
+            (id) => id !== mailingListId,
+          ),
+        }));
       }
     } catch (e: unknown) {
       console.error("Failed to update API key allowlist: ", e);
@@ -245,6 +309,227 @@ export default function ApiKeysClientView({
       });
     } finally {
       setTogglingMailingListId(null);
+    }
+  }
+
+  async function handleAddRecipient(key: ApiKeyRecord) {
+    const parsed = recipientEmailSchema.safeParse(newRecipient);
+    if (!parsed.success) {
+      toast({
+        variant: "destructive",
+        title: "Invalid email",
+        description: "Enter a valid recipient email address.",
+      });
+      return;
+    }
+    const email = parsed.data;
+    const authClient = requireAuthClient();
+    if (!authClient) return;
+    setMutatingRecipient(true);
+    try {
+      await addApiKeyScopeEntry(
+        key.api_key_id,
+        "recipients",
+        email,
+        authClient,
+        appId,
+      );
+      patchScopes(key.api_key_id, (current) => ({
+        recipients: current.recipients.includes(email)
+          ? current.recipients
+          : [...current.recipients, email],
+      }));
+      setNewRecipient("");
+    } catch (e: unknown) {
+      console.error("Failed to add allowed recipient: ", e);
+      toast({
+        variant: "destructive",
+        title: "Failed to add recipient",
+        description:
+          e instanceof Error ? e.message : "An unknown error has occurred!",
+      });
+    } finally {
+      setMutatingRecipient(false);
+    }
+  }
+
+  async function handleRemoveRecipient(key: ApiKeyRecord, email: string) {
+    const authClient = requireAuthClient();
+    if (!authClient) return;
+    setMutatingRecipient(true);
+    try {
+      await removeApiKeyScopeEntry(
+        key.api_key_id,
+        "recipients",
+        email,
+        authClient,
+        appId,
+      );
+      patchScopes(key.api_key_id, (current) => ({
+        recipients: current.recipients.filter((entry) => entry !== email),
+      }));
+    } catch (e: unknown) {
+      console.error("Failed to remove allowed recipient: ", e);
+      toast({
+        variant: "destructive",
+        title: "Failed to remove recipient",
+        description:
+          e instanceof Error ? e.message : "An unknown error has occurred!",
+      });
+    } finally {
+      setMutatingRecipient(false);
+    }
+  }
+
+  async function handleOpenSenders(key: ApiKeyRecord) {
+    setSendersTarget(key);
+    setNewSender("");
+    const authClient = getAuthClient();
+    if (!authClient) return;
+    try {
+      const senders = await getApiKeyScopeEntries(
+        key.api_key_id,
+        "senders",
+        authClient,
+        appId,
+      );
+      patchScopes(key.api_key_id, () => ({ senders }));
+    } catch (e: unknown) {
+      console.error("Failed to refresh allowed senders: ", e);
+    }
+  }
+
+  async function handleAddSender(key: ApiKeyRecord) {
+    const parsed = allowedSenderEntrySchema.safeParse(newSender);
+    if (!parsed.success) {
+      toast({
+        variant: "destructive",
+        title: "Invalid sender entry",
+        description:
+          "Enter an email address (claude@example.com) or a domain wildcard (*@example.com).",
+      });
+      return;
+    }
+    const sender = parsed.data;
+    const authClient = requireAuthClient();
+    if (!authClient) return;
+    setMutatingSender(true);
+    try {
+      await addApiKeyScopeEntry(
+        key.api_key_id,
+        "senders",
+        sender,
+        authClient,
+        appId,
+      );
+      patchScopes(key.api_key_id, (current) => ({
+        senders: current.senders.includes(sender)
+          ? current.senders
+          : [...current.senders, sender],
+      }));
+      setNewSender("");
+    } catch (e: unknown) {
+      console.error("Failed to add allowed sender: ", e);
+      toast({
+        variant: "destructive",
+        title: "Failed to add sender",
+        description:
+          e instanceof Error ? e.message : "An unknown error has occurred!",
+      });
+    } finally {
+      setMutatingSender(false);
+    }
+  }
+
+  async function handleRemoveSender(key: ApiKeyRecord, sender: string) {
+    const authClient = requireAuthClient();
+    if (!authClient) return;
+    setMutatingSender(true);
+    try {
+      await removeApiKeyScopeEntry(
+        key.api_key_id,
+        "senders",
+        sender,
+        authClient,
+        appId,
+      );
+      patchScopes(key.api_key_id, (current) => ({
+        senders: current.senders.filter((entry) => entry !== sender),
+      }));
+    } catch (e: unknown) {
+      console.error("Failed to remove allowed sender: ", e);
+      toast({
+        variant: "destructive",
+        title: "Failed to remove sender",
+        description:
+          e instanceof Error ? e.message : "An unknown error has occurred!",
+      });
+    } finally {
+      setMutatingSender(false);
+    }
+  }
+
+  async function handleOpenTransports(key: ApiKeyRecord) {
+    setTransportsTarget(key);
+    const authClient = getAuthClient();
+    if (!authClient) return;
+    try {
+      const transports = await getApiKeyScopeEntries(
+        key.api_key_id,
+        "transports",
+        authClient,
+        appId,
+      );
+      patchScopes(key.api_key_id, () => ({ transports }));
+    } catch (e: unknown) {
+      console.error("Failed to refresh allowed transports: ", e);
+    }
+  }
+
+  async function handleToggleTransport(
+    key: ApiKeyRecord,
+    transportId: string,
+    nextChecked: boolean,
+  ) {
+    const authClient = requireAuthClient();
+    if (!authClient) return;
+    setTogglingTransportId(transportId);
+    try {
+      if (nextChecked) {
+        await addApiKeyScopeEntry(
+          key.api_key_id,
+          "transports",
+          transportId,
+          authClient,
+          appId,
+        );
+        patchScopes(key.api_key_id, (current) => ({
+          transports: current.transports.includes(transportId)
+            ? current.transports
+            : [...current.transports, transportId],
+        }));
+      } else {
+        await removeApiKeyScopeEntry(
+          key.api_key_id,
+          "transports",
+          transportId,
+          authClient,
+          appId,
+        );
+        patchScopes(key.api_key_id, (current) => ({
+          transports: current.transports.filter((id) => id !== transportId),
+        }));
+      }
+    } catch (e: unknown) {
+      console.error("Failed to update allowed transports: ", e);
+      toast({
+        variant: "destructive",
+        title: "Failed to update transports",
+        description:
+          e instanceof Error ? e.message : "An unknown error has occurred!",
+      });
+    } finally {
+      setTogglingTransportId(null);
     }
   }
 
@@ -295,9 +580,11 @@ export default function ApiKeysClientView({
           <p className="text-sm text-muted-foreground">
             API keys can be used as bearer tokens against{" "}
             <code className="font-mono">/api/send</code>. The plaintext value is
-            shown only once at creation time. Use{" "}
-            <strong>Manage audiences</strong> to scope a key to specific
-            mailing lists — keys with no audiences set are unrestricted.
+            shown only once at creation time. Each key can be scoped on three
+            independent dimensions — <strong>audiences</strong> (mailing lists
+            and individual recipients), <strong>senders</strong> (allowed from
+            addresses), and <strong>transports</strong> — and is unrestricted
+            on any dimension with no entries configured.
           </p>
 
           {apiKeys.length === 0 ? (
@@ -308,7 +595,12 @@ export default function ApiKeysClientView({
           ) : (
             <ul className="flex flex-col gap-2">
               {apiKeys.map((key) => {
-                const allowlist = allowlistsByKeyId[key.api_key_id] ?? [];
+                const scopes = getScopes(key.api_key_id);
+                const restricted =
+                  scopes.mailingLists.length > 0 ||
+                  scopes.recipients.length > 0 ||
+                  scopes.senders.length > 0 ||
+                  scopes.transports.length > 0;
                 return (
                   <li
                     key={key.api_key_id}
@@ -333,15 +625,16 @@ export default function ApiKeysClientView({
                       <p
                         className={cn(
                           "text-xs",
-                          allowlist.length === 0
-                            ? "text-muted-foreground"
-                            : "text-foreground",
+                          restricted
+                            ? "text-foreground"
+                            : "text-muted-foreground",
                         )}
                       >
-                        {describeAllowlist(allowlist.length)}
+                        {describeAudiences(scopes)} · {describeSenders(scopes)}{" "}
+                        · {describeTransports(scopes)}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Button
                         variant="secondary"
                         size="sm"
@@ -349,7 +642,25 @@ export default function ApiKeysClientView({
                         className="flex items-center gap-2"
                       >
                         <Users className="h-4 w-4" />
-                        Manage audiences
+                        Audiences
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleOpenSenders(key)}
+                        className="flex items-center gap-2"
+                      >
+                        <AtSign className="h-4 w-4" />
+                        Senders
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => handleOpenTransports(key)}
+                        className="flex items-center gap-2"
+                      >
+                        <Server className="h-4 w-4" />
+                        Transports
                       </Button>
                       <Button
                         variant="destructive"
@@ -508,9 +819,11 @@ export default function ApiKeysClientView({
           <DialogHeader>
             <DialogTitle>Manage audiences</DialogTitle>
             <DialogDescription>
-              Select the mailing lists this API key is permitted to send to.
-              Leave all unchecked to allow sending to any recipient. Restricted
-              keys cannot use cc or bcc.
+              Select the mailing lists and individual recipients this API key
+              is permitted to send to. Mailing lists and individual recipients
+              form one combined allowlist: leave both empty to allow sending
+              to any recipient. Restricted keys may only cc/bcc allowlisted
+              individual recipients.
             </DialogDescription>
           </DialogHeader>
           {audiencesTarget && (
@@ -522,16 +835,18 @@ export default function ApiKeysClientView({
                 </p>
               </div>
               <Separator decorative orientation="horizontal" className="w-full" />
+              <p className="text-sm font-medium">Mailing lists</p>
               {allMailingLists.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No mailing lists exist yet. Create one before scoping keys.
                 </p>
               ) : (
-                <ul className="flex flex-col gap-2 max-h-80 overflow-y-auto">
+                <ul className="flex flex-col gap-2 max-h-60 overflow-y-auto">
                   {allMailingLists.map((list) => {
-                    const allowlist =
-                      allowlistsByKeyId[audiencesTarget.api_key_id] ?? [];
-                    const checked = allowlist.includes(list.mailing_list_id);
+                    const scopes = getScopes(audiencesTarget.api_key_id);
+                    const checked = scopes.mailingLists.includes(
+                      list.mailing_list_id,
+                    );
                     const isToggling =
                       togglingMailingListId === list.mailing_list_id;
                     return (
@@ -570,10 +885,221 @@ export default function ApiKeysClientView({
                   })}
                 </ul>
               )}
+              <Separator decorative orientation="horizontal" className="w-full" />
+              <p className="text-sm font-medium">Individual recipients</p>
+              <div className="flex items-stretch gap-2">
+                <Input
+                  placeholder="recipient@example.com"
+                  value={newRecipient}
+                  onChange={(e) => setNewRecipient(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void handleAddRecipient(audiencesTarget);
+                    }
+                  }}
+                  disabled={mutatingRecipient}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => handleAddRecipient(audiencesTarget)}
+                  disabled={mutatingRecipient}
+                >
+                  Add
+                </Button>
+              </div>
+              {getScopes(audiencesTarget.api_key_id).recipients.length ===
+              0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No individual recipients allowlisted for this key.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1 max-h-40 overflow-y-auto">
+                  {getScopes(audiencesTarget.api_key_id).recipients.map(
+                    (email) => (
+                      <li
+                        key={email}
+                        className="flex items-center justify-between gap-2 p-1.5 rounded-md hover:bg-muted/50"
+                      >
+                        <span className="text-sm font-mono">{email}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleRemoveRecipient(audiencesTarget, email)
+                          }
+                          disabled={mutatingRecipient}
+                          aria-label={`Remove ${email}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              )}
             </div>
           )}
           <DialogFooter>
             <Button onClick={() => setAudiencesTarget(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage senders dialog */}
+      <Dialog
+        open={sendersTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setSendersTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage allowed senders</DialogTitle>
+            <DialogDescription>
+              Restrict which from addresses this API key may send as. Entries
+              are exact email addresses (claude@example.com) or domain
+              wildcards (*@example.com). Restricted keys must also use an
+              allowed address as reply-to. Leave empty to allow any sender.
+            </DialogDescription>
+          </DialogHeader>
+          {sendersTarget && (
+            <div className="space-y-3 mt-2">
+              <div>
+                <p className="text-sm font-medium">{sendersTarget.name}</p>
+                <p className="text-xs font-mono text-muted-foreground">
+                  {sendersTarget.key_prefix}…
+                </p>
+              </div>
+              <Separator decorative orientation="horizontal" className="w-full" />
+              <div className="flex items-stretch gap-2">
+                <Input
+                  placeholder="claude@example.com or *@example.com"
+                  value={newSender}
+                  onChange={(e) => setNewSender(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void handleAddSender(sendersTarget);
+                    }
+                  }}
+                  disabled={mutatingSender}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => handleAddSender(sendersTarget)}
+                  disabled={mutatingSender}
+                >
+                  Add
+                </Button>
+              </div>
+              {getScopes(sendersTarget.api_key_id).senders.length === 0 ? (
+                <p className="text-xs text-muted-foreground">
+                  No sender restrictions — this key may send from any address.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-1 max-h-60 overflow-y-auto">
+                  {getScopes(sendersTarget.api_key_id).senders.map(
+                    (sender) => (
+                      <li
+                        key={sender}
+                        className="flex items-center justify-between gap-2 p-1.5 rounded-md hover:bg-muted/50"
+                      >
+                        <span className="text-sm font-mono">{sender}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            handleRemoveSender(sendersTarget, sender)
+                          }
+                          disabled={mutatingSender}
+                          aria-label={`Remove ${sender}`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    ),
+                  )}
+                </ul>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setSendersTarget(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage transports dialog */}
+      <Dialog
+        open={transportsTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setTransportsTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Manage allowed transports</DialogTitle>
+            <DialogDescription>
+              Restrict which mail transports this API key may deliver through.
+              Leave all unchecked to allow any configured transport. Requests
+              that omit the transport property use the deployment default —
+              which must be allowed for a restricted key.
+            </DialogDescription>
+          </DialogHeader>
+          {transportsTarget && (
+            <div className="space-y-3 mt-2">
+              <div>
+                <p className="text-sm font-medium">{transportsTarget.name}</p>
+                <p className="text-xs font-mono text-muted-foreground">
+                  {transportsTarget.key_prefix}…
+                </p>
+              </div>
+              <Separator decorative orientation="horizontal" className="w-full" />
+              <ul className="flex flex-col gap-2">
+                {transportOptions.map((transport) => {
+                  const scopes = getScopes(transportsTarget.api_key_id);
+                  const checked = scopes.transports.includes(transport.id);
+                  const isToggling = togglingTransportId === transport.id;
+                  return (
+                    <li
+                      key={transport.id}
+                      className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50"
+                    >
+                      <Checkbox
+                        id={`transport-${transport.id}`}
+                        checked={checked}
+                        disabled={isToggling}
+                        onCheckedChange={(value) =>
+                          handleToggleTransport(
+                            transportsTarget,
+                            transport.id,
+                            value === true,
+                          )
+                        }
+                      />
+                      <Label
+                        htmlFor={`transport-${transport.id}`}
+                        className="flex flex-col gap-0.5 cursor-pointer"
+                      >
+                        <span className="text-sm font-medium font-mono">
+                          {transport.id}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {transport.configured
+                            ? "Configured on this deployment"
+                            : "Not configured on this deployment"}
+                          {transport.is_default ? " · default transport" : ""}
+                        </span>
+                      </Label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setTransportsTarget(null)}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

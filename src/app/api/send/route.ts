@@ -16,6 +16,17 @@ import {
   requestLooksLikeApiKeyAuth,
   validateApiKeyFromRequest,
 } from "@/lib/api-keys/validateApiKeyFromRequest";
+import {
+  extractEmailAddress,
+  senderMatchesAllowlist,
+} from "@/lib/api-keys/sender-scope";
+import {
+  isMailTransportKind,
+  loadMailTransportsAvailability,
+  MAIL_TRANSPORT_KINDS,
+  type IMailTransportsAvailability,
+  type MailTransportKind,
+} from "@/lib/mail-transport";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry, MailKeysRegistry } from "@/lib/mail-db";
 
@@ -95,13 +106,30 @@ interface SendAuthContext {
 }
 
 /**
+ * Flattens an optional cc/bcc value into a list of addresses.
+ */
+function toAddressList(value: string | string[] | undefined): string[] {
+  if (value === undefined) return [];
+  return Array.isArray(value) ? value : [value];
+}
+
+/**
  * Shared send-email logic. Used by both authentication paths (API key and
  * admin JWT) so the validation, template rendering, and dispatch behavior
  * stays identical regardless of how the caller authenticated.
  *
- * When `auth.apiKeyId` is set, the route enforces the key's mailing-list
- * allowlist (if any): a key with one or more allowlist rows may ONLY pass
- * a single allowlisted mailing list UUID in `to`, with no cc/bcc.
+ * When `auth.apiKeyId` is set, the route enforces the key's scopes. Each
+ * scope dimension with zero configured entries leaves the key unrestricted
+ * on that dimension:
+ * - transports: the resolved transport (explicit `transport` property, or
+ *   the deployment default) must be in the key's allowed transports.
+ * - senders: `from` (after default fallback) and `replyTo` must match the
+ *   key's allowed sender entries (exact address or `*@domain`).
+ * - audience: mailing-list and individual-recipient entries form ONE
+ *   combined allowlist. A key with any entry of either kind may only pass a
+ *   single allowlisted mailing list UUID in `to`, or individual addresses
+ *   that are all allowlisted; cc/bcc addresses must be allowlisted
+ *   individuals too.
  */
 async function handleSendEmailRequest(
   req: NextRequest,
@@ -130,8 +158,40 @@ async function handleSendEmailRequest(
   const toIsUuid: boolean =
     typeof to === "string" && uuidSchema.safeParse(to).success;
 
+  // ---- Transport resolution ----
+  // An explicitly requested transport must be a known id AND configured on
+  // this deployment (400 otherwise, dryRun included). An omitted transport
+  // resolves to the deployment default without a configured-check, so
+  // dryRun requests keep working on deployments with no transport
+  // configured; a real send through an unconfigured default still surfaces
+  // the config error at dispatch, as it always has.
+  let transportAvailability: IMailTransportsAvailability;
+  try {
+    transportAvailability = loadMailTransportsAvailability();
+  } catch (e: unknown) {
+    console.error("Failed to resolve mail transport availability: ", e);
+    return internalServerError("Mail transport configuration is invalid!");
+  }
+  const requestedTransport: string | undefined = sendEmailOpts.transport;
+  if (requestedTransport !== undefined) {
+    if (!isMailTransportKind(requestedTransport)) {
+      return badRequest(
+        `Unknown transport '${requestedTransport}'! Expected one of: ${MAIL_TRANSPORT_KINDS.join(", ")}.`,
+      );
+    }
+    if (!transportAvailability.configured.includes(requestedTransport)) {
+      return badRequest(
+        `Transport '${requestedTransport}' is not configured on this server.`,
+      );
+    }
+  }
+  const transportId: MailTransportKind =
+    requestedTransport !== undefined && isMailTransportKind(requestedTransport)
+      ? requestedTransport
+      : transportAvailability.defaultTransport;
+
   // Open a single ServerlessDatabase handle for the lifetime of any DB
-  // work this request needs (allowlist lookup + mailing-list expansion).
+  // work this request needs (scope lookup + mailing-list expansion).
   // If neither path runs we skip opening the handle entirely.
   let resolvedFromMailingListId: string | null = null;
   const needsDb: boolean = auth.apiKeyId !== null || toIsUuid;
@@ -139,35 +199,85 @@ async function handleSendEmailRequest(
     try {
       await using dbh = ServerlessDatabase.getAsyncResource();
 
-      // ---- Allowlist enforcement (API-key callers only) ----
+      // ---- Scope enforcement (API-key callers only) ----
       if (auth.apiKeyId !== null) {
         const keysRegistry = new MailKeysRegistry(dbh);
-        const allowlist = await keysRegistry.listAllowedMailingListIds(
-          auth.apiKeyId,
-        );
+        const scopes = await keysRegistry.getApiKeyScopes(auth.apiKeyId);
 
-        if (allowlist.length > 0) {
-          // Restricted key: cc/bcc are not permitted at all.
-          if (
-            sendEmailOpts.cc !== undefined ||
-            sendEmailOpts.bcc !== undefined
-          ) {
-            return forbidden("This API key is not permitted to set cc or bcc.");
-          }
+        // Transport scope: the resolved transport (explicit or default)
+        // must be allowlisted.
+        if (
+          scopes.allowedTransportIds.length > 0 &&
+          !scopes.allowedTransportIds.includes(transportId)
+        ) {
+          return forbidden(
+            `This API key is not permitted to use the '${transportId}' mail transport.`,
+          );
+        }
 
-          // Restricted key: `to` MUST be a single mailing list UUID.
-          if (!toIsUuid) {
+        // Sender scope: `from` (after default fallback) and `replyTo` must
+        // both match the key's allowed sender entries.
+        if (scopes.allowedSenders.length > 0) {
+          const fromAddress = extractEmailAddress(from);
+          if (!senderMatchesAllowlist(fromAddress, scopes.allowedSenders)) {
             return forbidden(
-              "This API key may only send to allowlisted mailing lists.",
+              `This API key is not permitted to send from '${fromAddress}'.`,
             );
           }
+          if (sendEmailOpts.replyTo !== undefined) {
+            const replyToAddress = extractEmailAddress(sendEmailOpts.replyTo);
+            if (
+              !senderMatchesAllowlist(replyToAddress, scopes.allowedSenders)
+            ) {
+              return forbidden(
+                `This API key is not permitted to set '${replyToAddress}' as the reply-to address.`,
+              );
+            }
+          }
+        }
 
-          // Restricted key: that UUID MUST be in the allowlist.
-          const mailingListId: string = to as string;
-          if (!allowlist.includes(mailingListId)) {
-            return forbidden(
-              "This API key is not permitted to send to that mailing list.",
-            );
+        // Audience scope: mailing lists + individual recipients form one
+        // combined allowlist; any entry of either kind restricts the key.
+        const audienceRestricted: boolean =
+          scopes.allowedMailingListIds.length > 0 ||
+          scopes.allowedRecipientEmails.length > 0;
+        if (audienceRestricted) {
+          const allowedRecipients = new Set<string>(
+            scopes.allowedRecipientEmails.map((email) => email.toLowerCase()),
+          );
+
+          // cc/bcc addresses must all be allowlisted individuals.
+          const copiedAddresses: string[] = [
+            ...toAddressList(sendEmailOpts.cc),
+            ...toAddressList(sendEmailOpts.bcc),
+          ];
+          for (const address of copiedAddresses) {
+            if (!allowedRecipients.has(address.trim().toLowerCase())) {
+              return forbidden(
+                `This API key is not permitted to cc/bcc '${address}'.`,
+              );
+            }
+          }
+
+          if (toIsUuid) {
+            // `to` is a mailing list: it must be in the allowlist.
+            const mailingListId: string = to as string;
+            if (!scopes.allowedMailingListIds.includes(mailingListId)) {
+              return forbidden(
+                "This API key is not permitted to send to that mailing list.",
+              );
+            }
+          } else {
+            // `to` is one or more individual addresses: all must be
+            // allowlisted.
+            const toAddresses: string[] = Array.isArray(to) ? to : [to];
+            for (const address of toAddresses) {
+              if (!allowedRecipients.has(address.trim().toLowerCase())) {
+                return forbidden(
+                  `This API key is not permitted to send to '${address}'.`,
+                );
+              }
+            }
           }
         }
       }
@@ -230,6 +340,7 @@ async function handleSendEmailRequest(
     replyTo: sendEmailOpts.replyTo ?? undefined,
     cc: sendEmailOpts.cc ?? undefined,
     bcc: sendEmailOpts.bcc ?? undefined,
+    transport: transportId,
   };
 
   // Transports throw on delivery failure (see IMailTransport), so any
@@ -280,15 +391,16 @@ async function handleSendEmailRequest(
   const authLogTag: string =
     auth.apiKeyId !== null ? ` [api_key=${auth.apiKeyId}]` : "";
   const dryRunLogTag: string = dryRun ? " [dry-run]" : "";
+  const transportLogTag: string = ` [transport=${transportId}]`;
   const verb: string = dryRun ? "validated email send to" : "sent email to";
   if (resolvedFromMailingListId !== null) {
     console.log(
-      `[/api/send]${authLogTag}${dryRunLogTag} Successfully ${verb} mailing list '${resolvedFromMailingListId}' (${(to as string[]).length} recipients): `,
+      `[/api/send]${authLogTag}${dryRunLogTag}${transportLogTag} Successfully ${verb} mailing list '${resolvedFromMailingListId}' (${(to as string[]).length} recipients): `,
       to,
     );
   } else {
     console.log(
-      `[/api/send]${authLogTag}${dryRunLogTag} Successfully ${verb}: `,
+      `[/api/send]${authLogTag}${dryRunLogTag}${transportLogTag} Successfully ${verb}: `,
       to,
     );
   }

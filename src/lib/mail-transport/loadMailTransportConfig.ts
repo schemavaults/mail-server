@@ -22,8 +22,68 @@ export interface ISmtpTransportConfig {
 
 export type MailTransportConfig = IResendTransportConfig | ISmtpTransportConfig;
 
-function isMailTransportKind(val: string): val is MailTransportKind {
+export function isMailTransportKind(val: string): val is MailTransportKind {
   return (MAIL_TRANSPORT_KINDS as readonly string[]).includes(val);
+}
+
+/**
+ * Snapshot of which transports this deployment offers. A transport is
+ * "configured" when its required env vars are present (`RESEND_API_KEY` for
+ * resend, `SMTP_HOST` for smtp) — both may be configured at once. The
+ * default transport is selected by `MAIL_TRANSPORT` (default "resend") and
+ * is what `/api/send` uses when a request omits its `transport` property.
+ */
+export interface IMailTransportsAvailability {
+  /** Transport ids with their env vars present, in registry order. */
+  configured: MailTransportKind[];
+  /** Default transport id per MAIL_TRANSPORT. Not necessarily configured. */
+  defaultTransport: MailTransportKind;
+}
+
+/**
+ * Resolves the default transport id from `MAIL_TRANSPORT`.
+ *
+ * @throws {MailTransportConfigError} when MAIL_TRANSPORT names an unknown
+ * transport kind.
+ */
+export function loadDefaultMailTransportKind(
+  env: Record<string, string | undefined> = process.env,
+): MailTransportKind {
+  const rawKind: string =
+    env.MAIL_TRANSPORT && env.MAIL_TRANSPORT.trim().length > 0
+      ? env.MAIL_TRANSPORT.trim().toLowerCase()
+      : DEFAULT_MAIL_TRANSPORT;
+  if (!isMailTransportKind(rawKind)) {
+    throw new MailTransportConfigError(
+      `Unknown MAIL_TRANSPORT '${rawKind}'! Expected one of: ${MAIL_TRANSPORT_KINDS.join(", ")}.`,
+    );
+  }
+  return rawKind;
+}
+
+/**
+ * Reports which transports are configured (per their env vars) and which is
+ * the default. Presence checks only — a configured transport can still fail
+ * `loadMailTransportConfig` on malformed values (e.g. a bad SMTP_PORT), which
+ * surfaces at send time as it always has.
+ *
+ * @throws {MailTransportConfigError} when MAIL_TRANSPORT names an unknown
+ * transport kind.
+ */
+export function loadMailTransportsAvailability(
+  env: Record<string, string | undefined> = process.env,
+): IMailTransportsAvailability {
+  const configured: MailTransportKind[] = [];
+  if (env.RESEND_API_KEY && env.RESEND_API_KEY.trim().length > 0) {
+    configured.push("resend");
+  }
+  if (env.SMTP_HOST && env.SMTP_HOST.trim().length > 0) {
+    configured.push("smtp");
+  }
+  return {
+    configured,
+    defaultTransport: loadDefaultMailTransportKind(env),
+  };
 }
 
 function parseBooleanEnvVar(name: string, raw: string): boolean {
@@ -36,9 +96,11 @@ function parseBooleanEnvVar(name: string, raw: string): boolean {
 }
 
 /**
- * Resolves the outbound mail transport configuration from environment
- * variables (see .env.example). `MAIL_TRANSPORT` selects the transport and
- * defaults to "resend" when unset, so existing deployments are unaffected.
+ * Resolves one transport's configuration from environment variables (see
+ * .env.example). When `kind` is provided, that transport's config is loaded;
+ * when omitted, the default transport selected by `MAIL_TRANSPORT` (default
+ * "resend") is loaded, so existing single-transport deployments are
+ * unaffected.
  *
  * @throws {MailTransportConfigError} when the selected transport's required
  * variables are missing or malformed. Config problems surface at first send,
@@ -46,16 +108,9 @@ function parseBooleanEnvVar(name: string, raw: string): boolean {
  */
 export function loadMailTransportConfig(
   env: Record<string, string | undefined> = process.env,
+  kind?: MailTransportKind,
 ): MailTransportConfig {
-  const rawKind: string =
-    env.MAIL_TRANSPORT && env.MAIL_TRANSPORT.trim().length > 0
-      ? env.MAIL_TRANSPORT.trim().toLowerCase()
-      : DEFAULT_MAIL_TRANSPORT;
-  if (!isMailTransportKind(rawKind)) {
-    throw new MailTransportConfigError(
-      `Unknown MAIL_TRANSPORT '${rawKind}'! Expected one of: ${MAIL_TRANSPORT_KINDS.join(", ")}.`,
-    );
-  }
+  const rawKind: MailTransportKind = kind ?? loadDefaultMailTransportKind(env);
 
   if (rawKind === "resend") {
     const apiKey: string | undefined = env.RESEND_API_KEY;
@@ -70,7 +125,7 @@ export function loadMailTransportConfig(
   const host: string | undefined = env.SMTP_HOST?.trim();
   if (!host) {
     throw new MailTransportConfigError(
-      "MAIL_TRANSPORT is 'smtp' but 'SMTP_HOST' is not set!",
+      "The 'smtp' mail transport is selected but 'SMTP_HOST' is not set!",
     );
   }
 

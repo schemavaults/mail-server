@@ -1,9 +1,49 @@
 import { describe, expect, test } from "bun:test";
 import {
   loadMailTransportConfig,
+  loadMailTransportsAvailability,
   DEFAULT_SMTP_PORT,
 } from "../loadMailTransportConfig";
 import MailTransportConfigError from "../MailTransportConfigError";
+
+describe("loadMailTransportsAvailability", () => {
+  test("reports no configured transports when no transport env vars are set", () => {
+    const availability = loadMailTransportsAvailability({});
+    expect(availability.configured).toEqual([]);
+    expect(availability.defaultTransport).toBe("resend");
+  });
+
+  test("reports resend configured when RESEND_API_KEY is set", () => {
+    const availability = loadMailTransportsAvailability({
+      RESEND_API_KEY: "re_123",
+    });
+    expect(availability.configured).toEqual(["resend"]);
+  });
+
+  test("reports both transports configured when both env sets are present", () => {
+    const availability = loadMailTransportsAvailability({
+      RESEND_API_KEY: "re_123",
+      SMTP_HOST: "smtp.example.com",
+      MAIL_TRANSPORT: "smtp",
+    });
+    expect(availability.configured).toEqual(["resend", "smtp"]);
+    expect(availability.defaultTransport).toBe("smtp");
+  });
+
+  test("ignores whitespace-only transport env vars", () => {
+    const availability = loadMailTransportsAvailability({
+      RESEND_API_KEY: "   ",
+      SMTP_HOST: "smtp.example.com",
+    });
+    expect(availability.configured).toEqual(["smtp"]);
+  });
+
+  test("throws MailTransportConfigError for an unknown MAIL_TRANSPORT", () => {
+    expect(() =>
+      loadMailTransportsAvailability({ MAIL_TRANSPORT: "sendgrid" }),
+    ).toThrow(MailTransportConfigError);
+  });
+});
 
 describe("loadMailTransportConfig", () => {
   describe("transport selection", () => {
@@ -32,6 +72,18 @@ describe("loadMailTransportConfig", () => {
       expect(() =>
         loadMailTransportConfig({ MAIL_TRANSPORT: "sendgrid" }),
       ).toThrow(MailTransportConfigError);
+    });
+
+    test("an explicit kind overrides the MAIL_TRANSPORT default", () => {
+      const config = loadMailTransportConfig(
+        {
+          MAIL_TRANSPORT: "resend",
+          RESEND_API_KEY: "re_123",
+          SMTP_HOST: "smtp.example.com",
+        },
+        "smtp",
+      );
+      expect(config.kind).toBe("smtp");
     });
   });
 

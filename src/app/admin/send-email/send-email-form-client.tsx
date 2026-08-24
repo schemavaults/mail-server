@@ -62,6 +62,7 @@ const formSchema = z
       }, "Template props must be valid JSON."),
     text: z.string().optional(),
     html: z.string().optional(),
+    transport: z.string().optional(),
     dryRun: z.boolean().optional(),
   })
   .superRefine((v, ctx) => {
@@ -103,12 +104,26 @@ function toRecipientField(
   return parts;
 }
 
+/** One configured transport the send form can select. */
+export interface SendEmailTransportOption {
+  id: string;
+  is_default: boolean;
+}
+
+/**
+ * Sentinel Select value meaning "omit `transport` from the request body and
+ * let the mail-server use its default transport".
+ */
+const DEFAULT_TRANSPORT_SENTINEL = "__default__";
+
 export interface SendEmailFormClientProps {
   templates: { id: string; description: string }[];
+  transports: SendEmailTransportOption[];
 }
 
 export default function SendEmailFormClient({
   templates,
+  transports,
 }: SendEmailFormClientProps): ReactElement {
   const { toast } = useToast();
   const auth = useAuth();
@@ -135,6 +150,7 @@ export default function SendEmailFormClient({
       template_props_json: "{}",
       text: "",
       html: "",
+      transport: DEFAULT_TRANSPORT_SENTINEL,
       dryRun: false,
     },
   });
@@ -310,6 +326,12 @@ export default function SendEmailFormClient({
     if (ccField) body.cc = ccField;
     const bccField = toRecipientField(formData.bcc);
     if (bccField) body.bcc = bccField;
+    if (
+      formData.transport &&
+      formData.transport !== DEFAULT_TRANSPORT_SENTINEL
+    ) {
+      body.transport = formData.transport;
+    }
     if (formData.dryRun) body.dryRun = true;
 
     try {
@@ -453,6 +475,44 @@ export default function SendEmailFormClient({
               <p className="text-red-500 text-sm">{errors.subject.message}</p>
             )}
           </div>
+
+          {transports.length > 0 ? (
+            <div>
+              <Label htmlFor="transport">Transport</Label>
+              <Controller
+                control={control}
+                name="transport"
+                render={({ field }) => (
+                  <Select
+                    value={field.value ?? DEFAULT_TRANSPORT_SENTINEL}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger id="transport" className="w-full">
+                      <SelectValue placeholder="Deployment default" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={DEFAULT_TRANSPORT_SENTINEL}>
+                        Deployment default
+                        {(() => {
+                          const def = transports.find((t) => t.is_default);
+                          return def ? ` (${def.id})` : "";
+                        })()}
+                      </SelectItem>
+                      {transports.map(({ id, is_default }) => (
+                        <SelectItem key={id} value={id}>
+                          {id}
+                          {is_default ? " (default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Which configured mail transport should deliver this email.
+              </p>
+            </div>
+          ) : null}
 
           <Separator decorative orientation="horizontal" className="my-2" />
 
