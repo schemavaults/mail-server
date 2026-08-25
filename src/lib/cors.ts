@@ -1,6 +1,5 @@
 import "server-only";
 
-import { type NextRequest, NextResponse } from "next/server";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { CorsOriginsRegistry } from "@/lib/mail-db/CorsOriginsRegistry";
 
@@ -22,10 +21,10 @@ async function isAllowedOrigin(origin: string | null): Promise<boolean> {
   }
 }
 
-export async function applyCorsHeaders(
-  req: NextRequest,
-  res: NextResponse,
-): Promise<NextResponse> {
+export async function applyCorsHeaders<TResponse extends Response>(
+  req: Request,
+  res: TResponse,
+): Promise<TResponse> {
   const origin = req.headers.get("origin");
   if (origin && (await isAllowedOrigin(origin))) {
     res.headers.set("Access-Control-Allow-Origin", origin);
@@ -35,9 +34,7 @@ export async function applyCorsHeaders(
   return res;
 }
 
-export async function corsPreflightResponse(
-  req: NextRequest,
-): Promise<NextResponse> {
+export async function corsPreflightResponse(req: Request): Promise<Response> {
   const origin = req.headers.get("origin");
   const headers = new Headers();
   if (origin && (await isAllowedOrigin(origin))) {
@@ -54,5 +51,5 @@ export async function corsPreflightResponse(
     );
     headers.set("Access-Control-Max-Age", "86400");
   }
-  return new NextResponse(null, { status: 204, headers });
+  return new Response(null, { status: 204, headers });
 }

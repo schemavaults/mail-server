@@ -1,37 +1,45 @@
 import "server-only";
 
-import { type NextRequest, NextResponse } from "next/server";
+import { handle } from "hono/vercel";
+import { createRouteApp } from "@/lib/hono/create-route-app";
+import { parseJsonBody } from "@/lib/hono/parse-json-body";
+import {
+  badRequest,
+  internalServerError,
+  jsonError,
+} from "@/lib/hono/responses";
+import type { Context } from "hono";
 import { confirmSubscriptionRequestBodySchema } from "./confirm-subscription-request-body-schema";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry } from "@/lib/mail-db";
 import { hashApiKey } from "@/lib/api-keys/hashApiKey";
 
-function badRequest(message: string): NextResponse {
-  return NextResponse.json(
+const INVALID_LINK_MESSAGE = "Confirmation link is invalid.";
+
+function confirmedResponse(
+  c: Context,
+  mailing_list_id: string,
+  email: string,
+): Response {
+  return c.json(
     {
-      success: false,
-      message,
+      success: true,
+      mailing_list_id,
+      email,
     },
-    {
-      status: 400,
-    },
+    200,
   );
 }
 
-const INVALID_LINK_MESSAGE = "Confirmation link is invalid.";
+const app = createRouteApp("/api/mailing-lists/confirm");
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  const raw_json_body = await req.json().catch(() => null);
-  if (typeof raw_json_body !== "object" || !raw_json_body) {
-    return badRequest("Expected request to have JSON body.");
-  }
-
-  const parsed_body =
-    await confirmSubscriptionRequestBodySchema.safeParseAsync(raw_json_body);
-  if (!parsed_body.success) {
-    return badRequest(INVALID_LINK_MESSAGE);
-  }
-  const { token, email } = parsed_body.data;
+app.post("/", async (c) => {
+  const body = await parseJsonBody(c, confirmSubscriptionRequestBodySchema, {
+    malformedMessage: "Expected request to have JSON body.",
+    invalidMessage: INVALID_LINK_MESSAGE,
+  });
+  if (!body.ok) return body.response;
+  const { token, email } = body.data;
 
   try {
     await using dbh = ServerlessDatabase.getAsyncResource();
@@ -43,33 +51,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
 
     if (!pending) {
-      return badRequest(INVALID_LINK_MESSAGE);
+      return badRequest(c, INVALID_LINK_MESSAGE);
     }
 
     if (pending.email.toLowerCase() !== email.toLowerCase()) {
-      return badRequest(INVALID_LINK_MESSAGE);
+      return badRequest(c, INVALID_LINK_MESSAGE);
     }
 
     if (pending.confirmed_at !== null) {
-      return NextResponse.json(
-        {
-          success: true,
-          mailing_list_id: pending.mailing_list_id,
-          email: pending.email,
-        },
-        { status: 200 },
-      );
+      return confirmedResponse(c, pending.mailing_list_id, pending.email);
     }
 
     const now = Date.now();
     if (pending.expires_at < now) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Confirmation link has expired.",
-        },
-        { status: 410 },
-      );
+      return jsonError(c, 410, "Confirmation link has expired.");
     }
 
     await registry.markPendingSubscriptionConfirmed(
@@ -88,22 +83,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        mailing_list_id: pending.mailing_list_id,
-        email: pending.email,
-      },
-      { status: 200 },
-    );
+    return confirmedResponse(c, pending.mailing_list_id, pending.email);
   } catch (e: unknown) {
     console.error("Failed to confirm mailing list subscription:", e);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to confirm mailing list subscription!",
-      },
-      { status: 500 },
+    return internalServerError(
+      c,
+      "Failed to confirm mailing list subscription!",
     );
   }
-}
+});
+
+export const POST = handle(app);

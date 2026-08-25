@@ -1,66 +1,35 @@
 import "server-only";
 
-import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
-import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
+import { handle } from "hono/vercel";
+import { createRouteApp } from "@/lib/hono/create-route-app";
+import { runWithAdminGuard } from "@/lib/hono/admin-guard";
+import { parseUuidParam } from "@/lib/hono/parse-uuid-param";
+import { internalServerError, jsonMessage } from "@/lib/hono/responses";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { CorsOriginsRegistry } from "@/lib/mail-db/CorsOriginsRegistry";
 
-const corsOriginIdSchema = z.string().uuid();
+const app = createRouteApp("/api/admin/cors-origins/:cors_origin_id");
 
-interface SuccessResponse {
-  success: true;
-  message: string;
-}
+app.delete("/", (c) =>
+  runWithAdminGuard(c, async () => {
+    const originId = parseUuidParam(c, "cors_origin_id");
+    if (!originId.ok) return originId.response;
+    const cors_origin_id = originId.value;
 
-interface ErrorResponse {
-  success: false;
-  message: string;
-}
+    try {
+      await using dbh = ServerlessDatabase.getAsyncResource();
+      const registry = new CorsOriginsRegistry(dbh);
+      await registry.removeOrigin(cors_origin_id);
+    } catch (e: unknown) {
+      console.error("Failed to remove allowed CORS origin: ", e);
+      return internalServerError(c, "Failed to remove allowed CORS origin!");
+    }
 
-export async function DELETE(
-  req: NextRequest,
-  ctx: RouteContext<"/api/admin/cors-origins/[cors_origin_id]">,
-): Promise<NextResponse> {
-  const { cors_origin_id: rawCorsOriginId } = await ctx.params;
+    return jsonMessage(
+      c,
+      `Successfully removed allowed CORS origin with ID: '${cors_origin_id}'.`,
+    );
+  }),
+);
 
-  const protected_route = await withAdminApiRouteGuard(
-    async function DELETE_handler(): Promise<NextResponse> {
-      const parsed = corsOriginIdSchema.safeParse(rawCorsOriginId);
-      if (!parsed.success) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Invalid cors_origin_id; must be a valid UUID.",
-          } satisfies ErrorResponse,
-          { status: 400 },
-        );
-      }
-      const cors_origin_id = parsed.data;
-
-      try {
-        await using dbh = ServerlessDatabase.getAsyncResource();
-        const registry = new CorsOriginsRegistry(dbh);
-        await registry.removeOrigin(cors_origin_id);
-      } catch (e: unknown) {
-        console.error("Failed to remove allowed CORS origin: ", e);
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Failed to remove allowed CORS origin!",
-          } satisfies ErrorResponse,
-          { status: 500 },
-        );
-      }
-
-      return NextResponse.json(
-        {
-          success: true,
-          message: `Successfully removed allowed CORS origin with ID: '${cors_origin_id}'.`,
-        } satisfies SuccessResponse,
-        { status: 200 },
-      );
-    },
-  );
-  return await protected_route(req);
-}
+export const DELETE = handle(app);

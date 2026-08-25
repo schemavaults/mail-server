@@ -3,7 +3,7 @@ import type {
   Selectable,
   Updateable,
 } from "@schemavaults/dbh";
-import z from "zod";
+import { z } from "@/lib/zod-openapi";
 
 /**
  * Validates a web origin of the form scheme://host[:port] — no path, query,
@@ -20,7 +20,12 @@ export const corsOriginValueSchema = z
     } catch {
       return false;
     }
-  }, "Must be a web origin of the form scheme://host[:port] with no path or trailing slash.");
+  }, "Must be a web origin of the form scheme://host[:port] with no path or trailing slash.")
+  .openapi({
+    description:
+      "A web origin of the form scheme://host[:port] with no path or trailing slash.",
+    example: "https://app.example.com",
+  });
 
 export const corsAllowedOriginRowSchema = z
   .object({
@@ -37,7 +42,8 @@ export const corsAllowedOriginRowSchema = z
     description: true,
     created_at: true,
     created_by_user_id: true,
-  });
+  })
+  .openapi("CorsAllowedOrigin");
 
 export type CorsAllowedOriginsTable = z.infer<
   typeof corsAllowedOriginRowSchema

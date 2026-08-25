@@ -1,21 +1,29 @@
 import "server-only";
 
-import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+import { handle } from "hono/vercel";
+import type { Context } from "hono";
+import { z } from "@/lib/zod-openapi";
 import { createSendEmailRequestBodySchema } from "@schemavaults/send-email";
+import { createRouteApp } from "@/lib/hono/create-route-app";
+import {
+  runWithApiKeyOrAdminGuard,
+  type ApiKeyOrAdminAuthContext,
+} from "@/lib/hono/admin-guard";
+import { parseJsonBody } from "@/lib/hono/parse-json-body";
+import {
+  badRequest,
+  forbidden,
+  internalServerError,
+  jsonMessage,
+} from "@/lib/hono/responses";
 import sendEmailFromTemplate from "@/lib/send-email-from-template";
 import DefaultMailSenderAddress from "@/lib/DefaultMailSenderAddress";
 import sendEmail from "@/lib/send-email";
-import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
 import {
   emailTemplateIdSchema,
   type EmailTemplateId,
 } from "@/lib/EmailTemplatesCatalog";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
-import {
-  requestLooksLikeApiKeyAuth,
-  validateApiKeyFromRequest,
-} from "@/lib/api-keys/validateApiKeyFromRequest";
 import {
   extractEmailAddress,
   senderMatchesAllowlist,
@@ -39,73 +47,6 @@ const uuidSchema = z.string().uuid();
 // mailing-list behavior is identical regardless of the configured transport.
 const MAX_RECIPIENTS_PER_SEND = 50;
 
-function badRequest(message: string = "Invalid request"): NextResponse {
-  return NextResponse.json(
-    {
-      success: false,
-      message,
-    },
-    {
-      status: 400,
-    },
-  );
-}
-
-function unauthorized(message: string = "Unauthorized"): NextResponse {
-  return NextResponse.json(
-    {
-      success: false,
-      message,
-    },
-    {
-      status: 401,
-    },
-  );
-}
-
-function forbidden(message: string = "Forbidden"): NextResponse {
-  return NextResponse.json(
-    {
-      success: false,
-      message,
-    },
-    {
-      status: 403,
-    },
-  );
-}
-
-function internalServerError(
-  message: string = "An unknown error has occurred!",
-): NextResponse {
-  return NextResponse.json(
-    {
-      success: false,
-      message,
-    },
-    {
-      status: 500,
-    },
-  );
-}
-
-function emailSentSuccessfullyResponse(): NextResponse {
-  return NextResponse.json(
-    {
-      success: true,
-      message: "Successfully sent email!",
-    },
-    {
-      status: 200,
-    },
-  );
-}
-
-interface SendAuthContext {
-  /** Non-null when the caller authenticated via an API key. */
-  apiKeyId: string | null;
-}
-
 /**
  * Shared send-email logic. Used by both authentication paths (API key and
  * admin JWT) so the validation, template rendering, and dispatch behavior
@@ -127,20 +68,16 @@ interface SendAuthContext {
  * key with no entries at all may not send to anyone.
  */
 async function handleSendEmailRequest(
-  req: NextRequest,
-  auth: SendAuthContext,
-): Promise<NextResponse> {
-  const parsed_data = await sendEmailRequestBodySchema.safeParseAsync(
-    await req.json(),
-  );
-  if (!parsed_data.success) {
-    console.error(
-      "Failed to parse request body to send email from this @schemavaults/mail-server instance: ",
-      parsed_data.error,
-    );
-    return badRequest("Failed to parse request body!");
-  }
-  const sendEmailOpts = parsed_data.data;
+  c: Context,
+  auth: ApiKeyOrAdminAuthContext,
+): Promise<Response> {
+  const parsed_body = await parseJsonBody(c, sendEmailRequestBodySchema, {
+    invalidMessage: "Failed to parse request body!",
+    logLabel:
+      "request body to send email from this @schemavaults/mail-server instance",
+  });
+  if (!parsed_body.ok) return parsed_body.response;
+  const sendEmailOpts = parsed_body.data;
   const dryRun: boolean = sendEmailOpts.dryRun === true;
 
   const subject: string = sendEmailOpts.subject;
@@ -165,17 +102,19 @@ async function handleSendEmailRequest(
     transportAvailability = loadMailTransportsAvailability();
   } catch (e: unknown) {
     console.error("Failed to resolve mail transport availability: ", e);
-    return internalServerError("Mail transport configuration is invalid!");
+    return internalServerError(c, "Mail transport configuration is invalid!");
   }
   const requestedTransport: string | undefined = sendEmailOpts.transport;
   if (requestedTransport !== undefined) {
     if (!isMailTransportKind(requestedTransport)) {
       return badRequest(
+        c,
         `Unknown transport '${requestedTransport}'! Expected one of: ${MAIL_TRANSPORT_KINDS.join(", ")}.`,
       );
     }
     if (!transportAvailability.configured.includes(requestedTransport)) {
       return badRequest(
+        c,
         `Transport '${requestedTransport}' is not configured on this server.`,
       );
     }
@@ -206,6 +145,7 @@ async function handleSendEmailRequest(
           !scopes.allowedTransportIds.includes(transportId)
         ) {
           return forbidden(
+            c,
             `This API key is not permitted to use the '${transportId}' mail transport.`,
           );
         }
@@ -216,6 +156,7 @@ async function handleSendEmailRequest(
           const fromAddress = extractEmailAddress(from);
           if (!senderMatchesAllowlist(fromAddress, scopes.allowedSenders)) {
             return forbidden(
+              c,
               `This API key is not permitted to send from '${fromAddress}'.`,
             );
           }
@@ -225,6 +166,7 @@ async function handleSendEmailRequest(
               !senderMatchesAllowlist(replyToAddress, scopes.allowedSenders)
             ) {
               return forbidden(
+                c,
                 `This API key is not permitted to set '${replyToAddress}' as the reply-to address.`,
               );
             }
@@ -249,7 +191,7 @@ async function handleSendEmailRequest(
           },
         );
         if (!audienceDecision.allowed) {
-          return forbidden(audienceDecision.message);
+          return forbidden(c, audienceDecision.message);
         }
       }
 
@@ -282,10 +224,11 @@ async function handleSendEmailRequest(
         }
 
         if (recipients.length === 0) {
-          return badRequest("Mailing list has no active subscribers.");
+          return badRequest(c, "Mailing list has no active subscribers.");
         }
         if (recipients.length > MAX_RECIPIENTS_PER_SEND) {
           return badRequest(
+            c,
             `Mailing list has more than ${MAX_RECIPIENTS_PER_SEND} active subscribers; per-send recipient limit exceeded.`,
           );
         }
@@ -300,7 +243,7 @@ async function handleSendEmailRequest(
         }'): `,
         e,
       );
-      return internalServerError("Failed to prepare email for sending!");
+      return internalServerError(c, "Failed to prepare email for sending!");
     }
   }
 
@@ -322,7 +265,7 @@ async function handleSendEmailRequest(
         sendEmailOpts.message.template_id,
       );
       if (!parsed_template_id.success) {
-        return badRequest("Invalid template ID!");
+        return badRequest(c, "Invalid template ID!");
       }
       const template_id: EmailTemplateId = parsed_template_id.data;
 
@@ -344,12 +287,13 @@ async function handleSendEmailRequest(
   } catch (e: unknown) {
     if (e instanceof BadEmailTemplatePropsError) {
       console.error("Error sending email — invalid template props: ", e.message);
-      return badRequest(e.message);
+      return badRequest(c, e.message);
     }
 
     console.error("Error sending email: ", e);
 
     return internalServerError(
+      c,
       typeof e === "object" &&
         !!e &&
         "message" in e &&
@@ -376,31 +320,16 @@ async function handleSendEmailRequest(
     );
   }
 
-  return emailSentSuccessfullyResponse();
+  return jsonMessage(c, "Successfully sent email!");
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  // API-key path: if the caller is presenting a token that looks like a
-  // SchemaVaults Mail Server API key, validate it against the api_keys table
-  // and skip the admin JWT guard entirely. The validated record is passed
-  // through so allowlist enforcement can scope what this key may send.
-  if (requestLooksLikeApiKeyAuth(req)) {
-    const result = await validateApiKeyFromRequest(req);
-    if (!result.valid) {
-      return unauthorized("Invalid or revoked API key.");
-    }
-    return await handleSendEmailRequest(req, {
-      apiKeyId: result.record.api_key_id,
-    });
-  }
+const app = createRouteApp("/api/send");
 
-  // Fallback path: existing admin JWT guard. Keeps the in-app
-  // /admin/send-email page working without changes. Admins bypass
-  // allowlist enforcement entirely (apiKeyId = null).
-  const protected_route = await withAdminApiRouteGuard(
-    async function POST_handler({ req }): Promise<NextResponse> {
-      return await handleSendEmailRequest(req, { apiKeyId: null });
-    },
-  );
-  return await protected_route(req);
-}
+// Accepts either a mail-server API key (validated against the api_keys
+// table; scope enforcement applies) or an admin JWT (scopes bypassed,
+// keeping the in-app /admin/send-email page working without changes).
+app.post("/", (c) =>
+  runWithApiKeyOrAdminGuard(c, (auth) => handleSendEmailRequest(c, auth)),
+);
+
+export const POST = handle(app);
