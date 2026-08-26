@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod-openapi";
 import isValidBase64Url from "@/lib/isValidBase64Url";
 
 /**
@@ -17,11 +17,19 @@ export const confirmSubscriptionRequestBodySchema = z
       .length(CONFIRMATION_TOKEN_LENGTH)
       .refine(isValidBase64Url, {
         message: "token must be URL-safe base64",
+      })
+      .openapi({
+        description:
+          "43-character URL-safe base64 confirmation token from the confirmation email link.",
       }),
-    email: z.string().email(),
+    email: z.string().email().openapi({
+      description: "Email address the confirmation was sent to.",
+      example: "subscriber@example.com",
+    }),
   })
   .required({ token: true, email: true })
-  .strict();
+  .strict()
+  .openapi("ConfirmSubscriptionRequestBody");
 
 export type ConfirmSubscriptionRequestBody = z.infer<
   typeof confirmSubscriptionRequestBodySchema

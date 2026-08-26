@@ -3,7 +3,7 @@ import type {
   Selectable,
   Updateable,
 } from "@schemavaults/dbh";
-import z from "zod";
+import { z } from "@/lib/zod-openapi";
 
 export const apiKeyTableRowSchema = z.object({
   api_key_id: z.string().uuid(),
@@ -36,3 +36,14 @@ export type ApiKeyUpdate = Updateable<ApiKeysTable>;
  * or the plaintext token; safe to return from admin list endpoints.
  */
 export type ApiKeyRecord = Omit<ApiKey, "key_hash">;
+
+/**
+ * Schema mirror of {@link ApiKeyRecord}, used by the admin API-key routes'
+ * OpenAPI registrations.
+ */
+export const apiKeyRecordSchema = apiKeyTableRowSchema
+  .omit({ key_hash: true })
+  .openapi("ApiKeyRecord", {
+    description:
+      "An API key as returned by the admin endpoints. Never includes the secret hash or the plaintext token.",
+  });

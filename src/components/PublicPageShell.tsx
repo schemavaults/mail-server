@@ -25,7 +25,11 @@ export function PublicPageShell({
     <div
       className={cn(
         "w-full min-h-screen h-full",
-        "flex flex-col justify-center items-stretch",
+        // justify-start, not justify-center: the growing <main> already
+        // pushes the footer to the bottom on short pages, and centering a
+        // column that overflows the viewport clips its top half above the
+        // scrollable area (unreachable Nav/header on long pages like /docs).
+        "flex flex-col justify-start items-stretch",
         "bg-background",
       )}
     >

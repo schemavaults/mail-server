@@ -1,12 +1,16 @@
 import type { Insertable, Selectable, Updateable } from "@schemavaults/dbh";
-import z from "zod";
+import { z } from "@/lib/zod-openapi";
 
 /**
  * The kinds of white-label assets an admin can upload from /admin/branding.
  * One row is stored per kind; the app falls back to the bundled default
  * asset for kinds without a row.
  */
-export const brandingAssetKindSchema = z.enum(["logo", "favicon"]);
+export const brandingAssetKindSchema = z
+  .enum(["logo", "favicon"])
+  .openapi("BrandingAssetKind", {
+    description: "Kind of white-label branding asset.",
+  });
 
 export type BrandingAssetKind = z.infer<typeof brandingAssetKindSchema>;
 
@@ -18,14 +22,18 @@ export const BRANDING_ASSET_KINDS: readonly BrandingAssetKind[] =
  * served with a restrictive Content-Security-Policy so embedded scripts
  * never execute.
  */
-export const brandingAssetContentTypeSchema = z.enum([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/svg+xml",
-  "image/x-icon",
-  "image/vnd.microsoft.icon",
-]);
+export const brandingAssetContentTypeSchema = z
+  .enum([
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/svg+xml",
+    "image/x-icon",
+    "image/vnd.microsoft.icon",
+  ])
+  .openapi("BrandingAssetContentType", {
+    description: "MIME types accepted for uploaded branding assets.",
+  });
 
 export type BrandingAssetContentType = z.infer<
   typeof brandingAssetContentTypeSchema
@@ -66,3 +74,17 @@ export interface BrandingAssetMetadata {
   content_type: BrandingAssetContentType;
   updated_at: number;
 }
+
+/**
+ * Schema mirror of {@link BrandingAssetMetadata}, used by the admin branding
+ * routes' OpenAPI registrations.
+ */
+export const brandingAssetMetadataSchema = z
+  .object({
+    asset_kind: brandingAssetKindSchema,
+    content_type: brandingAssetContentTypeSchema,
+    updated_at: z.number().nonnegative().openapi({
+      description: "Upload time as a Unix timestamp in milliseconds.",
+    }),
+  })
+  .openapi("BrandingAssetMetadata");

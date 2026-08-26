@@ -1,84 +1,35 @@
 import "server-only";
 
-import { type NextRequest, NextResponse } from "next/server";
+import { handle } from "hono/vercel";
+import { createRouteApp } from "@/lib/hono/create-route-app";
+import { corsMiddleware } from "@/lib/hono/cors-middleware";
+import { parseJsonBody } from "@/lib/hono/parse-json-body";
+import { internalServerError, jsonMessage } from "@/lib/hono/responses";
 import { joinMailingListRequestBodySchema } from "./join-mailing-list-request-body-schema";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailingListRegistry } from "@/lib/mail-db";
 import { generateConfirmationToken } from "@/lib/mailing-list-confirmation-tokens/generateConfirmationToken";
 import { sendEmailFromTemplate } from "@/lib/send-email-from-template";
-import { applyCorsHeaders, corsPreflightResponse } from "@/lib/cors";
+import { getMailServerBaseUrl } from "@/lib/mail-server-base-url";
 
 const CONFIRMATION_TTL_MS = 24 * 60 * 60 * 1000;
 
-/**
- * Public base URL of this mail server, used to build absolute links embedded
- * in emails. Configured via the HOST environment variable (with or without a
- * scheme; https is assumed when omitted). Falls back to localhost with the
- * dev server's PORT when unset.
- */
-function getMailServerBaseUrl(): string {
-  const host = process.env.HOST;
-  if (typeof host === "string" && host.length > 0) {
-    return new URL(host.includes("://") ? host : `https://${host}`).origin;
-  }
-  return `http://localhost:${process.env.PORT ?? "3000"}`;
-}
+const PENDING_CONFIRMATION_MESSAGE =
+  "Check your inbox for a confirmation email to complete your subscription.";
 
-async function badRequest(
-  req: NextRequest,
-  message: string,
-): Promise<NextResponse> {
-  return await applyCorsHeaders(
-    req,
-    NextResponse.json(
-      {
-        success: false,
-        message,
-      },
-      {
-        status: 400,
-      },
-    ),
-  );
-}
+const app = createRouteApp("/api/mailing-lists/join");
 
-async function pendingConfirmationResponse(
-  req: NextRequest,
-): Promise<NextResponse> {
-  return await applyCorsHeaders(
-    req,
-    NextResponse.json(
-      {
-        success: true,
-        message:
-          "Check your inbox for a confirmation email to complete your subscription.",
-      },
-      {
-        status: 200,
-      },
-    ),
-  );
-}
+// Public cross-origin route: joining is offered from other web apps, so the
+// database-backed CORS allowlist applies (and answers OPTIONS preflights).
+app.use(corsMiddleware());
 
-export async function OPTIONS(req: NextRequest): Promise<NextResponse> {
-  return await corsPreflightResponse(req);
-}
-
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  const raw_json_body = await req.json();
-  if (typeof raw_json_body !== "object" || !raw_json_body) {
-    return await badRequest(req, "Expected request to have JSON body.");
-  }
-
-  const parsed_body =
-    await joinMailingListRequestBodySchema.safeParseAsync(raw_json_body);
-  if (!parsed_body.success) {
-    return await badRequest(
-      req,
-      "Failed to parse request body to join mailing list!",
-    );
-  }
-  const { email, mailing_list_id } = parsed_body.data;
+app.post("/", async (c) => {
+  const body = await parseJsonBody(c, joinMailingListRequestBodySchema, {
+    malformedMessage: "Expected request to have JSON body.",
+    invalidMessage: "Failed to parse request body to join mailing list!",
+  });
+  if (!body.ok) return body.response;
+  const { email, mailing_list_id } = body.data;
 
   try {
     await using dbh = ServerlessDatabase.getAsyncResource();
@@ -88,7 +39,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const list = await mailRegistry.getMailingList(mailing_list_id);
 
     if (await mailRegistry.isAlreadySubscribed(mailing_list_id, email)) {
-      return await pendingConfirmationResponse(req);
+      return jsonMessage(c, PENDING_CONFIRMATION_MESSAGE);
     }
 
     const { plaintext, hash } = await generateConfirmationToken();
@@ -126,19 +77,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   } catch (e: unknown) {
     console.error("Failed to start mailing list subscription:", e);
-    return await applyCorsHeaders(
-      req,
-      NextResponse.json(
-        {
-          success: false,
-          message: "Failed to start mailing list subscription!",
-        },
-        {
-          status: 500,
-        },
-      ),
+    return internalServerError(
+      c,
+      "Failed to start mailing list subscription!",
     );
   }
 
-  return await pendingConfirmationResponse(req);
-}
+  return jsonMessage(c, PENDING_CONFIRMATION_MESSAGE);
+});
+
+export const POST = handle(app);
+export const OPTIONS = handle(app);

@@ -1,29 +1,18 @@
 import "server-only";
 
-import { type NextRequest, NextResponse } from "next/server";
-import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
+import { handle } from "hono/vercel";
+import type { Context } from "hono";
+import { createRouteApp } from "@/lib/hono/create-route-app";
+import { runWithApiKeyOrAdminGuard } from "@/lib/hono/admin-guard";
+import { internalServerError, jsonData } from "@/lib/hono/responses";
 import { EmailTemplatesCatalog } from "@/lib/EmailTemplatesCatalog";
-import {
-  requestLooksLikeApiKeyAuth,
-  validateApiKeyFromRequest,
-} from "@/lib/api-keys/validateApiKeyFromRequest";
 
 interface TemplateListItem {
   id: string;
   description: string;
 }
 
-interface ListTemplatesSuccessResponse {
-  success: true;
-  data: TemplateListItem[];
-}
-
-interface ErrorResponse {
-  success: false;
-  message: string;
-}
-
-async function loadTemplateList(): Promise<NextResponse> {
+async function loadTemplateList(c: Context): Promise<Response> {
   try {
     const entries: TemplateListItem[] = await Promise.all(
       Object.values(EmailTemplatesCatalog).map(async (load) => {
@@ -32,45 +21,18 @@ async function loadTemplateList(): Promise<NextResponse> {
         return { id: entry.id, description: entry.description };
       }),
     );
-    return NextResponse.json(
-      { success: true, data: entries } satisfies ListTemplatesSuccessResponse,
-      { status: 200 },
-    );
+    return jsonData(c, entries);
   } catch (e: unknown) {
     console.error("Failed to list email templates: ", e);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to list email templates!",
-      } satisfies ErrorResponse,
-      { status: 500 },
-    );
+    return internalServerError(c, "Failed to list email templates!");
   }
 }
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  // API-key path: if the caller is presenting a token that looks like a
-  // SchemaVaults Mail Server API key, validate it against the api_keys table
-  // and skip the admin JWT guard entirely. Mirrors POST /api/send.
-  if (requestLooksLikeApiKeyAuth(req)) {
-    const result = await validateApiKeyFromRequest(req);
-    if (!result.valid) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid or revoked API key.",
-        } satisfies ErrorResponse,
-        { status: 401 },
-      );
-    }
-    return await loadTemplateList();
-  }
+const app = createRouteApp("/api/templates");
 
-  // Fallback path: existing admin JWT guard.
-  const protected_route = await withAdminApiRouteGuard(
-    async function GET_handler(): Promise<NextResponse> {
-      return await loadTemplateList();
-    },
-  );
-  return await protected_route(req);
-}
+// Accepts either a mail-server API key or an admin JWT — mirrors /api/send.
+app.get("/", (c) =>
+  runWithApiKeyOrAdminGuard(c, async () => await loadTemplateList(c)),
+);
+
+export const GET = handle(app);

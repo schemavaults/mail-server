@@ -1,13 +1,33 @@
 import "server-only";
 
-import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
+import { handle } from "hono/vercel";
+import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { createRouteApp } from "@/lib/hono/create-route-app";
+import { runWithAdminGuard } from "@/lib/hono/admin-guard";
 import EmailTemplatesCatalog, {
   isValidTemplateId,
 } from "@/lib/EmailTemplatesCatalog";
 import sampleEmailTemplateProps from "@/lib/EmailTemplatesCatalog/sampleProps";
 import { render } from "@react-email/render";
-import { type NextRequest, NextResponse } from "next/server";
 import type { ReactElement } from "react";
+
+// This route's error envelope predates the shared `{ success, message }`
+// shape — it uses `error` instead of `message`, and the admin template
+// preview UI depends on it. Keep it bespoke.
+function previewError(
+  c: Context,
+  status: ContentfulStatusCode,
+  error: string,
+): Response {
+  return c.json({ success: false, error }, status);
+}
+
+function htmlResponse(c: Context, html: string): Response {
+  return c.body(html, 200, {
+    "Content-Type": "text/html; charset=utf-8",
+  });
+}
 
 async function renderTemplateToHtml(
   templateId: string,
@@ -33,86 +53,71 @@ async function renderTemplateToHtml(
   }
 }
 
-export async function GET(req: NextRequest): Promise<NextResponse> {
-  const protected_route = await withAdminApiRouteGuard(
-    async function GET_handler({ req }): Promise<NextResponse> {
-      const templateId = req.nextUrl.searchParams.get("template_id");
-      if (!templateId) {
-        return NextResponse.json(
-          { success: false, error: "Invalid or missing template_id" },
-          { status: 400 },
-        );
-      }
+const app = createRouteApp("/api/admin/templates/preview");
 
-      const props =
-        (sampleEmailTemplateProps as Record<string, Record<string, unknown>>)[
-          templateId
-        ] ?? {};
-      const result = await renderTemplateToHtml(templateId, props);
-      if (!result.ok) {
-        return NextResponse.json(
-          { success: false, error: result.error },
-          { status: result.status },
-        );
-      }
+app.get("/", (c) =>
+  runWithAdminGuard(c, async () => {
+    const templateId = c.req.query("template_id");
+    if (!templateId) {
+      return previewError(c, 400, "Invalid or missing template_id");
+    }
 
-      return new NextResponse(result.html, {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
-    },
-  );
-  return await protected_route(req);
-}
+    const props =
+      (sampleEmailTemplateProps as Record<string, Record<string, unknown>>)[
+        templateId
+      ] ?? {};
+    const result = await renderTemplateToHtml(templateId, props);
+    if (!result.ok) {
+      return previewError(
+        c,
+        result.status as ContentfulStatusCode,
+        result.error,
+      );
+    }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
-  const protected_route = await withAdminApiRouteGuard(
-    async function POST_handler({ req }): Promise<NextResponse> {
-      let body: unknown;
-      try {
-        body = await req.json();
-      } catch {
-        return NextResponse.json(
-          { success: false, error: "Request body must be valid JSON." },
-          { status: 400 },
-        );
-      }
+    return htmlResponse(c, result.html);
+  }),
+);
 
-      if (typeof body !== "object" || body === null) {
-        return NextResponse.json(
-          { success: false, error: "Request body must be a JSON object." },
-          { status: 400 },
-        );
-      }
+app.post("/", (c) =>
+  runWithAdminGuard(c, async () => {
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return previewError(c, 400, "Request body must be valid JSON.");
+    }
 
-      const { template_id, props } = body as {
-        template_id?: unknown;
-        props?: unknown;
-      };
+    if (typeof body !== "object" || body === null) {
+      return previewError(c, 400, "Request body must be a JSON object.");
+    }
 
-      if (typeof template_id !== "string") {
-        return NextResponse.json(
-          { success: false, error: "Missing or invalid 'template_id'." },
-          { status: 400 },
-        );
-      }
+    const { template_id, props } = body as {
+      template_id?: unknown;
+      props?: unknown;
+    };
 
-      const propsObject: Record<string, unknown> =
-        props && typeof props === "object" && !Array.isArray(props)
-          ? (props as Record<string, unknown>)
-          : {};
+    if (typeof template_id !== "string") {
+      return previewError(c, 400, "Missing or invalid 'template_id'.");
+    }
 
-      const result = await renderTemplateToHtml(template_id, propsObject);
-      if (!result.ok) {
-        return NextResponse.json(
-          { success: false, error: result.error },
-          { status: result.status },
-        );
-      }
+    const propsObject: Record<string, unknown> =
+      props && typeof props === "object" && !Array.isArray(props)
+        ? (props as Record<string, unknown>)
+        : {};
 
-      return new NextResponse(result.html, {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
-    },
-  );
-  return await protected_route(req);
-}
+    const result = await renderTemplateToHtml(template_id, propsObject);
+    if (!result.ok) {
+      return previewError(
+        c,
+        result.status as ContentfulStatusCode,
+        result.error,
+      );
+    }
+
+    return htmlResponse(c, result.html);
+  }),
+);
+
+export const GET = handle(app);
+export const POST = handle(app);

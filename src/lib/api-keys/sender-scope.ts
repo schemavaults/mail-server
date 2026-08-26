@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "@/lib/zod-openapi";
 
 // Shared by the /api/send enforcement path, the admin API routes, and the
 // /admin/keys client view (for input validation) — deliberately NOT
@@ -27,7 +27,12 @@ export const allowedSenderEntrySchema = z
       message:
         "Sender entry must be an email address (claude@example.com) or a domain wildcard (*@example.com).",
     },
-  );
+  )
+  .openapi({
+    description:
+      "A lowercase email address, or a `*@domain` wildcard permitting any local part at that domain.",
+    example: "*@example.com",
+  });
 
 /**
  * Extracts the address part of a From: header value. Handles both a bare
