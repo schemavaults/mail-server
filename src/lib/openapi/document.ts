@@ -2,6 +2,7 @@ import {
   OpenAPIRegistry,
   OpenApiGeneratorV31,
 } from "@asteasolutions/zod-to-openapi";
+import packageJson from "../../../package.json";
 import { getBrandConfig } from "@/lib/branding";
 import { getMailServerBaseUrl } from "@/lib/mail-server-base-url";
 import { registerSecuritySchemes } from "./security";
@@ -30,10 +31,11 @@ import { registerAdminTransportsPaths } from "@/app/api/admin/transports/openapi
 import { registerOpenApiDocumentPaths } from "@/app/api/openapi.json/openapi";
 
 /**
- * Version of this API description (OpenAPI `info.version`), independent of
- * the package version. Bump on meaningful API-surface changes.
+ * Version of this API description (OpenAPI `info.version`), resolved from
+ * the package.json version so the document tracks releases automatically.
+ * The JSON import is inlined at build time — no runtime filesystem read.
  */
-export const OPENAPI_DOCUMENT_VERSION = "1.0.0";
+export const OPENAPI_DOCUMENT_VERSION: string = packageJson.version;
 
 const PATH_REGISTRARS: readonly ((registry: OpenAPIRegistry) => void)[] = [
   registerSendPaths,

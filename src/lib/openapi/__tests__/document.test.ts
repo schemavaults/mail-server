@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import packageJson from "../../../../package.json";
 import { buildOpenApiDocument } from "../document";
 import {
   ADMIN_JWT_SECURITY_SCHEME,
@@ -36,7 +37,7 @@ describe("buildOpenApiDocument", () => {
   it("generates an OpenAPI 3.1 document with info and servers", () => {
     expect(doc.openapi).toBe("3.1.0");
     expect(doc.info.title).toContain("Mail Server API");
-    expect(doc.info.version.length).toBeGreaterThan(0);
+    expect(doc.info.version).toBe(packageJson.version);
     expect(doc.servers?.length).toBeGreaterThan(0);
   });
 
