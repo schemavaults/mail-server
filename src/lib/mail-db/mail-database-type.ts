@@ -7,8 +7,10 @@ import type { BrandingAssetsTable } from "./branding-assets-table";
 import type { CorsAllowedOriginsTable } from "./cors-allowed-origins-table";
 import type { MailingListSubscriberTable } from "./mailing-list-subscriber-table";
 import type { MailingListUnsubscribeTable } from "./mailing-list-unsubscribe-record-table";
+import type { MailTransportSettingsTable } from "./mail-transport-settings-table";
 import type { MailingListsTable } from "./mailing-lists-table";
 import type { PendingSubscriptionsTable } from "./pending-subscriptions-table";
+import type { TestEmailsTable } from "./test-emails-table";
 
 export type MailDatabase = {
   mailing_lists: MailingListsTable;
@@ -22,4 +24,6 @@ export type MailDatabase = {
   pending_subscriptions: PendingSubscriptionsTable;
   cors_allowed_origins: CorsAllowedOriginsTable;
   branding_assets: BrandingAssetsTable;
+  test_emails: TestEmailsTable;
+  mail_transport_settings: MailTransportSettingsTable;
 };

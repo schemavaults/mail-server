@@ -54,6 +54,7 @@
     "migrate:production": "bun run build:migrations && npx @schemavaults/dbh migrate ./dist/migrations --environment production --env-file .env.production",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "bun test",
+    "test:e2e": "bun test ./e2e",
     "skills:install": "/bin/bash ./.claude/hooks/install-send-email-skills.sh"
   },
   "packageManager": "bun@1.3.14"

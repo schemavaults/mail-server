@@ -15,6 +15,8 @@ const EXPECTED_PATHS: Record<string, string[]> = {
   "/api/mailing-lists/unsubscribe": ["post"],
   "/api/mailing-lists/subscribers": ["get"],
   "/api/templates": ["get"],
+  "/api/test-emails": ["get"],
+  "/api/test-emails/{test_email_id}": ["get"],
   "/api/branding/{asset_kind}": ["get"],
   "/api/admin/api-keys": ["get", "post"],
   "/api/admin/api-keys/{api_key_id}": ["patch", "delete"],
@@ -28,6 +30,7 @@ const EXPECTED_PATHS: Record<string, string[]> = {
   "/api/admin/templates": ["get"],
   "/api/admin/templates/preview": ["get", "post"],
   "/api/admin/transports": ["get"],
+  "/api/admin/transports/{transport_id}": ["patch"],
   "/api/openapi.json": ["get"],
 };
 
@@ -83,6 +86,7 @@ describe("buildOpenApiDocument", () => {
       "CorsAllowedOrigin",
       "MailTransportKind",
       "BrandingAssetKind",
+      "TestEmail",
     ]) {
       expect(schemas, `missing component schema ${expected}`).toContain(
         expected,

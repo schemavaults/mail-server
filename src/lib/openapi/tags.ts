@@ -7,6 +7,7 @@ export const OPENAPI_TAGS = {
   mailingLists: "Mailing Lists",
   templates: "Templates",
   branding: "Branding",
+  testEmails: "Test Emails",
   adminApiKeys: "Admin: API Keys",
   adminBranding: "Admin: Branding",
   adminCors: "Admin: CORS",
@@ -35,6 +36,11 @@ export const OPENAPI_TAG_DEFINITIONS: { name: string; description: string }[] =
     {
       name: OPENAPI_TAGS.branding,
       description: "Public white-label branding assets (logo, favicon).",
+    },
+    {
+      name: OPENAPI_TAGS.testEmails,
+      description:
+        "Read emails captured by the fake-send test-database transport, for E2E-testing the /api/send flow.",
     },
     {
       name: OPENAPI_TAGS.adminApiKeys,

@@ -14,14 +14,17 @@ export {
   loadDefaultMailTransportKind,
   loadMailTransportsAvailability,
   isMailTransportKind,
+  isTestDatabaseTransportEnvEnabled,
   MAIL_TRANSPORT_KINDS,
   DEFAULT_MAIL_TRANSPORT,
   DEFAULT_SMTP_PORT,
+  TEST_DATABASE_MAIL_TRANSPORT,
   type MailTransportKind,
   type MailTransportConfig,
   type IMailTransportsAvailability,
   type IResendTransportConfig,
   type ISmtpTransportConfig,
+  type ITestDatabaseTransportConfig,
 } from "./loadMailTransportConfig";
 export { loadMailTransport } from "./loadMailTransport";
 export { MailTransportConfigError } from "./MailTransportConfigError";

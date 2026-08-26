@@ -1,3 +1,5 @@
+import type { MailTransportKind } from "./loadMailTransportConfig";
+
 /**
  * Transport-neutral description of one outbound email. Every transport
  * accepts exactly this shape; react-email templates are rendered to `html`
@@ -27,6 +29,6 @@ export interface IMailTransportSendResult {
  * callers handle failures uniformly via try/catch.
  */
 export interface IMailTransport {
-  readonly kind: "resend" | "smtp";
+  readonly kind: MailTransportKind;
   send(options: IMailTransportSendOptions): Promise<IMailTransportSendResult>;
 }

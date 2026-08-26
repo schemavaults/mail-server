@@ -16,6 +16,8 @@ import { registerUnsubscribeMailingListPaths } from "@/app/api/mailing-lists/uns
 import { registerConfirmSubscriptionPaths } from "@/app/api/mailing-lists/confirm/openapi";
 import { registerSubscribersPaths } from "@/app/api/mailing-lists/subscribers/openapi";
 import { registerTemplatesPaths } from "@/app/api/templates/openapi";
+import { registerTestEmailsPaths } from "@/app/api/test-emails/openapi";
+import { registerTestEmailItemPaths } from "@/app/api/test-emails/[test_email_id]/openapi";
 import { registerBrandingAssetPaths } from "@/app/api/branding/[asset_kind]/openapi";
 import { registerApiKeysPaths } from "@/app/api/admin/api-keys/openapi";
 import { registerApiKeyItemPaths } from "@/app/api/admin/api-keys/[api_key_id]/openapi";
@@ -28,6 +30,7 @@ import { registerCorsOriginsPaths } from "@/app/api/admin/cors-origins/openapi";
 import { registerAdminTemplatesPaths } from "@/app/api/admin/templates/openapi";
 import { registerTemplatePreviewPaths } from "@/app/api/admin/templates/preview/openapi";
 import { registerAdminTransportsPaths } from "@/app/api/admin/transports/openapi";
+import { registerAdminTransportItemPaths } from "@/app/api/admin/transports/[transport_id]/openapi";
 import { registerOpenApiDocumentPaths } from "@/app/api/openapi.json/openapi";
 
 /**
@@ -45,6 +48,8 @@ const PATH_REGISTRARS: readonly ((registry: OpenAPIRegistry) => void)[] = [
   registerUnsubscribeMailingListPaths,
   registerSubscribersPaths,
   registerTemplatesPaths,
+  registerTestEmailsPaths,
+  registerTestEmailItemPaths,
   registerBrandingAssetPaths,
   registerApiKeysPaths,
   registerApiKeyItemPaths,
@@ -57,6 +62,7 @@ const PATH_REGISTRARS: readonly ((registry: OpenAPIRegistry) => void)[] = [
   registerAdminTemplatesPaths,
   registerTemplatePreviewPaths,
   registerAdminTransportsPaths,
+  registerAdminTransportItemPaths,
   registerOpenApiDocumentPaths,
 ];
 
