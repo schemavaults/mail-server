@@ -1,6 +1,5 @@
 import "server-only";
 
-import { NextRequest, NextResponse } from "next/server";
 import type { Context } from "hono";
 import { withAdminApiRouteGuard } from "@/lib/withAdminRouteGuard";
 import {
@@ -8,33 +7,15 @@ import {
   validateApiKeyFromRequest,
 } from "@/lib/api-keys/validateApiKeyFromRequest";
 import { unauthorized } from "./responses";
+import { toNextRequest, toNextResponse } from "./next-interop";
+
+export { toNextRequest } from "./next-interop";
 
 type TAdminRouteHandler = Parameters<typeof withAdminApiRouteGuard>[0];
 type TAdminRouteHandlerProps = Parameters<TAdminRouteHandler>[0];
 
 /** The authenticated admin user the auth-server-sdk guard resolves. */
 export type AdminRouteUser = TAdminRouteHandlerProps["user"];
-
-/**
- * Adapts a Hono context's underlying Request to the NextRequest the
- * auth-server-sdk guards expect. The wrapper shares the original body
- * stream, so the guard may only inspect headers/cookies — which is all it
- * does — while the route handler keeps reading the body through `c.req`.
- */
-export function toNextRequest(c: Context): NextRequest {
-  const raw = c.req.raw;
-  return raw instanceof NextRequest ? raw : new NextRequest(raw);
-}
-
-function toNextResponse(res: Response): NextResponse {
-  return res instanceof NextResponse
-    ? res
-    : new NextResponse(res.body, {
-        status: res.status,
-        statusText: res.statusText,
-        headers: res.headers,
-      });
-}
 
 /**
  * Runs `handler` behind the admin JWT guard (`user.admin` required). The
