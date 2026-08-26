@@ -109,6 +109,7 @@ export function PublicPageFooter({
                 )}
               >
                 <FooterSectionLink title={branding.name} href={branding.url} />
+                <FooterSectionLink title="API Documentation" href="/docs" />
                 <FooterSectionLink title="Login" href="/auth/login" />
               </ul>
             </div>

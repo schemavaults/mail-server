@@ -15,7 +15,7 @@ import { BrandWordmark } from "@/components/BrandWordmark";
 import { useAdmin, useCurrentUser } from "@schemavaults/auth-react-provider";
 import { useCoreWebAppUrl } from "@/contexts/CoreWebAppUrlContext";
 import { ADMIN_LINKS } from "@/lib/admin-links";
-import { ArrowLeft, ChevronDown, LogOut } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronDown, LogOut } from "lucide-react";
 import Link from "next/link";
 import type { PropsWithChildren, ReactElement, ReactNode } from "react";
 
@@ -66,60 +66,69 @@ export function Nav({ title, backHref, children }: NavProps): ReactElement {
           {title}
         </h2>
 
-        {(children || user) && (
-          <div className="ml-auto flex items-center gap-2 md:gap-4">
-            {children}
-            {user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center gap-2 max-w-[60vw]"
+        <div className="ml-auto flex items-center gap-2 md:gap-4">
+          <Button variant="ghost" asChild>
+            <Link
+              href="/docs"
+              title="API Documentation"
+              className="flex items-center gap-2"
+            >
+              <BookOpen className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">API Docs</span>
+              <span className="sr-only sm:hidden">API Documentation</span>
+            </Link>
+          </Button>
+          {children}
+          {user && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 max-w-[60vw]"
+                >
+                  <span className="truncate">{user.email}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-muted-foreground">
+                      Signed in as
+                    </span>
+                    <span className="text-sm truncate">{user.email}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {admin && (
+                  <>
+                    {ADMIN_LINKS.map(({ href, label, icon: Icon }) => (
+                      <DropdownMenuItem key={href} asChild>
+                        <Link
+                          href={href}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Icon className="h-4 w-4" />
+                          {label}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/auth/logout"
+                    className="flex items-center gap-2 cursor-pointer"
                   >
-                    <span className="truncate">{user.email}</span>
-                    <ChevronDown className="h-4 w-4 shrink-0" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground">
-                        Signed in as
-                      </span>
-                      <span className="text-sm truncate">{user.email}</span>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {admin && (
-                    <>
-                      {ADMIN_LINKS.map(({ href, label, icon: Icon }) => (
-                        <DropdownMenuItem key={href} asChild>
-                          <Link
-                            href={href}
-                            className="flex items-center gap-2 cursor-pointer"
-                          >
-                            <Icon className="h-4 w-4" />
-                            {label}
-                          </Link>
-                        </DropdownMenuItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/auth/logout"
-                      className="flex items-center gap-2 cursor-pointer"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Log out
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        )}
+                    <LogOut className="h-4 w-4" />
+                    Log out
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </header>
       <Separator decorative orientation="horizontal" className="w-full" />
     </>
