@@ -48,6 +48,12 @@ export async function loadMailTransport(
       const { SmtpMailTransport } = await import("./SmtpMailTransport");
       return new SmtpMailTransport(config);
     }
+    case "test-database-transport": {
+      const { TestDatabaseMailTransport } = await import(
+        "./TestDatabaseMailTransport"
+      );
+      return new TestDatabaseMailTransport();
+    }
   }
 }
 

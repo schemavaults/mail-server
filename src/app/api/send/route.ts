@@ -33,11 +33,16 @@ import {
   isMailTransportKind,
   loadMailTransportsAvailability,
   MAIL_TRANSPORT_KINDS,
+  TEST_DATABASE_MAIL_TRANSPORT,
   type IMailTransportsAvailability,
   type MailTransportKind,
 } from "@/lib/mail-transport";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
-import { MailingListRegistry, MailKeysRegistry } from "@/lib/mail-db";
+import {
+  MailingListRegistry,
+  MailKeysRegistry,
+  MailTransportSettingsRegistry,
+} from "@/lib/mail-db";
 
 const sendEmailRequestBodySchema = createSendEmailRequestBodySchema(true);
 const uuidSchema = z.string().uuid();
@@ -123,6 +128,38 @@ async function handleSendEmailRequest(
     requestedTransport !== undefined && isMailTransportKind(requestedTransport)
       ? requestedTransport
       : transportAvailability.defaultTransport;
+
+  // The test-database transport carries a runtime admin kill switch on top
+  // of its env opt-in (toggled at /admin/transports), so real users can be
+  // locked out of fake sending without a redeploy. Enforce it here for a
+  // clean 400; the transport itself re-checks at dispatch as defense in
+  // depth. Mirroring the configured-check above, a dryRun that merely
+  // *defaults* to this transport is exempt so dryRun validation keeps
+  // working regardless of transport state.
+  if (
+    transportId === TEST_DATABASE_MAIL_TRANSPORT &&
+    (requestedTransport !== undefined || !dryRun)
+  ) {
+    try {
+      await using dbh = ServerlessDatabase.getAsyncResource();
+      const settings = new MailTransportSettingsRegistry(dbh);
+      if (!(await settings.isTransportEnabled(TEST_DATABASE_MAIL_TRANSPORT))) {
+        return badRequest(
+          c,
+          `Transport '${TEST_DATABASE_MAIL_TRANSPORT}' has been disabled by an administrator.`,
+        );
+      }
+    } catch (e: unknown) {
+      console.error(
+        `Failed to check whether the '${TEST_DATABASE_MAIL_TRANSPORT}' transport is enabled: `,
+        e,
+      );
+      return internalServerError(
+        c,
+        "Failed to check mail transport settings!",
+      );
+    }
+  }
 
   // Open a single ServerlessDatabase handle for the lifetime of any DB
   // work this request needs (scope lookup + mailing-list expansion).

@@ -1,10 +1,24 @@
 import MailTransportConfigError from "./MailTransportConfigError";
 
-export const MAIL_TRANSPORT_KINDS = ["resend", "smtp"] as const;
+export const MAIL_TRANSPORT_KINDS = [
+  "resend",
+  "smtp",
+  "test-database-transport",
+] as const;
 export type MailTransportKind = (typeof MAIL_TRANSPORT_KINDS)[number];
 
 export const DEFAULT_MAIL_TRANSPORT: MailTransportKind = "resend";
 export const DEFAULT_SMTP_PORT = 587;
+
+/**
+ * The fake-send transport: instead of delivering mail, every send is stored
+ * as a row in the TEST_EMAILS table so E2E tests can read it back via
+ * /api/test-emails. Available only when TEST_DATABASE_MAIL_TRANSPORT_ENABLED
+ * is set, and additionally admin-disableable at runtime from
+ * /admin/transports.
+ */
+export const TEST_DATABASE_MAIL_TRANSPORT =
+  "test-database-transport" as const satisfies MailTransportKind;
 
 export interface IResendTransportConfig {
   kind: "resend";
@@ -20,18 +34,51 @@ export interface ISmtpTransportConfig {
   auth: { user: string; pass: string } | null;
 }
 
-export type MailTransportConfig = IResendTransportConfig | ISmtpTransportConfig;
+/**
+ * The test-database transport has no delivery settings of its own — it
+ * writes to the app's own Postgres database — so its config only records
+ * that the env opt-in is present.
+ */
+export interface ITestDatabaseTransportConfig {
+  kind: typeof TEST_DATABASE_MAIL_TRANSPORT;
+}
+
+export type MailTransportConfig =
+  | IResendTransportConfig
+  | ISmtpTransportConfig
+  | ITestDatabaseTransportConfig;
 
 export function isMailTransportKind(val: string): val is MailTransportKind {
   return (MAIL_TRANSPORT_KINDS as readonly string[]).includes(val);
 }
 
 /**
+ * True iff the deployment has opted into the fake-send test-database
+ * transport via TEST_DATABASE_MAIL_TRANSPORT_ENABLED ("true" or "1").
+ * Any other value — unset included — reads as disabled, so production
+ * deployments never expose the transport by accident.
+ */
+export function isTestDatabaseTransportEnvEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  const raw = env.TEST_DATABASE_MAIL_TRANSPORT_ENABLED;
+  if (typeof raw !== "string") return false;
+  const normalized = raw.trim().toLowerCase();
+  return normalized === "true" || normalized === "1";
+}
+
+/**
  * Snapshot of which transports this deployment offers. A transport is
  * "configured" when its required env vars are present (`RESEND_API_KEY` for
- * resend, `SMTP_HOST` for smtp) — both may be configured at once. The
+ * resend, `SMTP_HOST` for smtp, `TEST_DATABASE_MAIL_TRANSPORT_ENABLED` for
+ * the test-database transport) — several may be configured at once. The
  * default transport is selected by `MAIL_TRANSPORT` (default "resend") and
  * is what `/api/send` uses when a request omits its `transport` property.
+ *
+ * Env presence is not the whole story for the test-database transport: an
+ * admin can additionally disable it at runtime from /admin/transports (the
+ * setting lives in the MAIL_TRANSPORT_SETTINGS table), which this env-only
+ * snapshot does not reflect.
  */
 export interface IMailTransportsAvailability {
   /** Transport ids with their env vars present, in registry order. */
@@ -80,6 +127,9 @@ export function loadMailTransportsAvailability(
   if (env.SMTP_HOST && env.SMTP_HOST.trim().length > 0) {
     configured.push("smtp");
   }
+  if (isTestDatabaseTransportEnvEnabled(env)) {
+    configured.push(TEST_DATABASE_MAIL_TRANSPORT);
+  }
   return {
     configured,
     defaultTransport: loadDefaultMailTransportKind(env),
@@ -111,6 +161,16 @@ export function loadMailTransportConfig(
   kind?: MailTransportKind,
 ): MailTransportConfig {
   const rawKind: MailTransportKind = kind ?? loadDefaultMailTransportKind(env);
+
+  if (rawKind === TEST_DATABASE_MAIL_TRANSPORT) {
+    if (!isTestDatabaseTransportEnvEnabled(env)) {
+      throw new MailTransportConfigError(
+        `The '${TEST_DATABASE_MAIL_TRANSPORT}' mail transport is selected but ` +
+          `'TEST_DATABASE_MAIL_TRANSPORT_ENABLED' is not set to "true"!`,
+      );
+    }
+    return { kind: TEST_DATABASE_MAIL_TRANSPORT };
+  }
 
   if (rawKind === "resend") {
     const apiKey: string | undefined = env.RESEND_API_KEY;

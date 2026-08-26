@@ -42,6 +42,116 @@ jobs:
       - name: Build Next.js app
         run: bun run build
 
+  # Full round-trip E2E: POST /api/send through the fake-send
+  # test-database-transport against a real running server + Postgres, then
+  # read the captured emails back via /api/test-emails. See e2e/README.md.
+  e2e:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: mail
+          POSTGRES_PASSWORD: mail
+          POSTGRES_DB: mail
+          # The Neon serverless driver used by the app in non-production
+          # environments pipelines a cleartext PasswordMessage on connect,
+          # so host auth must be `password` (not scram).
+          POSTGRES_HOST_AUTH_METHOD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mail"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      SCHEMAVAULTS_APP_ENVIRONMENT: development
+      NEXT_PUBLIC_SCHEMAVAULTS_APP_ENVIRONMENT: development
+      POSTGRES_URL: postgres://mail:mail@localhost:5432/mail
+      POSTGRES_URL_NON_POOLING: postgres://mail:mail@localhost:5432/mail
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: mail
+      POSTGRES_PASSWORD: mail
+      POSTGRES_DATABASE: mail
+      HOST: http://localhost:5346
+      MAIL_FROM_ADDRESS: noreply@e2e.example.com
+      MAIL_TRANSPORT: test-database-transport
+      TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "true"
+      E2E_MAIL_SERVER_BASE_URL: http://localhost:5346
+      E2E_MAIL_SERVER_API_KEY: svlts_mail_pk_e2e-ci-only-not-a-real-secret
+      E2E_DEFAULT_TRANSPORT_IS_TEST_DATABASE: "true"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: bun install
+
+      # The app (and the migration CLI) reach Postgres through a Neon-style
+      # WebSocket tunnel in non-production environments; this small Bun
+      # script stands in for Neon's wsproxy (see e2e/setup/ws-proxy.ts).
+      - name: Start Postgres WebSocket proxy
+        run: |
+          nohup bun e2e/setup/ws-proxy.ts > ws-proxy.log 2>&1 &
+          sleep 1
+          cat ws-proxy.log
+
+      - name: Write .env.development for migrations
+        run: |
+          {
+            echo "POSTGRES_URL=$POSTGRES_URL"
+            echo "POSTGRES_URL_NON_POOLING=$POSTGRES_URL_NON_POOLING"
+            echo "POSTGRES_HOST=$POSTGRES_HOST"
+            echo "POSTGRES_USER=$POSTGRES_USER"
+            echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
+            echo "POSTGRES_DATABASE=$POSTGRES_DATABASE"
+          } > .env.development
+
+      - name: Run database migrations
+        run: bun run migrate:development
+
+      - name: Seed the E2E API key
+        run: bun e2e/setup/seed-e2e-api-key.ts
+
+      - name: Build Next.js app
+        run: bun run build
+
+      - name: Start mail-server
+        run: nohup bunx next start -p 5346 > next-server.log 2>&1 &
+
+      - name: Wait for the server to answer over the database
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:5346/api/mailing-lists > /dev/null; then
+              echo "Server is up."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Server did not become ready in time." >&2
+          exit 1
+
+      - name: Run E2E tests
+        run: bun run test:e2e
+
+      - name: Print server logs on failure
+        if: failure()
+        run: |
+          echo "--- ws-proxy.log ---"; cat ws-proxy.log || true
+          echo "--- next-server.log ---"; cat next-server.log || true
+
   migrate:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'

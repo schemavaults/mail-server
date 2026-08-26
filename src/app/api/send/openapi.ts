@@ -91,7 +91,7 @@ export function registerSendPaths(registry: OpenAPIRegistry): void {
     responses: {
       200: messageResponse("The email was sent (or validated, for dry runs)."),
       ...errorResponses({
-        400: "Invalid request body, unknown/unconfigured transport, invalid template, or empty/oversized mailing list.",
+        400: "Invalid request body, unknown/unconfigured/admin-disabled transport, invalid template, or empty/oversized mailing list.",
         401: "Missing or invalid credentials.",
         403: "The API key's audience, sender, or transport scope forbids this send.",
         500: "Failed to prepare or dispatch the email.",

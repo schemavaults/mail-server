@@ -2,7 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   loadMailTransportConfig,
   loadMailTransportsAvailability,
+  isTestDatabaseTransportEnvEnabled,
   DEFAULT_SMTP_PORT,
+  TEST_DATABASE_MAIL_TRANSPORT,
 } from "../loadMailTransportConfig";
 import MailTransportConfigError from "../MailTransportConfigError";
 
@@ -42,6 +44,52 @@ describe("loadMailTransportsAvailability", () => {
     expect(() =>
       loadMailTransportsAvailability({ MAIL_TRANSPORT: "sendgrid" }),
     ).toThrow(MailTransportConfigError);
+  });
+
+  test("reports the test-database transport configured only when its env opt-in is set", () => {
+    expect(
+      loadMailTransportsAvailability({
+        TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "true",
+      }).configured,
+    ).toEqual([TEST_DATABASE_MAIL_TRANSPORT]);
+    expect(
+      loadMailTransportsAvailability({
+        TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "false",
+      }).configured,
+    ).toEqual([]);
+  });
+
+  test("allows the test-database transport as the MAIL_TRANSPORT default", () => {
+    const availability = loadMailTransportsAvailability({
+      MAIL_TRANSPORT: "test-database-transport",
+      TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "1",
+    });
+    expect(availability.defaultTransport).toBe(TEST_DATABASE_MAIL_TRANSPORT);
+    expect(availability.configured).toEqual([TEST_DATABASE_MAIL_TRANSPORT]);
+  });
+});
+
+describe("isTestDatabaseTransportEnvEnabled", () => {
+  test("accepts 'true' and '1' (case/whitespace-insensitive)", () => {
+    for (const raw of ["true", "TRUE", " true ", "1"]) {
+      expect(
+        isTestDatabaseTransportEnvEnabled({
+          TEST_DATABASE_MAIL_TRANSPORT_ENABLED: raw,
+        }),
+      ).toBe(true);
+    }
+  });
+
+  test("treats unset, empty, and malformed values as disabled", () => {
+    for (const env of [
+      {},
+      { TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "" },
+      { TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "false" },
+      { TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "0" },
+      { TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "yes please" },
+    ]) {
+      expect(isTestDatabaseTransportEnvEnabled(env)).toBe(false);
+    }
   });
 });
 
@@ -84,6 +132,28 @@ describe("loadMailTransportConfig", () => {
         "smtp",
       );
       expect(config.kind).toBe("smtp");
+    });
+  });
+
+  describe("test-database transport", () => {
+    test("returns its config when the env opt-in is set", () => {
+      const config = loadMailTransportConfig({
+        MAIL_TRANSPORT: "test-database-transport",
+        TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "true",
+      });
+      expect(config).toEqual({ kind: TEST_DATABASE_MAIL_TRANSPORT });
+    });
+
+    test("throws MailTransportConfigError without the env opt-in", () => {
+      expect(() =>
+        loadMailTransportConfig({}, TEST_DATABASE_MAIL_TRANSPORT),
+      ).toThrow(MailTransportConfigError);
+      expect(() =>
+        loadMailTransportConfig({
+          MAIL_TRANSPORT: "test-database-transport",
+          TEST_DATABASE_MAIL_TRANSPORT_ENABLED: "false",
+        }),
+      ).toThrow(MailTransportConfigError);
     });
   });
 
