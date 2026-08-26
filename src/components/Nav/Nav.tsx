@@ -67,17 +67,6 @@ export function Nav({ title, backHref, children }: NavProps): ReactElement {
         </h2>
 
         <div className="ml-auto flex items-center gap-2 md:gap-4">
-          <Button variant="ghost" asChild>
-            <Link
-              href="/docs"
-              title="API Documentation"
-              className="flex items-center gap-2"
-            >
-              <BookOpen className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">API Docs</span>
-              <span className="sr-only sm:hidden">API Documentation</span>
-            </Link>
-          </Button>
           {children}
           {user && (
             <DropdownMenu>
@@ -116,6 +105,17 @@ export function Nav({ title, backHref, children }: NavProps): ReactElement {
                     <DropdownMenuSeparator />
                   </>
                 )}
+                <DropdownMenuItem asChild>
+                  <Link
+                    href="/docs"
+                    title="API Documentation"
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    API Docs
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link
                     href="/auth/logout"
