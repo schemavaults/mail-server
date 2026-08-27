@@ -1,6 +1,8 @@
 import "server-only";
 
 import type { Metadata } from "next";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import type { ReactElement } from "react";
 import PublicPageShell from "@/components/PublicPageShell";
 import { ApiReferenceView } from "@/components/ApiDocs";
@@ -36,7 +38,21 @@ let cachedViewModel: DocsViewModel | null = null;
 export default function ApiDocsPage(): ReactElement {
   cachedViewModel ??= buildDocsViewModel(buildOpenApiDocument());
   return (
-    <PublicPageShell title="API Reference">
+    <PublicPageShell
+      title="API Reference"
+      navActions={
+        // /docs is reachable from anywhere (including directly by URL), so
+        // the way out is a plain link to the homepage rather than a
+        // history-based "go back".
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Back
+        </Link>
+      }
+    >
       <ApiReferenceView doc={cachedViewModel} />
     </PublicPageShell>
   );

@@ -8,6 +8,11 @@ import PublicPageFooter from "@/components/PublicPageFooter";
 export type PublicPageShellProps = PropsWithChildren<{
   /** Page title shown in the <Nav /> beside the brand wordmark. */
   title: ReactNode;
+  /**
+   * Optional content for the <Nav />'s top-right action area, rendered
+   * before the signed-in user menu (e.g. the "Back" link on /docs).
+   */
+  navActions?: ReactNode;
 }>;
 
 /**
@@ -19,6 +24,7 @@ export type PublicPageShellProps = PropsWithChildren<{
  */
 export function PublicPageShell({
   title,
+  navActions,
   children,
 }: PublicPageShellProps): ReactElement {
   return (
@@ -33,7 +39,7 @@ export function PublicPageShell({
         "bg-background",
       )}
     >
-      <Nav title={title} />
+      <Nav title={title}>{navActions}</Nav>
       <main className="flex flex-col justify-start items-stretch w-full grow flex-nowrap">
         {children}
       </main>
