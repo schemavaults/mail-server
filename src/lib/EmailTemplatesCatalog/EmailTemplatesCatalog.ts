@@ -14,6 +14,8 @@ export const EmailTemplatesCatalog = {
     ),
   "my-test-email": async () =>
     import("./email-template-refs/MyTestEmail").then((m) => m.default),
+  "one-time-passcode": async () =>
+    import("./email-template-refs/OneTimePasscode").then((m) => m.default),
   "password-reset": async () =>
     import("./email-template-refs/PasswordReset").then((m) => m.default),
   "payment-failed": async () =>

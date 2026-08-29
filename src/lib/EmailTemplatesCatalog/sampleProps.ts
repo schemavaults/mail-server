@@ -3,6 +3,7 @@ import FollowUpSurveyEmail from "@/email-templates/follow-up-survey";
 import MagicLinkSignInEmail from "@/email-templates/magic-link-sign-in";
 import MailingListConfirmationEmail from "@/email-templates/mailing-list-confirmation";
 import TestEmail from "@/email-templates/my-test-email";
+import OneTimePasscodeEmail from "@/email-templates/one-time-passcode";
 import PasswordResetEmail from "@/email-templates/password-reset";
 import PaymentFailedEmail from "@/email-templates/payment-failed";
 import PaymentReceiptEmail from "@/email-templates/payment-receipt";
@@ -33,6 +34,7 @@ export const sampleEmailTemplateProps = {
   "magic-link-sign-in": MagicLinkSignInEmail.PreviewProps,
   "mailing-list-confirmation": MailingListConfirmationEmail.PreviewProps,
   "my-test-email": TestEmail.PreviewProps,
+  "one-time-passcode": OneTimePasscodeEmail.PreviewProps,
   "password-reset": PasswordResetEmail.PreviewProps,
   "payment-failed": PaymentFailedEmail.PreviewProps,
   "payment-receipt": PaymentReceiptEmail.PreviewProps,
