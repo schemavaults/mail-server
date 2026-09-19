@@ -26,6 +26,10 @@ export const EmailTemplatesCatalog = {
     import("./email-template-refs/SubscriptionCancelled").then(
       (m) => m.default,
     ),
+  "subscription-renewal-reminder": async () =>
+    import("./email-template-refs/SubscriptionRenewalReminder").then(
+      (m) => m.default,
+    ),
   "team-invitation": async () =>
     import("./email-template-refs/TeamInvitation").then((m) => m.default),
   "team-invitation-accepted": async () =>
