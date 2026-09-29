@@ -1,10 +1,10 @@
-import type { NextRequest } from "next/server";
-
 /**
  * Pulls the bearer token off the `Authorization` header. Returns `null` if
  * the header is missing or doesn't follow the `Bearer <token>` format.
  */
-export function extractBearerToken(req: NextRequest): string | null {
+export function extractBearerToken(
+  req: Pick<Request, "headers">,
+): string | null {
   const header = req.headers.get("authorization") ?? req.headers.get("Authorization");
   if (!header) return null;
   const match = header.match(/^Bearer\s+(.+)$/i);

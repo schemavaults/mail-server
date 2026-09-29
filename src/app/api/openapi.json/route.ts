@@ -1,21 +1,7 @@
 import "server-only";
 
-import { handle } from "hono/vercel";
-import { createRouteApp } from "@/lib/hono/create-route-app";
-import {
-  buildOpenApiDocument,
-  type OpenApiDocument,
-} from "@/lib/openapi/document";
+import { serveOpenApiDocument } from "@/lib/api/app";
 
-const app = createRouteApp("/api/openapi.json");
-
-// The document only depends on env configuration (branding, HOST), which is
-// fixed for the lifetime of the process — build it once, lazily.
-let cachedDocument: OpenApiDocument | null = null;
-
-app.get("/", (c) => {
-  cachedDocument ??= buildOpenApiDocument();
-  return c.json(cachedDocument);
-});
-
-export const GET = handle(app);
+// Not an operation itself: the document describes the catalogue, and is
+// linked from the /docs header instead.
+export const { GET } = serveOpenApiDocument("/api/openapi.json");

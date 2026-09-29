@@ -1,9 +1,9 @@
 import { z } from "@/lib/zod-openapi";
 import { apiKeyNameSchema } from "@/lib/api-keys/api-key-name";
 
-// Request bodies for the admin API-key management routes, shared between the
-// Hono apps (./route.ts, ./[api_key_id]/route.ts) and their OpenAPI
-// registrations.
+// Request bodies for the admin API-key management operations
+// (./operations.ts, ./[api_key_id]/operations.ts), validated by the
+// operations runtime and documented from the same schemas.
 
 export const createApiKeyBodySchema = z
   .object({

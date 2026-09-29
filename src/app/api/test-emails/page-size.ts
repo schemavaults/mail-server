@@ -1,4 +1,4 @@
-// Paging bounds for GET /api/test-emails, shared by the route handler and
-// its OpenAPI registration (which must not import route.ts itself).
+// Paging bounds for GET /api/test-emails, shared by its operation
+// definition and anything else that pages through test emails.
 export const DEFAULT_TEST_EMAILS_PAGE_SIZE = 50;
 export const MAX_TEST_EMAILS_PAGE_SIZE = 200;

@@ -3,8 +3,8 @@ import { allowedSenderEntrySchema } from "@/lib/api-keys/sender-scope";
 import { mailTransportKindSchema } from "@/lib/mail-transport/transport-kind-schema";
 
 // Request bodies for the four API-key scope routes (allowlist, recipients,
-// senders, transports). Shared between each subroute's Hono app (built via
-// ./scope-route-factory) and its OpenAPI registration (./scope-route-openapi).
+// senders, transports), validated by the operations runtime and documented
+// from the same schemas (see ./scope-operations.ts).
 
 export const allowlistMutationBodySchema = z
   .object({
