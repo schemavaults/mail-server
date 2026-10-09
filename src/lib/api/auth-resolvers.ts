@@ -1,13 +1,17 @@
 import "server-only";
 
 import {
+  isOperationError,
   OperationError,
   OPERATION_ERROR_CODES,
   type AuthPrincipal,
   type AuthResolver,
   type AuthResolvers,
 } from "@schemavaults/openapi-operations";
-import { createSchemaVaultsAuthResolvers } from "@schemavaults/auth-server-sdk/openapi-operations";
+import {
+  createSchemaVaultsAuthResolvers,
+  SCHEMAVAULTS_AUTH_RESOLVER_ERROR_CODES,
+} from "@schemavaults/auth-server-sdk/openapi-operations";
 import { getAppId } from "@/lib/getAppId";
 import { extractBearerToken } from "@/lib/api-keys/extractBearerToken";
 import { API_KEY_PREFIX } from "@/lib/api-keys/API_KEY_PREFIX";
@@ -42,6 +46,10 @@ function getSchemaVaultsResolvers(): AuthResolvers<MailServerUser, undefined> {
  * mail server that accepts an access token is admin-only (mirroring the
  * `withAdminApiRouteGuard` these operations replaced), including those that
  * also accept an API key and so cannot use the "admin" route guard.
+ *
+ * A 500 the SDK raises because token verification is not configured names
+ * the missing setting; that detail is already logged server-side, so callers
+ * get the generic message the replaced guard answered with.
  */
 function adminAccessTokenResolver(schemeName: string): MailServerAuthResolver {
   return async (c, scheme, context) => {
@@ -49,7 +57,21 @@ function adminAccessTokenResolver(schemeName: string): MailServerAuthResolver {
     if (!resolve) {
       throw new TypeError(`No auth-server-sdk resolver for '${schemeName}'!`);
     }
-    const principal = await resolve(c, scheme, context);
+    let principal: Awaited<ReturnType<typeof resolve>>;
+    try {
+      principal = await resolve(c, scheme, context);
+    } catch (e: unknown) {
+      if (
+        isOperationError(e) &&
+        e.body.error === SCHEMAVAULTS_AUTH_RESOLVER_ERROR_CODES.notConfigured
+      ) {
+        throw new OperationError(500, {
+          error: OPERATION_ERROR_CODES.internal,
+          message: "Internal Server Error",
+        });
+      }
+      throw e;
+    }
     if (principal && !principal.isAdmin) {
       throw new OperationError(403, {
         error: OPERATION_ERROR_CODES.forbidden,

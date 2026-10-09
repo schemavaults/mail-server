@@ -10,6 +10,8 @@ import { OperationError } from "@schemavaults/openapi-operations";
 const VALID_API_KEY = "svlts_mail_pk_valid-test-key";
 const VALID_API_KEY_ID = "0f4b4a52-8b1f-4f8e-9b7a-3f4d1e2c5a6b";
 const ADMIN_TOKEN = "admin-access-token";
+/** Makes the stubbed SDK resolver fail as when JWKS access is unconfigured. */
+const UNCONFIGURED_TOKEN = "token-while-auth-is-unconfigured";
 const USER_TOKEN = "non-admin-access-token";
 const ALLOWED_ORIGIN = "https://allowed.example";
 
@@ -28,6 +30,9 @@ mock.module("@/lib/api-keys/validateApiKeyFromRequest", () => ({
 }));
 
 mock.module("@schemavaults/auth-server-sdk/openapi-operations", () => ({
+  SCHEMAVAULTS_AUTH_RESOLVER_ERROR_CODES: {
+    notConfigured: "auth_not_configured",
+  },
   createSchemaVaultsAuthResolvers: () => ({
     "schemavaults-access-token": async (
       c: { req: { raw: Request } },
@@ -35,6 +40,13 @@ mock.module("@schemavaults/auth-server-sdk/openapi-operations", () => ({
     ) => {
       const token = bearerToken(c.req.raw);
       if (token === null) return null;
+      if (token === UNCONFIGURED_TOKEN) {
+        throw new OperationError(500, {
+          error: "auth_not_configured",
+          message:
+            "Authentication is not configured on this server: the 'SCHEMAVAULTS_AUTH_JWKS_ACCESS_PRIVATE_KEY' environment variable is not set",
+        });
+      }
       if (token !== ADMIN_TOKEN && token !== USER_TOKEN) {
         throw new OperationError(401, {
           error: "invalid_token",
@@ -81,6 +93,10 @@ const adminBranding = await import(
   "@/app/api/admin/branding/[asset_kind]/route"
 );
 const { serveOperations } = await import("../app");
+const { apiKeyIdOf } = await import("../define-operation");
+const { mailApiKeyScheme, accessTokenBearerScheme } = await import(
+  "../auth-schemes"
+);
 const { sendEmail } = await import("@/app/api/send/operations");
 
 function request(
@@ -123,6 +139,16 @@ describe("admin-only operations", () => {
     );
     expect(res.status).toBe(403);
     expect(await json(res)).toMatchObject({ error: "forbidden" });
+  });
+
+  it("hide auth configuration details from callers", async () => {
+    const res = await adminTemplates.GET(
+      request("/api/admin/templates", { token: UNCONFIGURED_TOKEN }),
+    );
+    expect(res.status).toBe(500);
+    const body = await json(res);
+    expect(body.message).toBe("Internal Server Error");
+    expect(JSON.stringify(body)).not.toContain("SCHEMAVAULTS_AUTH_JWKS");
   });
 
   it("do not accept an API key", async () => {
@@ -218,6 +244,40 @@ describe("API-key-or-admin operations", () => {
       request("/api/templates", { token: USER_TOKEN }),
     );
     expect(res.status).toBe(403);
+  });
+});
+
+describe("apiKeyIdOf", () => {
+  const principal = (overrides: Record<string, unknown>) => ({
+    scheme: accessTokenBearerScheme.name,
+    user: null,
+    isAdmin: false,
+    scope: null,
+    ...overrides,
+  });
+
+  it("returns the key ID for API-key callers", () => {
+    expect(
+      apiKeyIdOf(
+        principal({ scheme: mailApiKeyScheme.name, clientId: VALID_API_KEY_ID }),
+      ),
+    ).toBe(VALID_API_KEY_ID);
+  });
+
+  it("returns null (scopes bypassed) only for admins", () => {
+    expect(apiKeyIdOf(principal({ isAdmin: true }))).toBeNull();
+  });
+
+  it("refuses a non-admin access token instead of bypassing scopes", () => {
+    expect(() => apiKeyIdOf(principal({ isAdmin: false }))).toThrow(
+      "Administrator access required",
+    );
+  });
+
+  it("refuses an API-key principal without a key ID", () => {
+    expect(() =>
+      apiKeyIdOf(principal({ scheme: mailApiKeyScheme.name })),
+    ).toThrow("Invalid or revoked API key.");
   });
 });
 
