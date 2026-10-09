@@ -16,6 +16,7 @@ import { getAppId } from "@/lib/getAppId";
 import { extractBearerToken } from "@/lib/api-keys/extractBearerToken";
 import { API_KEY_PREFIX } from "@/lib/api-keys/API_KEY_PREFIX";
 import { validateApiKeyFromRequest } from "@/lib/api-keys/validateApiKeyFromRequest";
+import { isMailServerTokenRevoked } from "./token-revocation";
 import {
   accessTokenBearerScheme,
   accessTokenCookieScheme,
@@ -31,11 +32,14 @@ let schemaVaultsResolvers: AuthResolvers<MailServerUser, undefined> | null =
 /**
  * The auth-server-sdk's access-token resolvers, created on first use so the
  * API server id (the tokens' audience and the cookie name) is read from the
- * runtime environment rather than whatever was set at build time.
+ * runtime environment rather than whatever was set at build time. Every
+ * token that verifies is also checked with the auth server for revocation
+ * (./token-revocation.ts); a revoked one is refused with 401 `token_revoked`.
  */
 function getSchemaVaultsResolvers(): AuthResolvers<MailServerUser, undefined> {
   schemaVaultsResolvers ??= createSchemaVaultsAuthResolvers<undefined>({
     apiServerId: getAppId(),
+    isTokenRevoked: isMailServerTokenRevoked,
   });
   return schemaVaultsResolvers;
 }

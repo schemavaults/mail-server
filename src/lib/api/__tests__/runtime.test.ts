@@ -1,5 +1,14 @@
 import { describe, expect, it, mock } from "bun:test";
 import { OperationError } from "@schemavaults/openapi-operations";
+// The real helpers behind the mocked SDK entry point below (imported from
+// its implementation files, which the mock does not replace): mock.module is
+// process-wide, and other modules (./token-revocation) use them.
+import {
+  accessTokenFromCookieValue,
+  bearerTokenFromAuthorizationHeader,
+  SCHEMAVAULTS_AUTH_RESOLVER_ERROR_CODES,
+} from "@schemavaults/auth-server-sdk/dist/openapi-operations/create-schemavaults-auth-resolvers.js";
+import { readCookie } from "@schemavaults/auth-server-sdk/dist/openapi-operations/read-cookie.js";
 
 // Exercises the route handlers the operations runtime serves, end to end
 // through `serveOperations()`: credential resolution, the admin-only rule for
@@ -30,9 +39,10 @@ mock.module("@/lib/api-keys/validateApiKeyFromRequest", () => ({
 }));
 
 mock.module("@schemavaults/auth-server-sdk/openapi-operations", () => ({
-  SCHEMAVAULTS_AUTH_RESOLVER_ERROR_CODES: {
-    notConfigured: "auth_not_configured",
-  },
+  accessTokenFromCookieValue,
+  bearerTokenFromAuthorizationHeader,
+  readCookie,
+  SCHEMAVAULTS_AUTH_RESOLVER_ERROR_CODES,
   createSchemaVaultsAuthResolvers: () => ({
     "schemavaults-access-token": async (
       c: { req: { raw: Request } },

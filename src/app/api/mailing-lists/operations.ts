@@ -21,6 +21,7 @@ import {
 } from "@schemavaults/auth-server-sdk";
 import type { PotentiallyValidTokenSource } from "@schemavaults/auth-common";
 import { getAppId } from "@/lib/getAppId";
+import { isMailServerTokenRevoked } from "@/lib/api/token-revocation";
 
 const createMailingListSuccessSchema = z
   .object({
@@ -44,8 +45,11 @@ async function isAdminRequest(request: Request): Promise<boolean> {
     });
   }
 
+  // A revoked token (see isMailServerTokenRevoked) resolves no user, so its
+  // caller only sees public lists.
   const route_guard: IRouteGuard = await new RouteGuardFactory({
     environment: getAppEnvironment(),
+    is_token_revoked: isMailServerTokenRevoked,
   }).createGuardFromTokenSources("admin", token_sources, getAppId());
 
   return route_guard.isAccessAllowed() && route_guard.user?.admin
