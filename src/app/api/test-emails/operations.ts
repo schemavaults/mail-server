@@ -7,8 +7,8 @@ import { internalError } from "@/lib/api/errors";
 import { dataResponse, errorResponses } from "@/lib/api/responses";
 import { OPENAPI_TAGS } from "@/lib/api/tags";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
-import { TestEmailsRegistry, type TestEmail } from "@/lib/mail-db";
-import { testEmailSchema } from "@/lib/mail-db/test-emails-table";
+import { TestEmailsRegistry, type TestEmailSummary } from "@/lib/mail-db";
+import { testEmailSummarySchema } from "@/lib/mail-db/test-emails-table";
 import {
   assertTestEmailsAccess,
   TEST_EMAILS_ACCESS_NOTES,
@@ -29,7 +29,7 @@ export const listTestEmails = defineOperation({
   tags: [OPENAPI_TAGS.testEmails],
   summary: "List emails captured by the test-database transport",
   description:
-    "Lists emails 'sent' through the fake test-database-transport, newest first. Intended for E2E tests verifying the full /api/send flow without real delivery.",
+    "Lists emails 'sent' through the fake test-database-transport, newest first. Attachments are listed without their content; read an email by ID for that. Intended for E2E tests verifying the full /api/send flow without real delivery.",
   auth: apiKeyOrAdminAuth(TEST_EMAILS_ACCESS_NOTES),
   request: {
     query: z.object({
@@ -52,7 +52,7 @@ export const listTestEmails = defineOperation({
   responses: {
     200: dataResponse(
       "The captured test emails, newest first.",
-      z.array(testEmailSchema),
+      z.array(testEmailSummarySchema),
     ),
     ...errorResponses({
       403: "The API key's transport scope does not permit the test-database transport.",
@@ -63,7 +63,7 @@ export const listTestEmails = defineOperation({
     await assertTestEmailsAccess(apiKeyIdOf(ctx.auth));
     const { limit, offset } = ctx.query;
 
-    let emails: readonly TestEmail[];
+    let emails: readonly TestEmailSummary[];
     try {
       await using dbh = ServerlessDatabase.getAsyncResource();
       const registry = new TestEmailsRegistry(dbh);

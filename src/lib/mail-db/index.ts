@@ -5,7 +5,11 @@ export { CorsOriginsRegistry } from "./CorsOriginsRegistry";
 export { BrandingAssetsRegistry } from "./BrandingAssetsRegistry";
 export { TestEmailsRegistry } from "./TestEmailsRegistry";
 export { MailTransportSettingsRegistry } from "./MailTransportSettingsRegistry";
-export type { TestEmail } from "./test-emails-table";
+export type { TestEmail, TestEmailSummary } from "./test-emails-table";
+export type {
+  TestEmailAttachment,
+  TestEmailAttachmentMetadata,
+} from "./test-email-attachments-table";
 export type { MailTransportSetting } from "./mail-transport-settings-table";
 export type {
   BrandingAsset,

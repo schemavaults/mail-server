@@ -24,7 +24,7 @@ export const getTestEmail = defineOperation({
   tags: [OPENAPI_TAGS.testEmails],
   summary: "Read one email captured by the test-database transport",
   description:
-    "Reads a single fake-sent email by ID (the ID is also returned as the transport's message ID).",
+    "Reads a single fake-sent email by ID (the ID is also returned as the transport's message ID), including its attachments' base64-encoded content.",
   auth: apiKeyOrAdminAuth(TEST_EMAILS_ACCESS_NOTES),
   request: {
     params: z.object({

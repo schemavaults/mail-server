@@ -155,6 +155,9 @@ describe("buildMailServerOpenApiDocument", () => {
       "MailTransportKind",
       "BrandingAssetKind",
       "TestEmail",
+      "TestEmailSummary",
+      "TestEmailAttachment",
+      "TestEmailAttachmentMetadata",
     ]) {
       expect(schemas, `missing component schema ${expected}`).toContain(
         expected,

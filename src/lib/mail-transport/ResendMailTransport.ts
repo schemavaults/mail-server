@@ -37,6 +37,16 @@ export class ResendMailTransport implements IMailTransport {
       replyTo: options.replyTo,
       html: options.html,
       text: options.text,
+      // Resend's API takes attachment content as a base64 string, which is
+      // exactly the wire shape we hold, so the bytes are never decoded here.
+      // An omitted contentType is derived by Resend from the filename, and a
+      // contentId makes Resend send the attachment inline.
+      attachments: options.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.content,
+        contentType: attachment.contentType,
+        contentId: attachment.contentId,
+      })),
     } as CreateEmailOptions);
 
     if (error) {

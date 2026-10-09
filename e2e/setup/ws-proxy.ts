@@ -28,9 +28,35 @@ const TARGET_PORT = Number(process.env.E2E_PG_TCP_PORT ?? "5432");
 
 interface TunnelState {
   socket: Socket | null;
-  /** Client bytes buffered until the upstream TCP connection is open. */
+  /**
+   * Client bytes the upstream TCP socket has not accepted yet: everything
+   * received before it connects, plus whatever a write could not take
+   * because the socket's send buffer was full.
+   */
   pending: Uint8Array[];
   closed: boolean;
+}
+
+/**
+ * Writes queued client bytes upstream until the socket stops accepting
+ * them. Bun's TCP `write()` returns how many bytes it accepted and drops
+ * the rest rather than buffering it, so unaccepted bytes stay queued until
+ * the socket's `drain` event; ignoring a short write would silently cut a
+ * large Postgres message (e.g. a multi-megabyte INSERT) short and leave
+ * Postgres waiting forever for the rest.
+ */
+function flushPending(state: TunnelState): void {
+  const socket = state.socket;
+  if (socket === null) return;
+  while (state.pending.length > 0) {
+    const chunk = state.pending[0]!;
+    const written = Math.max(socket.write(chunk), 0);
+    if (written < chunk.byteLength) {
+      state.pending[0] = chunk.subarray(written);
+      return;
+    }
+    state.pending.shift();
+  }
 }
 
 const server = Bun.serve<TunnelState>({
@@ -52,6 +78,9 @@ const server = Bun.serve<TunnelState>({
           data(_socket, data) {
             ws.sendBinary(data);
           },
+          drain() {
+            flushPending(ws.data);
+          },
           close() {
             ws.data.closed = true;
             ws.close();
@@ -68,11 +97,8 @@ const server = Bun.serve<TunnelState>({
             socket.end();
             return;
           }
-          for (const chunk of ws.data.pending) {
-            socket.write(chunk);
-          }
-          ws.data.pending = [];
           ws.data.socket = socket;
+          flushPending(ws.data);
         })
         .catch((error: unknown) => {
           console.error(
@@ -84,15 +110,13 @@ const server = Bun.serve<TunnelState>({
         });
     },
     message(ws, message) {
+      // Copied (not a view), since the bytes may sit in the queue.
       const bytes: Uint8Array =
         typeof message === "string"
           ? new TextEncoder().encode(message)
           : new Uint8Array(message);
-      if (ws.data.socket !== null) {
-        ws.data.socket.write(bytes);
-      } else {
-        ws.data.pending.push(bytes);
-      }
+      ws.data.pending.push(bytes);
+      flushPending(ws.data);
     },
     close(ws) {
       ws.data.closed = true;

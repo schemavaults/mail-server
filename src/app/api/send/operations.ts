@@ -84,7 +84,7 @@ export const sendEmail = defineOperation({
   responses: {
     200: messageResponse("The email was sent (or validated, for dry runs)."),
     ...errorResponses({
-      400: "Invalid request body, unknown/unconfigured/admin-disabled transport, invalid template, or empty/oversized mailing list.",
+      400: "Invalid request body (including too many or too-large attachments), unknown/unconfigured/admin-disabled transport, invalid template, or empty/oversized mailing list.",
       403: "The API key's audience, sender, or transport scope forbids this send (or the access token is not an admin's).",
       500: "Failed to prepare or dispatch the email.",
     }),
@@ -311,6 +311,7 @@ export const sendEmail = defineOperation({
       cc: sendEmailOpts.cc ?? undefined,
       bcc: sendEmailOpts.bcc ?? undefined,
       transport: transportId,
+      attachments: sendEmailOpts.attachments ?? undefined,
     };
 
     // Transports throw on delivery failure (see IMailTransport), so any
