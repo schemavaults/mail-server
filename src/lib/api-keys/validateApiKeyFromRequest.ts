@@ -1,6 +1,5 @@
 import "server-only";
 
-import type { NextRequest } from "next/server";
 import { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import { MailKeysRegistry } from "@/lib/mail-db/MailKeysRegistry";
 import type { ApiKeyRecord } from "@/lib/mail-db/api-keys-table";
@@ -18,7 +17,9 @@ export type ValidateApiKeyResult =
  * JWT — we only want to enter the API-key code path when the caller is
  * actually presenting an API key.
  */
-export function requestLooksLikeApiKeyAuth(req: NextRequest): boolean {
+export function requestLooksLikeApiKeyAuth(
+  req: Pick<Request, "headers">,
+): boolean {
   const token = extractBearerToken(req);
   return token !== null && token.startsWith(API_KEY_PREFIX);
 }
@@ -30,7 +31,7 @@ export function requestLooksLikeApiKeyAuth(req: NextRequest): boolean {
  * `touchLastUsed` update so admins can see when keys are actively used.
  */
 export async function validateApiKeyFromRequest(
-  req: NextRequest,
+  req: Pick<Request, "headers">,
 ): Promise<ValidateApiKeyResult> {
   const token = extractBearerToken(req);
   if (!token || !token.startsWith(API_KEY_PREFIX)) {

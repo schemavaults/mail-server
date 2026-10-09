@@ -2,8 +2,8 @@ import { z } from "@/lib/zod-openapi";
 import { corsOriginValueSchema } from "@/lib/mail-db/cors-allowed-origins-table";
 
 /**
- * Request body for allowing a new CORS origin. Shared between the route's
- * Hono app and its OpenAPI registration.
+ * Request body for allowing a new CORS origin, validated by the operations
+ * runtime and documented from the same schema.
  */
 export const addCorsOriginBodySchema = z
   .object({

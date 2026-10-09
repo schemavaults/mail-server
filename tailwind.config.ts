@@ -61,7 +61,11 @@ try {
 
   // Generate and export the config
   config = configFactory.createConfig({
-    content: ["./src/**/*.{tsx,jsx,js,ts}", "@schemavaults/ui"],
+    content: [
+      "./src/**/*.{tsx,jsx,js,ts}",
+      "@schemavaults/ui",
+      "@schemavaults/openapi-docs-ui",
+    ],
   }) satisfies Config;
 } catch (e) {
   console.error(

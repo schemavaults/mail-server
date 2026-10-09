@@ -3,6 +3,8 @@
 import { useCallback, useState, type ReactElement } from "react";
 import { Button } from "@schemavaults/ui";
 
+const INVALID_LINK_MESSAGE = "Confirmation link is invalid.";
+
 type Status =
   | { kind: "idle" }
   | { kind: "loading" }
@@ -41,6 +43,7 @@ export default function ConfirmSubscriptionClient({
       });
       const json = (await res.json().catch(() => null)) as {
         success?: boolean;
+        error?: string;
         message?: string;
       } | null;
 
@@ -53,9 +56,14 @@ export default function ConfirmSubscriptionClient({
         return;
       }
       if (res.status === 400) {
+        // A token or email that fails request validation (`validation_error`)
+        // is just as much an invalid link as one matching no subscription.
         setStatus({
           kind: "invalid",
-          message: json?.message ?? "Confirmation link is invalid.",
+          message:
+            json?.error === "validation_error" || !json?.message
+              ? INVALID_LINK_MESSAGE
+              : json.message,
         });
         return;
       }

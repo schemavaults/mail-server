@@ -75,7 +75,7 @@ Everything else is derived automatically:
 - The `/admin/templates` iframe preview reads sample props via `sampleEmailTemplateProps[templateId]`
 - The `validateProps` unit test in `src/lib/EmailTemplatesCatalog/__tests__/validateProps.test.ts` automatically picks up the new template
 
-Do **not** edit `isValidTemplateId.ts`, `EmailTemplateIdSchema.ts`, or `src/app/api/admin/templates/preview/route.ts` (which now imports `sampleEmailTemplateProps`) — they all derive from the catalog object and the shared sample-props module.
+Do **not** edit `isValidTemplateId.ts`, `EmailTemplateIdSchema.ts`, or `src/app/api/admin/templates/preview/operations.ts` (which imports `sampleEmailTemplateProps`) — they all derive from the catalog object and the shared sample-props module.
 
 ## Verification
 

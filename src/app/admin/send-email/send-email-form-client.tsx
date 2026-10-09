@@ -225,10 +225,10 @@ export default function SendEmailFormClient({
             if (
               errBody &&
               typeof errBody === "object" &&
-              "error" in errBody &&
-              typeof errBody.error === "string"
+              "message" in errBody &&
+              typeof errBody.message === "string"
             ) {
-              errMsg = errBody.error;
+              errMsg = errBody.message;
             }
           } catch {
             // ignore
