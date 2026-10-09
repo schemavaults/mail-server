@@ -1,12 +1,12 @@
 name: CI
 
+# Feature branches are covered by their pull_request runs; pushing them too
+# would run every job twice per PR commit.
 on:
   pull_request:
   push:
     branches:
       - main
-      - "feature/**"
-      - "claude/**"
 
 env:
   BUN_VERSION: 1.4.2
