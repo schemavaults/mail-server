@@ -1,4 +1,8 @@
-import { createSendEmailRequestBodySchema } from "@schemavaults/send-email";
+import {
+  createSendEmailRequestBodySchema,
+  MAX_ATTACHMENTS_PER_EMAIL,
+  MAX_TOTAL_ATTACHMENT_BYTES,
+} from "@schemavaults/send-email";
 import { z, withOpenApi } from "@/lib/zod-openapi";
 
 // POST /api/send validates with @schemavaults/send-email's own request body
@@ -7,6 +11,9 @@ import { z, withOpenApi } from "@/lib/zod-openapi";
 // instance but before the `.openapi()` extension is guaranteed to exist on
 // it, so the documentation metadata is attached with `withOpenApi()` on
 // copies of the package's field schemas — validation is unchanged.
+// (`attachments` in particular must be wrapped, not rebuilt from its element
+// schema: a rebuilt array would silently drop the package's count and
+// total-size checks.)
 
 const packageSchema = createSendEmailRequestBodySchema(true);
 const { shape } = packageSchema;
@@ -51,6 +58,9 @@ export const sendEmailRequestBodySchema = withOpenApi(
       description:
         "Which configured transport should deliver this message (`resend`, `smtp`, or `test-database-transport`). Defaults to the deployment's MAIL_TRANSPORT.",
       example: "resend",
+    }),
+    attachments: withOpenApi(shape.attachments, {
+      description: `Files to attach (1–${MAX_ATTACHMENTS_PER_EMAIL}, at most ${MAX_TOTAL_ATTACHMENT_BYTES / (1024 * 1024)} MiB in total once decoded). Each carries its bytes base64-encoded in \`content\`; an omitted \`contentType\` is derived from the filename by the delivering transport, and setting \`contentId\` sends the file inline so the HTML body can reference it as \`cid:<contentId>\`. The hosting platform may cap the request body below this limit.`,
     }),
   }),
   "SendEmailRequestBody",

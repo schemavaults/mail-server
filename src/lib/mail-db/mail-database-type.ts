@@ -10,6 +10,7 @@ import type { MailingListUnsubscribeTable } from "./mailing-list-unsubscribe-rec
 import type { MailTransportSettingsTable } from "./mail-transport-settings-table";
 import type { MailingListsTable } from "./mailing-lists-table";
 import type { PendingSubscriptionsTable } from "./pending-subscriptions-table";
+import type { TestEmailAttachmentsTable } from "./test-email-attachments-table";
 import type { TestEmailsTable } from "./test-emails-table";
 
 export type MailDatabase = {
@@ -25,5 +26,6 @@ export type MailDatabase = {
   cors_allowed_origins: CorsAllowedOriginsTable;
   branding_assets: BrandingAssetsTable;
   test_emails: TestEmailsTable;
+  test_email_attachments: TestEmailAttachmentsTable;
   mail_transport_settings: MailTransportSettingsTable;
 };

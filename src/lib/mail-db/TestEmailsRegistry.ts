@@ -3,7 +3,24 @@ import "server-only";
 import type { Kysely } from "@schemavaults/dbh";
 import type { ServerlessDatabase } from "@/lib/ServerlessDatabase";
 import type { MailDatabase } from "./mail-database-type";
-import type { TestEmail, TestEmailsTable } from "./test-emails-table";
+import type {
+  TestEmail,
+  TestEmailSummary,
+  TestEmailsTable,
+} from "./test-emails-table";
+import type {
+  TestEmailAttachment,
+  TestEmailAttachmentMetadata,
+  TestEmailAttachmentsTable,
+} from "./test-email-attachments-table";
+
+export interface RecordTestEmailAttachmentInput {
+  filename: string;
+  /** The attachment's bytes, base64-encoded. */
+  content_base64: string;
+  content_type?: string | null;
+  content_id?: string | null;
+}
 
 export interface RecordTestEmailInput {
   from_address: string;
@@ -14,6 +31,7 @@ export interface RecordTestEmailInput {
   subject: string;
   html?: string | null;
   text?: string | null;
+  attachments?: readonly RecordTestEmailAttachmentInput[];
 }
 
 export interface ListTestEmailsOptions {
@@ -23,11 +41,18 @@ export interface ListTestEmailsOptions {
   offset: number;
 }
 
+type TestEmailFields = Omit<TestEmail, "attachments">;
+
+type TestEmailAttachmentMetadataRow = Omit<
+  TestEmailAttachmentsTable,
+  "content_base64"
+>;
+
 /**
- * Reader/writer for the TEST_EMAILS table — the storage behind the fake-send
- * test-database-transport. The recipient list columns are stored as
- * JSON-encoded string arrays in TEXT columns; this registry is the only
- * place that (de)serializes them.
+ * Reader/writer for the TEST_EMAILS and TEST_EMAIL_ATTACHMENTS tables — the
+ * storage behind the fake-send test-database-transport. The recipient list
+ * columns are stored as JSON-encoded string arrays in TEXT columns; this
+ * registry is the only place that (de)serializes them.
  */
 export class TestEmailsRegistry {
   private readonly dbh: ServerlessDatabase;
@@ -57,7 +82,7 @@ export class TestEmailsRegistry {
    * Neon returns BIGINT columns as strings; coerce them (and expand the
    * JSON-encoded address columns) so consumers receive the TestEmail shape.
    */
-  private parseRow(row: TestEmailsTable): TestEmail {
+  private parseRow(row: TestEmailsTable): TestEmailFields {
     return {
       test_email_id: row.test_email_id,
       from_address: row.from_address,
@@ -77,7 +102,22 @@ export class TestEmailsRegistry {
     };
   }
 
-  /** Stores one fake-sent email and returns it in API shape. */
+  private static parseAttachmentMetadata(
+    row: TestEmailAttachmentMetadataRow,
+  ): TestEmailAttachmentMetadata {
+    return {
+      filename: row.filename,
+      content_type: row.content_type,
+      content_id: row.content_id,
+      size_bytes: row.size_bytes,
+    };
+  }
+
+  /**
+   * Stores one fake-sent email (and its attachments, in the same
+   * transaction, so an email is never readable without them) and returns
+   * it in API shape.
+   */
   public async recordEmail(input: RecordTestEmailInput): Promise<TestEmail> {
     const row: TestEmailsTable = {
       test_email_id: crypto.randomUUID(),
@@ -91,14 +131,45 @@ export class TestEmailsRegistry {
       text: input.text ?? null,
       created_at: Date.now(),
     };
-    await this.db.insertInto("test_emails").values(row).execute();
-    return this.parseRow(row);
+    const attachmentRows: TestEmailAttachmentsTable[] = (
+      input.attachments ?? []
+    ).map((attachment, attachment_index) => ({
+      test_email_id: row.test_email_id,
+      attachment_index,
+      filename: attachment.filename,
+      content_type: attachment.content_type ?? null,
+      content_id: attachment.content_id ?? null,
+      // Computed from the base64 length; nothing is decoded.
+      size_bytes: Buffer.byteLength(attachment.content_base64, "base64"),
+      content_base64: attachment.content_base64,
+    }));
+
+    await this.db.transaction().execute(async (trx) => {
+      await trx.insertInto("test_emails").values(row).execute();
+      if (attachmentRows.length > 0) {
+        await trx
+          .insertInto("test_email_attachments")
+          .values(attachmentRows)
+          .execute();
+      }
+    });
+
+    return {
+      ...this.parseRow(row),
+      attachments: attachmentRows.map((attachmentRow) => ({
+        ...TestEmailsRegistry.parseAttachmentMetadata(attachmentRow),
+        content: attachmentRow.content_base64,
+      })),
+    };
   }
 
-  /** Lists stored fake emails, newest first. */
+  /**
+   * Lists stored fake emails, newest first. Attachments are listed as
+   * metadata only: their content is never read here.
+   */
   public async listEmails(
     options: ListTestEmailsOptions,
-  ): Promise<readonly TestEmail[]> {
+  ): Promise<readonly TestEmailSummary[]> {
     const rows = await this.db
       .selectFrom("test_emails")
       .selectAll()
@@ -107,16 +178,64 @@ export class TestEmailsRegistry {
       .limit(options.limit)
       .offset(options.offset)
       .execute();
-    return rows.map((row) => this.parseRow(row));
+    if (rows.length === 0) return [];
+
+    const attachmentRows = await this.db
+      .selectFrom("test_email_attachments")
+      .select([
+        "test_email_id",
+        "attachment_index",
+        "filename",
+        "content_type",
+        "content_id",
+        "size_bytes",
+      ])
+      .where(
+        "test_email_id",
+        "in",
+        rows.map((row) => row.test_email_id),
+      )
+      .orderBy("attachment_index", "asc")
+      .execute();
+
+    const attachmentsByEmail = new Map<string, TestEmailAttachmentMetadata[]>();
+    for (const attachmentRow of attachmentRows) {
+      const list = attachmentsByEmail.get(attachmentRow.test_email_id) ?? [];
+      list.push(TestEmailsRegistry.parseAttachmentMetadata(attachmentRow));
+      attachmentsByEmail.set(attachmentRow.test_email_id, list);
+    }
+
+    return rows.map((row) => ({
+      ...this.parseRow(row),
+      attachments: attachmentsByEmail.get(row.test_email_id) ?? [],
+    }));
   }
 
+  /** Reads one stored fake email, including its attachments' content. */
   public async getEmail(test_email_id: string): Promise<TestEmail | null> {
     const row = await this.db
       .selectFrom("test_emails")
       .selectAll()
       .where("test_email_id", "=", test_email_id)
       .executeTakeFirst();
-    return row === undefined ? null : this.parseRow(row);
+    if (row === undefined) return null;
+
+    const attachmentRows = await this.db
+      .selectFrom("test_email_attachments")
+      .selectAll()
+      .where("test_email_id", "=", test_email_id)
+      .orderBy("attachment_index", "asc")
+      .execute();
+
+    return {
+      ...this.parseRow(row),
+      attachments: attachmentRows.map(
+        (attachmentRow): TestEmailAttachment => ({
+          ...TestEmailsRegistry.parseAttachmentMetadata(attachmentRow),
+          content: attachmentRow.content_base64,
+        }),
+      ),
+    };
   }
 }
 

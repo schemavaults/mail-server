@@ -6,6 +6,7 @@
 // graph. Import a class from its own file if you need it directly.
 export type {
   IMailTransport,
+  IMailTransportAttachment,
   IMailTransportSendOptions,
   IMailTransportSendResult,
 } from "./types";

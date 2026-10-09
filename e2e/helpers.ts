@@ -64,14 +64,35 @@ export interface SendEmailRequest {
   bcc?: string | string[];
   dryRun?: boolean;
   transport?: string;
+  attachments?: {
+    filename: string;
+    /** base64-encoded bytes */
+    content: string;
+    contentType?: string;
+    contentId?: string;
+  }[];
 }
 
 export async function sendEmail(request: SendEmailRequest): Promise<Response> {
   return await apiRequest("/api/send", { body: request });
 }
 
-/** Matches the TestEmail schema served by /api/test-emails. */
-export interface TestEmailRecord {
+/** Matches the TestEmailAttachmentMetadata schema. */
+export interface TestEmailAttachmentMetadataRecord {
+  filename: string;
+  content_type: string | null;
+  content_id: string | null;
+  size_bytes: number;
+}
+
+/** Matches the TestEmailAttachment schema. */
+export interface TestEmailAttachmentRecord
+  extends TestEmailAttachmentMetadataRecord {
+  /** base64-encoded bytes */
+  content: string;
+}
+
+interface TestEmailFields {
   test_email_id: string;
   from_address: string;
   to_addresses: string[];
@@ -82,6 +103,19 @@ export interface TestEmailRecord {
   html: string | null;
   text: string | null;
   created_at: number;
+}
+
+/** Matches the TestEmail schema served by GET /api/test-emails/:id. */
+export interface TestEmailRecord extends TestEmailFields {
+  attachments: TestEmailAttachmentRecord[];
+}
+
+/**
+ * Matches the TestEmailSummary schema served by GET /api/test-emails, which
+ * lists attachments without their content.
+ */
+export interface TestEmailSummaryRecord extends TestEmailFields {
+  attachments: TestEmailAttachmentMetadataRecord[];
 }
 
 async function parseDataEnvelope<TData>(response: Response): Promise<TData> {
@@ -96,13 +130,13 @@ async function parseDataEnvelope<TData>(response: Response): Promise<TData> {
 
 export async function listTestEmails(
   params: { limit?: number; offset?: number } = {},
-): Promise<TestEmailRecord[]> {
+): Promise<TestEmailSummaryRecord[]> {
   const query = new URLSearchParams();
   if (params.limit !== undefined) query.set("limit", String(params.limit));
   if (params.offset !== undefined) query.set("offset", String(params.offset));
   const suffix = query.size > 0 ? `?${query.toString()}` : "";
   const response = await apiRequest(`/api/test-emails${suffix}`);
-  return await parseDataEnvelope<TestEmailRecord[]>(response);
+  return await parseDataEnvelope<TestEmailSummaryRecord[]>(response);
 }
 
 export async function getTestEmail(
@@ -120,7 +154,7 @@ export async function getTestEmail(
 export async function findTestEmailBySubject(
   subject: string,
   options: { attempts?: number } = {},
-): Promise<TestEmailRecord | null> {
+): Promise<TestEmailSummaryRecord | null> {
   const attempts = options.attempts ?? 5;
   for (let attempt = 0; attempt < attempts; attempt++) {
     if (attempt > 0) {

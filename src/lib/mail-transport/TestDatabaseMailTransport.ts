@@ -17,7 +17,8 @@ function toAddressArray(value: string | string[] | undefined): string[] {
 
 /**
  * Fake-send transport for E2E testing: instead of delivering anything, each
- * send is stored as a row in the TEST_EMAILS table and can be read back via
+ * send is stored as a row in the TEST_EMAILS table (its attachments in
+ * TEST_EMAIL_ATTACHMENTS) and can be read back via
  * GET /api/test-emails[/:test_email_id]. No SMTP/Resend (or any network) is
  * involved, and no real recipient ever receives mail.
  *
@@ -60,6 +61,12 @@ export class TestDatabaseMailTransport implements IMailTransport {
       subject: options.subject,
       html: options.html ?? null,
       text: options.text ?? null,
+      attachments: options.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        content_base64: attachment.content,
+        content_type: attachment.contentType ?? null,
+        content_id: attachment.contentId ?? null,
+      })),
     });
 
     return { id: stored.test_email_id };

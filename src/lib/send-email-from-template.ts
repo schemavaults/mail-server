@@ -97,6 +97,7 @@ export async function sendEmailFromTemplate<T extends EmailTemplateId>(
       text,
       from,
       transport: options.transport ?? undefined,
+      attachments: options.attachments ?? undefined,
     },
     transport,
   );
