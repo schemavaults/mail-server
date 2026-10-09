@@ -238,6 +238,26 @@ describe.skipIf(!E2E_ENABLED)(
         })),
       },
       { label: "an empty attachments array", attachments: [] },
+      {
+        label: "a content type carrying a header line break",
+        attachments: [
+          {
+            filename: "notes.txt",
+            content: toBase64("x"),
+            contentType: 'text/plain; name="x\r\nBcc: e2e-victim@example.com"',
+          },
+        ],
+      },
+      {
+        label: "a filename with a right-to-left override",
+        attachments: [
+          {
+            // Would display as "invoiceexe.pdf" in a mail client.
+            filename: `invoice${String.fromCharCode(0x202e)}fdp.exe`,
+            content: toBase64("x"),
+          },
+        ],
+      },
     ];
 
     for (const { label, attachments } of invalidAttachmentCases) {
