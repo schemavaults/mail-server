@@ -55,6 +55,7 @@ import {
   addCorsOrigin,
 } from "@/app/api/admin/cors-origins/operations";
 import { removeCorsOrigin } from "@/app/api/admin/cors-origins/[cors_origin_id]/operations";
+import { listEmailSendLog } from "@/app/api/admin/email-send-log/operations";
 import { listTemplateIds } from "@/app/api/admin/templates/operations";
 import {
   previewTemplateWithSampleProps,
@@ -96,6 +97,7 @@ export const MAIL_SERVER_OPERATIONS: readonly AnyOperationDefinition[] = [
   listCorsOrigins,
   addCorsOrigin,
   removeCorsOrigin,
+  listEmailSendLog,
   listTemplateIds,
   previewTemplateWithSampleProps,
   previewTemplate,

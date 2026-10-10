@@ -13,6 +13,7 @@ export const OPENAPI_TAGS = {
   adminApiKeys: "Admin: API Keys",
   adminBranding: "Admin: Branding",
   adminCors: "Admin: CORS",
+  adminEmailSendLog: "Admin: Email Send Log",
   adminTemplates: "Admin: Templates",
   adminTransports: "Admin: Transports",
 } as const;
@@ -56,6 +57,11 @@ export const OPENAPI_TAG_DEFINITIONS: NonNullable<
     name: OPENAPI_TAGS.adminCors,
     description:
       "Manage the CORS origin allowlist for public API routes (admin only).",
+  },
+  {
+    name: OPENAPI_TAGS.adminEmailSendLog,
+    description:
+      "Review outbound send attempts: when each email was delivered, or why it failed (admin only).",
   },
   {
     name: OPENAPI_TAGS.adminTemplates,

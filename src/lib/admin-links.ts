@@ -7,6 +7,7 @@ import {
   KeyRound,
   LayoutDashboard,
   Palette,
+  ScrollText,
   Send,
   Server,
   ShieldAlert,
@@ -44,6 +45,11 @@ export const ADMIN_LINKS: readonly AdminLink[] = [
     href: "/admin/send-email",
     label: "Send an email",
     icon: Send,
+  },
+  {
+    href: "/admin/email-send-log",
+    label: "View email send log",
+    icon: ScrollText,
   },
   {
     href: "/admin/keys",

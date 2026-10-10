@@ -29,6 +29,7 @@ const EXPECTED_PATHS: Record<string, string[]> = {
   "/api/admin/branding/{asset_kind}": ["put", "delete"],
   "/api/admin/cors-origins": ["get", "post"],
   "/api/admin/cors-origins/{cors_origin_id}": ["delete"],
+  "/api/admin/email-send-log": ["get"],
   "/api/admin/templates": ["get"],
   "/api/admin/templates/preview": ["get", "post"],
   "/api/admin/transports": ["get"],
@@ -158,6 +159,8 @@ describe("buildMailServerOpenApiDocument", () => {
       "TestEmailSummary",
       "TestEmailAttachment",
       "TestEmailAttachmentMetadata",
+      "EmailSendLogEntry",
+      "EmailSendLogStatus",
     ]) {
       expect(schemas, `missing component schema ${expected}`).toContain(
         expected,
