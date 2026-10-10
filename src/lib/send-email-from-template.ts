@@ -1,7 +1,10 @@
 import "server-only";
 
 import { render } from "@react-email/render";
-import sendEmail, { type ISendEmailResult } from "@/lib/send-email";
+import sendEmail, {
+  type ISendEmailOptions,
+  type ISendEmailResult,
+} from "@/lib/send-email";
 import type { IMailTransport } from "@/lib/mail-transport";
 import EmailTemplatesCatalog, {
   isValidTemplateId,
@@ -16,9 +19,10 @@ type TemplateMessageDef<T extends EmailTemplateId> =
   SendEmailRequestBody["message"] & { template_id: T };
 
 export type ISendEmailFromTemplateOptions<T extends EmailTemplateId> =
-  SendEmailRequestBody & {
-    message: TemplateMessageDef<T>;
-  };
+  SendEmailRequestBody &
+    Pick<ISendEmailOptions, "apiKeyId"> & {
+      message: TemplateMessageDef<T>;
+    };
 
 export async function sendEmailFromTemplate<T extends EmailTemplateId>(
   options: ISendEmailFromTemplateOptions<T>,
@@ -98,6 +102,7 @@ export async function sendEmailFromTemplate<T extends EmailTemplateId>(
       from,
       transport: options.transport ?? undefined,
       attachments: options.attachments ?? undefined,
+      apiKeyId: options.apiKeyId,
     },
     transport,
   );

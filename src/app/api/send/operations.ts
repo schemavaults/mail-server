@@ -312,6 +312,8 @@ export const sendEmail = defineOperation({
       bcc: sendEmailOpts.bcc ?? undefined,
       transport: transportId,
       attachments: sendEmailOpts.attachments ?? undefined,
+      // Attributes the send in the email send log (null for admins).
+      apiKeyId,
     };
 
     // Transports throw on delivery failure (see IMailTransport), so any
