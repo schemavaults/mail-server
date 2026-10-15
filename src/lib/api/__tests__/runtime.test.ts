@@ -100,6 +100,7 @@ const allowlist = await import(
 );
 const openApiJson = await import("@/app/api/openapi.json/route");
 const emailSendStats = await import("@/app/api/admin/email-send-stats/route");
+const deploymentSettings = await import("@/app/api/admin/settings/route");
 const adminBranding = await import(
   "@/app/api/admin/branding/[asset_kind]/route"
 );
@@ -224,6 +225,39 @@ describe("email send stats", () => {
     );
     expect(status).toBe(400);
     expect(body.error).toBe("too_many_buckets");
+  });
+});
+
+describe("deployment settings", () => {
+  async function patch(body: unknown, token: string = ADMIN_TOKEN) {
+    const res = await deploymentSettings.PATCH(
+      request("/api/admin/settings", {
+        method: "PATCH",
+        token,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+    return { status: res.status, body: await json(res) };
+  }
+
+  it("are admin-only", async () => {
+    const { status } = await patch({ default_time_zone: "UTC" }, USER_TOKEN);
+    expect(status).toBe(403);
+  });
+
+  it("refuse a time zone that is not an IANA name", async () => {
+    for (const default_time_zone of ["Mars/Olympus", "+05:30", 42]) {
+      const { status, body } = await patch({ default_time_zone });
+      expect(status, String(default_time_zone)).toBe(400);
+      expect(body.error).toBe("validation_error");
+    }
+  });
+
+  it("refuse an update that changes nothing", async () => {
+    const { status, body } = await patch({});
+    expect(status).toBe(400);
+    expect(body.error).toBe("nothing_to_update");
   });
 });
 

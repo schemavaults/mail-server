@@ -4,57 +4,89 @@ import {
   MAX_EMAIL_SEND_STATS_BUCKETS,
   type EmailSendStatsGranularity,
 } from "@/lib/mail-db/email-send-stats";
+import {
+  addCalendarDays,
+  startOfZonedDay,
+  wallTimeInZone,
+  zonedTimeToEpoch,
+  type CalendarDay,
+} from "@/lib/time-zone";
 
 // The date range the /admin/email-traffic page charts: a preset relative to
-// now, or a custom span of whole days. Ranges are computed in the browser's
-// local time, the same time zone the page asks the stats API to align its
-// buckets to, so "Last 7 days" runs from local midnight to local midnight.
+// a moment ("now" when picked), or a custom span of whole calendar days.
+// The selection itself is zone-free; it is resolved to instants in the time
+// zone the page groups by (the deployment's default, or the viewer's own),
+// the same zone the stats API aligns its buckets to, so "Last 7 days" runs
+// from local midnight to local midnight there.
 
 export const TRAFFIC_RANGE_PRESETS = [
-  { id: "24h", label: "24 hours" },
-  { id: "7d", label: "7 days" },
-  { id: "30d", label: "30 days" },
-  { id: "90d", label: "90 days" },
-  { id: "12m", label: "12 months" },
-] as const;
+  { id: "24h", label: "24 hours", granularity: "hour" },
+  { id: "7d", label: "7 days", granularity: "day" },
+  { id: "30d", label: "30 days", granularity: "day" },
+  { id: "90d", label: "90 days", granularity: "day" },
+  { id: "12m", label: "12 months", granularity: "month" },
+] as const satisfies readonly {
+  id: string;
+  label: string;
+  granularity: EmailSendStatsGranularity;
+}[];
 export type TrafficRangePresetId = (typeof TRAFFIC_RANGE_PRESETS)[number]["id"];
 
 export const DEFAULT_TRAFFIC_RANGE_PRESET: TrafficRangePresetId = "30d";
 
+export type TrafficRangeSelection =
+  | {
+      kind: "preset";
+      preset: TrafficRangePresetId;
+      /** The moment the preset counts back from, epoch milliseconds. */
+      now: number;
+    }
+  | {
+      kind: "custom";
+      /** First day of the range (inclusive). */
+      first: CalendarDay;
+      /** Last day of the range (inclusive). */
+      last: CalendarDay;
+    };
+
 export interface TrafficRange {
-  /** The preset the range was picked from, or "custom" for picked days. */
-  preset: TrafficRangePresetId | "custom";
   /** Start of the range (inclusive), epoch milliseconds. */
   from: number;
   /** End of the range (exclusive), epoch milliseconds. */
   to: number;
-  granularity: EmailSendStatsGranularity;
 }
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
-function startOfLocalDay(date: Date, offsetDays = 0): Date {
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate() + offsetDays,
-  );
+/** The calendar day `epoch` falls on in `timeZone`. */
+export function calendarDayInZone(
+  epoch: number,
+  timeZone: string,
+): CalendarDay {
+  const { year, month, day } = wallTimeInZone(epoch, timeZone);
+  return { year, month, day };
 }
 
-/** The range a preset covers as of `now`, with the preset's granularity. */
+/** The range a preset covers as of `now`, in `timeZone`. */
 export function presetTrafficRange(
   preset: TrafficRangePresetId,
-  now: Date,
+  now: number,
+  timeZone: string,
 ): TrafficRange {
+  const wall = wallTimeInZone(now, timeZone);
+  const today: CalendarDay = wall;
   switch (preset) {
     case "24h": {
       // The current hour and the 23 before it.
-      const nextHour = new Date(now);
-      nextHour.setMinutes(0, 0, 0);
-      nextHour.setHours(nextHour.getHours() + 1);
-      const to = nextHour.getTime();
-      return { preset, from: to - 24 * HOUR_MS, to, granularity: "hour" };
+      const to = zonedTimeToEpoch(
+        timeZone,
+        wall.year,
+        wall.month,
+        wall.day,
+        wall.hour + 1,
+      );
+      return { from: to - 24 * HOUR_MS, to };
     }
     case "7d":
     case "30d":
@@ -62,46 +94,67 @@ export function presetTrafficRange(
       // Today and the days before it, whole local days.
       const days = preset === "7d" ? 7 : preset === "30d" ? 30 : 90;
       return {
-        preset,
-        from: startOfLocalDay(now, 1 - days).getTime(),
-        to: startOfLocalDay(now, 1).getTime(),
-        granularity: "day",
+        from: startOfZonedDay(addCalendarDays(today, 1 - days), timeZone),
+        to: startOfZonedDay(addCalendarDays(today, 1), timeZone),
       };
     }
-    case "12m": {
+    case "12m":
       // This month and the 11 before it.
       return {
-        preset,
-        from: new Date(now.getFullYear(), now.getMonth() - 11, 1).getTime(),
-        to: new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime(),
-        granularity: "month",
+        from: zonedTimeToEpoch(timeZone, wall.year, wall.month - 11, 1),
+        to: zonedTimeToEpoch(timeZone, wall.year, wall.month + 1, 1),
       };
-    }
   }
 }
 
-/** Whether `granularity` keeps `[from, to)` within the API's bucket cap. */
+/**
+ * The range of whole days `first`…`last` (both inclusive, in either
+ * order) in `timeZone`.
+ */
+export function customTrafficRange(
+  first: CalendarDay,
+  last: CalendarDay,
+  timeZone: string,
+): TrafficRange {
+  const [start, end] =
+    startOfZonedDay(first, timeZone) <= startOfZonedDay(last, timeZone)
+      ? [first, last]
+      : [last, first];
+  return {
+    from: startOfZonedDay(start, timeZone),
+    to: startOfZonedDay(addCalendarDays(end, 1), timeZone),
+  };
+}
+
+export function resolveTrafficRange(
+  selection: TrafficRangeSelection,
+  timeZone: string,
+): TrafficRange {
+  return selection.kind === "preset"
+    ? presetTrafficRange(selection.preset, selection.now, timeZone)
+    : customTrafficRange(selection.first, selection.last, timeZone);
+}
+
+/** Whether `granularity` keeps `range` within the API's bucket cap. */
 export function isGranularityAllowed(
-  from: number,
-  to: number,
+  range: TrafficRange,
   granularity: EmailSendStatsGranularity,
 ): boolean {
   return (
-    estimateEmailSendStatsBucketCount(from, to, granularity) <=
+    estimateEmailSendStatsBucketCount(range.from, range.to, granularity) <=
     MAX_EMAIL_SEND_STATS_BUCKETS
   );
 }
 
 /**
- * A readable bucket size for `[from, to)`: hourly up to two days, daily up
- * to about three months, weekly up to about 18 months, monthly beyond —
+ * A readable bucket size for `range`: hourly up to two days, daily up to
+ * about three months, weekly up to about 18 months, monthly beyond —
  * coarsened further if the bucket cap would otherwise be exceeded.
  */
 export function autoTrafficGranularity(
-  from: number,
-  to: number,
+  range: TrafficRange,
 ): EmailSendStatsGranularity {
-  const span = to - from;
+  const span = range.to - range.from;
   const preferred: EmailSendStatsGranularity =
     span <= 2 * DAY_MS + HOUR_MS
       ? "hour"
@@ -114,29 +167,32 @@ export function autoTrafficGranularity(
     EMAIL_SEND_STATS_GRANULARITIES.indexOf(preferred),
   );
   return (
-    coarser.find((granularity) =>
-      isGranularityAllowed(from, to, granularity),
-    ) ?? "month"
+    coarser.find((granularity) => isGranularityAllowed(range, granularity)) ??
+    "month"
   );
 }
 
-/**
- * The range of whole local days `first`…`last` (both inclusive, in either
- * order), with an automatically picked granularity.
- */
-export function customTrafficRange(first: Date, last: Date): TrafficRange {
-  const [start, end] = first <= last ? [first, last] : [last, first];
-  const from = startOfLocalDay(start).getTime();
-  const to = startOfLocalDay(end, 1).getTime();
-  return {
-    preset: "custom",
-    from,
-    to,
-    granularity: autoTrafficGranularity(from, to),
-  };
+/** The granularity a new selection starts with: the preset's own, or auto. */
+export function defaultTrafficGranularity(
+  selection: TrafficRangeSelection,
+  range: TrafficRange,
+): EmailSendStatsGranularity {
+  if (selection.kind === "preset") {
+    const preset = TRAFFIC_RANGE_PRESETS.find(
+      (entry) => entry.id === selection.preset,
+    );
+    if (preset !== undefined) return preset.granularity;
+  }
+  return autoTrafficGranularity(range);
 }
 
-/** The last day a range covers: the local day before its exclusive end. */
-export function lastDayOfTrafficRange(range: TrafficRange): Date {
-  return new Date(range.to - 1);
+/** The first and last calendar days `range` covers in `timeZone`. */
+export function trafficRangeDays(
+  range: TrafficRange,
+  timeZone: string,
+): { first: CalendarDay; last: CalendarDay } {
+  return {
+    first: calendarDayInZone(range.from, timeZone),
+    last: calendarDayInZone(range.to - 1, timeZone),
+  };
 }

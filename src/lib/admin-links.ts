@@ -11,6 +11,7 @@ import {
   ScrollText,
   Send,
   Server,
+  Settings,
   ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
@@ -76,6 +77,11 @@ export const ADMIN_LINKS: readonly AdminLink[] = [
     href: "/admin/branding",
     label: "Customize branding (logo & favicon)",
     icon: Palette,
+  },
+  {
+    href: "/admin/settings",
+    label: "Deployment settings (time zone)",
+    icon: Settings,
   },
 ];
 

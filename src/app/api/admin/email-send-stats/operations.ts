@@ -12,24 +12,15 @@ import {
   emailSendStatsGranularitySchema,
   emailSendStatsSchema,
   estimateEmailSendStatsBucketCount,
-  isValidEmailSendStatsTimeZone,
   MAX_EMAIL_SEND_STATS_BUCKETS,
 } from "@/lib/mail-db/email-send-stats";
+import { isInvalidParameterValue } from "@/lib/mail-db/is-invalid-parameter-value";
+import { ianaTimeZoneSchema } from "@/lib/time-zone";
 
 /** The range used when a request omits `from`: the 30 days before `to`. */
 const DEFAULT_RANGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const epochMillisQueryParam = z.coerce.number().int().min(0);
-
-/**
- * True iff `e` is Postgres refusing a parameter value (SQLSTATE 22023) —
- * how it rejects a time zone name it does not know.
- */
-function isInvalidParameterValue(e: unknown): boolean {
-  if (typeof e !== "object" || e === null) return false;
-  const anyE = e as { code?: unknown; cause?: { code?: unknown } };
-  return anyE.code === "22023" || anyE.cause?.code === "22023";
-}
 
 // Counts the email send log's attempts per transport over a date range,
 // grouped into time buckets, for the /admin/email-traffic charts. Counts
@@ -54,12 +45,7 @@ export const getEmailSendStats = defineOperation({
           "End of the range (exclusive), Unix epoch milliseconds. Defaults to now.",
         example: 1769904000000,
       }),
-      timezone: z
-        .string()
-        .max(64)
-        .refine(isValidEmailSendStatsTimeZone, {
-          message: "Expected an IANA time zone name, e.g. 'America/New_York'.",
-        })
+      timezone: ianaTimeZoneSchema
         .default("UTC")
         .openapi({
           description:

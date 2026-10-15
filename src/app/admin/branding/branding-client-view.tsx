@@ -17,6 +17,7 @@ import {
 import uploadBrandingAsset from "@/lib/client-mail-db-actions/uploadBrandingAsset";
 import removeBrandingAsset from "@/lib/client-mail-db-actions/removeBrandingAsset";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
+import { useTimestampFormatters } from "@/contexts/DeploymentTimeZoneContext";
 
 export interface BrandingClientViewProps {
   initialAssets: readonly BrandingAssetMetadata[];
@@ -64,6 +65,7 @@ function BrandingAssetCard({
   onRemove,
 }: BrandingAssetCardProps): ReactElement {
   const details = ASSET_KIND_DETAILS[asset_kind];
+  const { formatDateTime } = useTimestampFormatters();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   // Bumped to remount the file input (clearing its selection) after a
   // successful upload or removal.
@@ -111,7 +113,7 @@ function BrandingAssetCard({
           <p className="text-sm text-muted-foreground">{details.description}</p>
           <span className="text-xs text-muted-foreground">
             {metadata
-              ? `Custom ${details.title.toLowerCase()} uploaded ${new Date(metadata.updated_at).toLocaleString()}`
+              ? `Custom ${details.title.toLowerCase()} uploaded ${formatDateTime(metadata.updated_at)}`
               : `Using the bundled default ${details.title.toLowerCase()}.`}
           </span>
         </div>

@@ -20,13 +20,10 @@ import listCorsOrigins from "@/lib/client-mail-db-actions/listCorsOrigins";
 import addCorsOrigin from "@/lib/client-mail-db-actions/addCorsOrigin";
 import removeCorsOrigin from "@/lib/client-mail-db-actions/removeCorsOrigin";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
+import { useTimestampFormatters } from "@/contexts/DeploymentTimeZoneContext";
 
 export interface CorsOriginsClientViewProps {
   initialOrigins: readonly CorsAllowedOrigin[];
-}
-
-function formatTimestamp(value: number): string {
-  return new Date(value).toLocaleString();
 }
 
 interface CorsOriginRowProps {
@@ -43,6 +40,7 @@ function CorsOriginRow({
   origin,
   onRemove,
 }: CorsOriginRowProps): ReactElement {
+  const { formatDateTime } = useTimestampFormatters();
   const [isRemoving, startRemoveTransition] = useTransition();
 
   return (
@@ -61,7 +59,7 @@ function CorsOriginRow({
           </span>
         ) : null}
         <span className="text-xs text-muted-foreground">
-          Added {formatTimestamp(origin.created_at)}
+          Added {formatDateTime(origin.created_at)}
         </span>
       </div>
       <Button

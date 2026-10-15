@@ -46,24 +46,6 @@ export function estimateEmailSendStatsBucketCount(
 }
 
 /**
- * True iff `timeZone` is an IANA time zone name (e.g. `UTC`,
- * `America/New_York`). Bare UTC offsets such as `+05:30` are refused even
- * where the runtime accepts them: Postgres reads them as POSIX zones, with
- * the sign inverted.
- */
-export function isValidEmailSendStatsTimeZone(timeZone: string): boolean {
-  if (!/^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+)*$/.test(timeZone)) {
-    return false;
-  }
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Display order for transports: the known transports in registry order,
  * then any other logged transport id alphabetically, then attempts that
  * resolved no transport (null) last.

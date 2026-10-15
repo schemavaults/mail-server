@@ -15,6 +15,7 @@ import type {
 import { DEFAULT_EMAIL_SEND_LOG_PAGE_SIZE } from "@/app/api/admin/email-send-log/page-size";
 import listEmailSendLog from "@/lib/client-mail-db-actions/listEmailSendLog";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
+import { useTimestampFormatters } from "@/contexts/DeploymentTimeZoneContext";
 
 export interface EmailSendLogClientViewProps {
   /** The newest page of entries (unfiltered), loaded server-side. */
@@ -32,10 +33,6 @@ const STATUS_FILTERS: readonly { value: StatusFilter; label: string }[] = [
 ];
 
 const PAGE_SIZE = DEFAULT_EMAIL_SEND_LOG_PAGE_SIZE;
-
-function formatTimestamp(value: number): string {
-  return new Date(value).toLocaleString();
-}
 
 function describeSender(entry: EmailSendLogEntry): string {
   if (entry.api_key_id === null) return "an admin or the server";
@@ -227,6 +224,7 @@ function EmailSendLogEntryRow({
 }: {
   entry: EmailSendLogEntry;
 }): ReactElement {
+  const { formatDateTime } = useTimestampFormatters();
   const delivered = entry.status === "delivered";
   return (
     <li className="w-full p-3 md:p-4 flex flex-col gap-1 border rounded-md bg-card shadow-sm">
@@ -242,7 +240,7 @@ function EmailSendLogEntryRow({
           <Badge variant="destructive">Failed</Badge>
         )}
         <p className="text-sm font-medium text-foreground">
-          {formatTimestamp(entry.delivered_at ?? entry.attempted_at)}
+          {formatDateTime(entry.delivered_at ?? entry.attempted_at)}
         </p>
       </div>
       <p className="text-xs text-muted-foreground">

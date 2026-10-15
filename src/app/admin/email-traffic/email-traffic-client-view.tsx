@@ -36,15 +36,21 @@ import {
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
 import { ChartColumnStacked, RefreshCw } from "lucide-react";
+import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
+import { useDeploymentTimeZone } from "@/contexts/DeploymentTimeZoneContext";
 import type { TransportStatus } from "@/app/api/admin/transports/transport-status-schema";
 import {
   EMAIL_SEND_STATS_GRANULARITIES,
-  isValidEmailSendStatsTimeZone,
   type EmailSendStats,
   type EmailSendStatsGranularity,
 } from "@/lib/mail-db/email-send-stats";
+import {
+  browserTimeZone,
+  compareCalendarDays,
+  type CalendarDay,
+} from "@/lib/time-zone";
 import getEmailSendStats from "@/lib/client-mail-db-actions/getEmailSendStats";
 import {
   StackedColumnChart,
@@ -54,12 +60,14 @@ import {
   DEFAULT_TRAFFIC_RANGE_PRESET,
   TRAFFIC_RANGE_PRESETS,
   autoTrafficGranularity,
-  customTrafficRange,
+  calendarDayInZone,
+  defaultTrafficGranularity,
   isGranularityAllowed,
-  lastDayOfTrafficRange,
-  presetTrafficRange,
+  resolveTrafficRange,
+  trafficRangeDays,
   type TrafficRange,
   type TrafficRangePresetId,
+  type TrafficRangeSelection,
 } from "./traffic-range";
 import {
   attemptsOf,
@@ -111,14 +119,17 @@ const SHARE_PIES: readonly { metric: Metric; title: string; empty: string }[] =
     { metric: "failed", title: "Failed", empty: "No failed attempts" },
   ];
 
-/** The browser's IANA time zone, or UTC when it reports none we accept. */
-function browserTimeZone(): string {
-  try {
-    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return isValidEmailSendStatsTimeZone(zone) ? zone : "UTC";
-  } catch {
-    return "UTC";
-  }
+/** The date picker works in browser-local Dates; ranges in calendar days. */
+function calendarDayOfPickerDate(date: Date): CalendarDay {
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth(),
+    day: date.getDate(),
+  };
+}
+
+function pickerDateOfCalendarDay(day: CalendarDay): Date {
+  return new Date(day.year, day.month, day.day);
 }
 
 export default function EmailTrafficClientView({
@@ -127,16 +138,45 @@ export default function EmailTrafficClientView({
 }: EmailTrafficClientViewProps): ReactElement {
   const auth = useAuth();
   const appId = useMailAppId();
+  const deploymentTimeZone = useDeploymentTimeZone();
 
-  // The range and time zone depend on the browser's clock and zone, so they
-  // are set after mount (the server render shows the loading state).
-  const [range, setRange] = useState<TrafficRange | null>(null);
-  const [timeZone, setTimeZone] = useState<string | null>(null);
+  // The selection and the viewer's zone depend on the browser's clock and
+  // zone, so they are set after mount (the server render shows the loading
+  // state).
+  const [selection, setSelection] = useState<TrafficRangeSelection | null>(
+    null,
+  );
+  const [granularityChoice, setGranularityChoice] =
+    useState<EmailSendStatsGranularity>("day");
+  const [myTimeZone, setMyTimeZone] = useState<string | null>(null);
+  const [preferMyTimeZone, setPreferMyTimeZone] = useState(false);
   const [draftDays, setDraftDays] = useState<DateRange | null>(null);
   useEffect(() => {
-    setTimeZone(browserTimeZone());
-    setRange(presetTrafficRange(DEFAULT_TRAFFIC_RANGE_PRESET, new Date()));
+    setMyTimeZone(browserTimeZone());
+    setSelection({
+      kind: "preset",
+      preset: DEFAULT_TRAFFIC_RANGE_PRESET,
+      now: Date.now(),
+    });
   }, []);
+
+  // Group by the deployment's default time zone (set at /admin/settings),
+  // unless the viewer switched to their own or none is set.
+  const timeZone: string | null =
+    myTimeZone === null
+      ? null
+      : deploymentTimeZone !== null && !preferMyTimeZone
+        ? deploymentTimeZone
+        : myTimeZone;
+  const range: TrafficRange | null =
+    selection !== null && timeZone !== null
+      ? resolveTrafficRange(selection, timeZone)
+      : null;
+  // A granularity picked for one range may be too fine for the next.
+  const granularity: EmailSendStatsGranularity =
+    range === null || isGranularityAllowed(range, granularityChoice)
+      ? granularityChoice
+      : autoTrafficGranularity(range);
 
   function getAuthClient(): ISchemaVaultsAuthClient | null {
     if (!auth.ready || !auth.client.current) return null;
@@ -145,13 +185,7 @@ export default function EmailTrafficClientView({
 
   const key: StatsKey | null =
     auth.ready && range !== null && timeZone !== null
-      ? [
-          "email-send-stats",
-          range.from,
-          range.to,
-          timeZone,
-          range.granularity,
-        ]
+      ? ["email-send-stats", range.from, range.to, timeZone, granularity]
       : null;
   const {
     data: stats,
@@ -174,38 +208,36 @@ export default function EmailTrafficClientView({
     { keepPreviousData: true, revalidateOnFocus: false },
   );
 
-  function selectPreset(preset: TrafficRangePresetId) {
+  function select(next: TrafficRangeSelection) {
     setDraftDays(null);
-    setRange(presetTrafficRange(preset, new Date()));
+    setSelection(next);
+    if (timeZone !== null) {
+      setGranularityChoice(
+        defaultTrafficGranularity(next, resolveTrafficRange(next, timeZone)),
+      );
+    }
+  }
+
+  function selectPreset(preset: TrafficRangePresetId) {
+    select({ kind: "preset", preset, now: Date.now() });
   }
 
   function selectDays(days: DateRange | undefined) {
     if (days?.from && days.to) {
-      setDraftDays(null);
-      setRange(customTrafficRange(days.from, days.to));
+      select({
+        kind: "custom",
+        first: calendarDayOfPickerDate(days.from),
+        last: calendarDayOfPickerDate(days.to),
+      });
     } else {
       setDraftDays(days ?? null);
     }
   }
 
-  function selectGranularity(granularity: EmailSendStatsGranularity) {
-    setRange((current) =>
-      current === null ? current : { ...current, granularity },
-    );
-  }
-
   function refresh() {
     // A preset moves with the clock: re-anchor it to now before refetching.
-    if (range !== null && range.preset !== "custom") {
-      const next = presetTrafficRange(range.preset, new Date());
-      const granularity = isGranularityAllowed(
-        next.from,
-        next.to,
-        range.granularity,
-      )
-        ? range.granularity
-        : autoTrafficGranularity(next.from, next.to);
-      setRange({ ...next, granularity });
+    if (selection !== null && selection.kind === "preset") {
+      setSelection({ ...selection, now: Date.now() });
     }
     void mutate();
   }
@@ -263,11 +295,20 @@ export default function EmailTrafficClientView({
   }, null);
 
   const loading = isLoading || isValidating;
+  const rangeDays =
+    range !== null && timeZone !== null
+      ? trafficRangeDays(range, timeZone)
+      : null;
   const pickerValue: DateRange | undefined =
     draftDays ??
-    (range === null
+    (rangeDays === null
       ? undefined
-      : { from: new Date(range.from), to: lastDayOfTrafficRange(range) });
+      : {
+          from: pickerDateOfCalendarDay(rangeDays.first),
+          to: pickerDateOfCalendarDay(rangeDays.last),
+        });
+  const today: CalendarDay | null =
+    timeZone !== null ? calendarDayInZone(Date.now(), timeZone) : null;
 
   return (
     <div
@@ -318,7 +359,13 @@ export default function EmailTrafficClientView({
               aria-label="Date range"
               size="sm"
               variant="outline"
-              value={range?.preset ?? DEFAULT_TRAFFIC_RANGE_PRESET}
+              value={
+                selection?.kind === "preset"
+                  ? selection.preset
+                  : selection === null
+                    ? DEFAULT_TRAFFIC_RANGE_PRESET
+                    : "custom"
+              }
               onValueChange={(value) =>
                 selectPreset(value as TrafficRangePresetId)
               }
@@ -336,7 +383,10 @@ export default function EmailTrafficClientView({
               onOpenChange={(open) => {
                 if (!open) setDraftDays(null);
               }}
-              disabledDates={(date) => date.getTime() > Date.now()}
+              disabledDates={(date) =>
+                today !== null &&
+                compareCalendarDays(calendarDayOfPickerDate(date), today) > 0
+              }
               placeholder="Custom range"
               formatDate={(date) =>
                 date.toLocaleDateString(undefined, {
@@ -348,7 +398,7 @@ export default function EmailTrafficClientView({
               disabled={range === null}
               className={cn(
                 "h-9",
-                range?.preset === "custom" && "border-primary",
+                selection?.kind === "custom" && "border-primary",
               )}
             />
             <SegmentedControl
@@ -356,30 +406,32 @@ export default function EmailTrafficClientView({
               size="sm"
               variant="outline"
               className="md:ml-auto"
-              value={range?.granularity ?? "day"}
+              value={granularity}
               onValueChange={(value) =>
-                selectGranularity(value as EmailSendStatsGranularity)
+                setGranularityChoice(value as EmailSendStatsGranularity)
               }
               disabled={range === null}
             >
-              {EMAIL_SEND_STATS_GRANULARITIES.map((granularity) => (
+              {EMAIL_SEND_STATS_GRANULARITIES.map((option) => (
                 <SegmentedControlItem
-                  key={granularity}
-                  value={granularity}
+                  key={option}
+                  value={option}
                   disabled={
-                    range !== null &&
-                    !isGranularityAllowed(range.from, range.to, granularity)
+                    range !== null && !isGranularityAllowed(range, option)
                   }
                 >
-                  {GRANULARITY_LABELS[granularity]}
+                  {GRANULARITY_LABELS[option]}
                 </SegmentedControlItem>
               ))}
             </SegmentedControl>
           </div>
-          {timeZone !== null ? (
-            <p className="text-xs text-muted-foreground -mt-2">
-              Days and hours are in your time zone, {timeZone}.
-            </p>
+          {timeZone !== null && myTimeZone !== null ? (
+            <TimeZoneNote
+              timeZone={timeZone}
+              deploymentTimeZone={deploymentTimeZone}
+              myTimeZone={myTimeZone}
+              onShowIn={(zone) => setPreferMyTimeZone(zone === myTimeZone)}
+            />
           ) : null}
 
           {transportsError !== null ? (
@@ -431,7 +483,7 @@ export default function EmailTrafficClientView({
             <StatCard>
               <StatCardHeader>
                 <StatCardLabel>
-                  Busiest {stats?.granularity ?? range?.granularity ?? "day"}
+                  Busiest {stats?.granularity ?? granularity}
                 </StatCardLabel>
               </StatCardHeader>
               <StatCardValue loading={stats === undefined}>
@@ -456,7 +508,7 @@ export default function EmailTrafficClientView({
               </CardTitle>
               <CardDescription>
                 Send attempts per{" "}
-                {stats?.granularity ?? range?.granularity ?? "day"}, stacked
+                {stats?.granularity ?? granularity}, stacked
                 by transport. Hover or use the arrow keys for exact counts.
               </CardDescription>
             </CardHeader>
@@ -667,6 +719,64 @@ export default function EmailTrafficClientView({
         </section>
       </main>
     </div>
+  );
+}
+
+/**
+ * Says which time zone the page groups by, and offers the other one when the
+ * deployment's default differs from the viewer's own.
+ */
+function TimeZoneNote({
+  timeZone,
+  deploymentTimeZone,
+  myTimeZone,
+  onShowIn,
+}: {
+  timeZone: string;
+  deploymentTimeZone: string | null;
+  myTimeZone: string;
+  onShowIn: (timeZone: string) => void;
+}): ReactElement {
+  const usingDeployment =
+    deploymentTimeZone !== null && timeZone === deploymentTimeZone;
+  const other =
+    deploymentTimeZone === null || deploymentTimeZone === myTimeZone
+      ? null
+      : usingDeployment
+        ? myTimeZone
+        : deploymentTimeZone;
+  return (
+    <p className="text-xs text-muted-foreground -mt-2">
+      {usingDeployment ? (
+        <>
+          Days and hours are in {timeZone}, this deployment&apos;s time zone.
+        </>
+      ) : (
+        <>Days and hours are in your time zone, {timeZone}.</>
+      )}{" "}
+      {other !== null ? (
+        <button
+          type="button"
+          onClick={() => onShowIn(other)}
+          className="underline underline-offset-2 hover:text-foreground"
+        >
+          {other === myTimeZone
+            ? `Show in my time zone (${other})`
+            : `Show in the deployment's time zone (${other})`}
+        </button>
+      ) : deploymentTimeZone === null ? (
+        <>
+          Admins can set a time zone for the whole deployment in{" "}
+          <Link
+            href="/admin/settings"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Settings
+          </Link>
+          .
+        </>
+      ) : null}
+    </p>
   );
 }
 

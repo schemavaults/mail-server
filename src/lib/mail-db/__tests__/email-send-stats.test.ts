@@ -3,7 +3,6 @@ import {
   compareEmailSendStatsTransports,
   emailSendStatsSchema,
   estimateEmailSendStatsBucketCount,
-  isValidEmailSendStatsTimeZone,
   MAX_EMAIL_SEND_STATS_BUCKETS,
 } from "../email-send-stats";
 
@@ -37,33 +36,6 @@ describe("estimateEmailSendStatsBucketCount", () => {
     expect(allowed(2 * 365 * DAY, "day")).toBe(false);
     expect(allowed(366 * DAY, "day")).toBe(true);
     expect(allowed(365 * DAY, "hour")).toBe(false);
-  });
-});
-
-describe("isValidEmailSendStatsTimeZone", () => {
-  it("accepts IANA zone names", () => {
-    for (const zone of [
-      "UTC",
-      "America/New_York",
-      "Asia/Kolkata",
-      "America/Argentina/Buenos_Aires",
-      "Etc/GMT+5",
-    ]) {
-      expect(isValidEmailSendStatsTimeZone(zone), zone).toBe(true);
-    }
-  });
-
-  it("refuses unknown zones, bare offsets, and SQL-ish input", () => {
-    for (const zone of [
-      "",
-      "Mars/Olympus",
-      "+05:30",
-      "-08:00",
-      "UTC'; DROP TABLE email_send_log; --",
-      "America/New York",
-    ]) {
-      expect(isValidEmailSendStatsTimeZone(zone), zone).toBe(false);
-    }
   });
 });
 
