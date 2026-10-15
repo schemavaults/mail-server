@@ -4,6 +4,7 @@ import type { MailingListSubscriber } from "@/lib/mail-db";
 import { cn } from "@schemavaults/ui";
 import type { ReactElement } from "react";
 import { Nav } from "@/components/Nav";
+import { useTimestampFormatters } from "@/contexts/DeploymentTimeZoneContext";
 
 export interface SubscribersClientViewProps {
   mailing_list_name: string;
@@ -16,6 +17,7 @@ export default function SubscribersClientView({
   mailing_list_id,
   subscribers,
 }: SubscribersClientViewProps): ReactElement {
+  const { formatDate } = useTimestampFormatters();
   return (
     <div
       className={cn(
@@ -58,7 +60,7 @@ export default function SubscribersClientView({
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Subscribed{" "}
-                      {new Date(subscriber.subscribe_time).toLocaleDateString()}
+                      {formatDate(subscriber.subscribe_time)}
                     </p>
                   </li>
                 ))}

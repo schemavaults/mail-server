@@ -99,6 +99,8 @@ const allowlist = await import(
   "@/app/api/admin/api-keys/[api_key_id]/allowlist/route"
 );
 const openApiJson = await import("@/app/api/openapi.json/route");
+const emailSendStats = await import("@/app/api/admin/email-send-stats/route");
+const deploymentSettings = await import("@/app/api/admin/settings/route");
 const adminBranding = await import(
   "@/app/api/admin/branding/[asset_kind]/route"
 );
@@ -183,6 +185,79 @@ describe("admin-only operations", () => {
         message: "Invalid api_key_id; must be a valid UUID.",
       }),
     );
+  });
+});
+
+describe("email send stats", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+
+  async function stats(query: string, token: string = ADMIN_TOKEN) {
+    const res = await emailSendStats.GET(
+      request(`/api/admin/email-send-stats?${query}`, { token }),
+    );
+    return { status: res.status, body: await json(res) };
+  }
+
+  it("is admin-only", async () => {
+    const { status } = await stats(`from=0&to=${DAY}`, USER_TOKEN);
+    expect(status).toBe(403);
+  });
+
+  it("refuses a time zone that is not an IANA name", async () => {
+    for (const timezone of ["Mars/Olympus", "+05:30"]) {
+      const { status, body } = await stats(
+        `from=0&to=${DAY}&timezone=${encodeURIComponent(timezone)}`,
+      );
+      expect(status, timezone).toBe(400);
+      expect(body.error).toBe("validation_error");
+    }
+  });
+
+  it("refuses an empty range", async () => {
+    const { status, body } = await stats(`from=${DAY}&to=${DAY}`);
+    expect(status).toBe(400);
+    expect(body.error).toBe("invalid_range");
+  });
+
+  it("refuses a range spanning too many buckets", async () => {
+    const { status, body } = await stats(
+      `from=0&to=${365 * DAY}&granularity=hour`,
+    );
+    expect(status).toBe(400);
+    expect(body.error).toBe("too_many_buckets");
+  });
+});
+
+describe("deployment settings", () => {
+  async function patch(body: unknown, token: string = ADMIN_TOKEN) {
+    const res = await deploymentSettings.PATCH(
+      request("/api/admin/settings", {
+        method: "PATCH",
+        token,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      }),
+    );
+    return { status: res.status, body: await json(res) };
+  }
+
+  it("are admin-only", async () => {
+    const { status } = await patch({ default_time_zone: "UTC" }, USER_TOKEN);
+    expect(status).toBe(403);
+  });
+
+  it("refuse a time zone that is not an IANA name", async () => {
+    for (const default_time_zone of ["Mars/Olympus", "+05:30", 42]) {
+      const { status, body } = await patch({ default_time_zone });
+      expect(status, String(default_time_zone)).toBe(400);
+      expect(body.error).toBe("validation_error");
+    }
+  });
+
+  it("refuse an update that changes nothing", async () => {
+    const { status, body } = await patch({});
+    expect(status).toBe(400);
+    expect(body.error).toBe("nothing_to_update");
   });
 });
 

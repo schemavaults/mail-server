@@ -51,6 +51,7 @@ import {
 import { apiKeyNameSchema } from "@/lib/api-keys/api-key-name";
 import { allowedSenderEntrySchema } from "@/lib/api-keys/sender-scope";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
+import { useTimestampFormatters } from "@/contexts/DeploymentTimeZoneContext";
 import { z } from "zod";
 
 /**
@@ -90,9 +91,12 @@ const EMPTY_SCOPES: ApiKeyScopesState = {
 
 const recipientEmailSchema = z.string().trim().toLowerCase().email();
 
-function formatTimestamp(value: number | null): string {
+function formatTimestamp(
+  value: number | null,
+  formatDateTime: (value: number) => string,
+): string {
   if (value === null || value === undefined) return "Never";
-  return new Date(value).toLocaleString();
+  return formatDateTime(value);
 }
 
 function describeAudiences(
@@ -135,6 +139,7 @@ export default function ApiKeysClientView({
   transportOptions,
 }: ApiKeysClientViewProps): ReactElement {
   const { toast } = useToast();
+  const { formatDateTime } = useTimestampFormatters();
   const auth = useAuth();
   const appId = useMailAppId();
   const [apiKeys, setApiKeys] =
@@ -759,8 +764,9 @@ export default function ApiKeysClientView({
                         {key.key_prefix}…
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Created {formatTimestamp(key.created_at)} · Last used{" "}
-                        {formatTimestamp(key.last_used_at)}
+                        Created {formatTimestamp(key.created_at, formatDateTime)}{" "}
+                        · Last used{" "}
+                        {formatTimestamp(key.last_used_at, formatDateTime)}
                       </p>
                       <p
                         className={cn(

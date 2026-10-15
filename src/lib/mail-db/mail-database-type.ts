@@ -5,6 +5,7 @@ import type { ApiKeyRecipientAllowlistsTable } from "./api-key-recipient-allowli
 import type { ApiKeysTable } from "./api-keys-table";
 import type { BrandingAssetsTable } from "./branding-assets-table";
 import type { CorsAllowedOriginsTable } from "./cors-allowed-origins-table";
+import type { DeploymentSettingsTable } from "./deployment-settings-table";
 import type { EmailSendLogTable } from "./email-send-log-table";
 import type { MailingListSubscriberTable } from "./mailing-list-subscriber-table";
 import type { MailingListUnsubscribeTable } from "./mailing-list-unsubscribe-record-table";
@@ -30,4 +31,5 @@ export type MailDatabase = {
   test_email_attachments: TestEmailAttachmentsTable;
   mail_transport_settings: MailTransportSettingsTable;
   email_send_log: EmailSendLogTable;
+  deployment_settings: DeploymentSettingsTable;
 };

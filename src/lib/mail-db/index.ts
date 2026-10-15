@@ -6,16 +6,24 @@ export { BrandingAssetsRegistry } from "./BrandingAssetsRegistry";
 export { TestEmailsRegistry } from "./TestEmailsRegistry";
 export { MailTransportSettingsRegistry } from "./MailTransportSettingsRegistry";
 export { EmailSendLogRegistry } from "./EmailSendLogRegistry";
+export { DeploymentSettingsRegistry } from "./DeploymentSettingsRegistry";
 export type { TestEmail, TestEmailSummary } from "./test-emails-table";
 export type {
   TestEmailAttachment,
   TestEmailAttachmentMetadata,
 } from "./test-email-attachments-table";
 export type { MailTransportSetting } from "./mail-transport-settings-table";
+export type { DeploymentSettings } from "./deployment-settings-table";
 export type {
   EmailSendLogEntry,
   EmailSendLogStatus,
 } from "./email-send-log-table";
+export type {
+  EmailSendStats,
+  EmailSendStatsBucket,
+  EmailSendStatsGranularity,
+  EmailSendStatsTransportCounts,
+} from "./email-send-stats";
 export type {
   BrandingAsset,
   BrandingAssetKind,
