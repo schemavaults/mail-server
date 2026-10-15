@@ -17,6 +17,12 @@ export type {
   EmailSendLogStatus,
 } from "./email-send-log-table";
 export type {
+  EmailSendStats,
+  EmailSendStatsBucket,
+  EmailSendStatsGranularity,
+  EmailSendStatsTransportCounts,
+} from "./email-send-stats";
+export type {
   BrandingAsset,
   BrandingAssetKind,
   BrandingAssetMetadata,

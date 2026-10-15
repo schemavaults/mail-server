@@ -99,6 +99,7 @@ const allowlist = await import(
   "@/app/api/admin/api-keys/[api_key_id]/allowlist/route"
 );
 const openApiJson = await import("@/app/api/openapi.json/route");
+const emailSendStats = await import("@/app/api/admin/email-send-stats/route");
 const adminBranding = await import(
   "@/app/api/admin/branding/[asset_kind]/route"
 );
@@ -183,6 +184,46 @@ describe("admin-only operations", () => {
         message: "Invalid api_key_id; must be a valid UUID.",
       }),
     );
+  });
+});
+
+describe("email send stats", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+
+  async function stats(query: string, token: string = ADMIN_TOKEN) {
+    const res = await emailSendStats.GET(
+      request(`/api/admin/email-send-stats?${query}`, { token }),
+    );
+    return { status: res.status, body: await json(res) };
+  }
+
+  it("is admin-only", async () => {
+    const { status } = await stats(`from=0&to=${DAY}`, USER_TOKEN);
+    expect(status).toBe(403);
+  });
+
+  it("refuses a time zone that is not an IANA name", async () => {
+    for (const timezone of ["Mars/Olympus", "+05:30"]) {
+      const { status, body } = await stats(
+        `from=0&to=${DAY}&timezone=${encodeURIComponent(timezone)}`,
+      );
+      expect(status, timezone).toBe(400);
+      expect(body.error).toBe("validation_error");
+    }
+  });
+
+  it("refuses an empty range", async () => {
+    const { status, body } = await stats(`from=${DAY}&to=${DAY}`);
+    expect(status).toBe(400);
+    expect(body.error).toBe("invalid_range");
+  });
+
+  it("refuses a range spanning too many buckets", async () => {
+    const { status, body } = await stats(
+      `from=0&to=${365 * DAY}&granularity=hour`,
+    );
+    expect(status).toBe(400);
+    expect(body.error).toBe("too_many_buckets");
   });
 });
 

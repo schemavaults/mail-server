@@ -61,7 +61,7 @@ export const OPENAPI_TAG_DEFINITIONS: NonNullable<
   {
     name: OPENAPI_TAGS.adminEmailSendLog,
     description:
-      "Review outbound send attempts: when each email was delivered, or why it failed (admin only).",
+      "Review outbound send attempts: when each email was delivered, or why it failed, and how many went through each transport over time (admin only).",
   },
   {
     name: OPENAPI_TAGS.adminTemplates,

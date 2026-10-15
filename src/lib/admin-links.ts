@@ -2,6 +2,7 @@
 
 import {
   BookTemplate,
+  ChartColumnStacked,
   Globe,
   Home,
   KeyRound,
@@ -50,6 +51,11 @@ export const ADMIN_LINKS: readonly AdminLink[] = [
     href: "/admin/email-send-log",
     label: "View email send log",
     icon: ScrollText,
+  },
+  {
+    href: "/admin/email-traffic",
+    label: "View email traffic by transport",
+    icon: ChartColumnStacked,
   },
   {
     href: "/admin/keys",
