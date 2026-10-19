@@ -48,7 +48,9 @@ export const sendEmailRequestBodySchema = withOpenApi(
     }),
     subject: withOpenApi(shape.subject, { example: "Welcome!" }),
     replyTo: withOpenApi(shape.replyTo, {
-      description: "Reply-to address.",
+      description:
+        "Reply-to address, in the same forms as `from`: a bare address, or a display name followed by the address in angle brackets.",
+      example: "Example Support <support@example.com>",
     }),
     dryRun: withOpenApi(shape.dryRun, {
       description:
