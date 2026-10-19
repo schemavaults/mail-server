@@ -26,7 +26,10 @@ import {
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
-import type { SendEmailRequestBody } from "@schemavaults/send-email";
+import {
+  emailSenderSchema,
+  type SendEmailRequestBody,
+} from "@schemavaults/send-email";
 import sendEmail from "@/lib/client-mail-db-actions/sendEmail";
 import JsonCodeEditor from "./JsonCodeEditor";
 
@@ -38,9 +41,26 @@ const emailOrEmpty = z
     "Must be a valid email address",
   );
 
+// Checked as submitted (trimmed), with the package's own message, e.g. that
+// a display name containing a comma needs double quotes.
+const senderOrEmpty = z
+  .string()
+  .optional()
+  .superRefine((v, ctx) => {
+    const sender = v?.trim();
+    if (!sender) return;
+    const parsed = emailSenderSchema.safeParse(sender);
+    if (!parsed.success) {
+      ctx.addIssue({
+        code: "custom",
+        message: parsed.error.issues[0]?.message ?? "Must be a valid sender",
+      });
+    }
+  });
+
 const formSchema = z
   .object({
-    from: emailOrEmpty,
+    from: senderOrEmpty,
     to: z.string().nonempty("Please provide at least one recipient."),
     replyTo: emailOrEmpty,
     cc: z.string().optional(),
@@ -402,8 +422,8 @@ export default function SendEmailFormClient({
             <Label htmlFor="from">From</Label>
             <Input
               id="from"
-              type="email"
-              placeholder="Defaults to the configured sender if blank"
+              type="text"
+              placeholder="Example <noreply@example.com> — defaults to the configured sender if blank"
               {...register("from")}
             />
             {errors.from && (

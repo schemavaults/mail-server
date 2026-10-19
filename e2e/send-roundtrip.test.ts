@@ -95,6 +95,36 @@ describe.skipIf(!E2E_ENABLED)(
       expect(email.text ?? "").toContain(name);
     });
 
+    test("a display-name sender is captured verbatim", async () => {
+      const subject = uniqueSubject("display-name-sender");
+      const from = '"E2E Sender, Inc." <e2e-sender@example.com>';
+
+      const sendResponse = await sendEmail({
+        to: "e2e-recipient@example.com",
+        from,
+        subject,
+        message: { html: `<p>${subject}</p>`, text: subject },
+        transport: TEST_TRANSPORT_ID,
+      });
+      expect(sendResponse.status).toBe(200);
+
+      const listed = await findTestEmailBySubject(subject);
+      expect(listed).not.toBeNull();
+      const email = await getTestEmail(listed!.test_email_id);
+      expect(email.from_address).toBe(from);
+    });
+
+    test("an unquoted display name containing a comma is rejected with 400", async () => {
+      const sendResponse = await sendEmail({
+        to: "e2e-recipient@example.com",
+        from: "E2E Sender, Inc. <e2e-sender@example.com>",
+        subject: uniqueSubject("bad-display-name-sender"),
+        message: { html: "<p>x</p>", text: "x" },
+        transport: TEST_TRANSPORT_ID,
+      });
+      expect(sendResponse.status).toBe(400);
+    });
+
     test.skipIf(!DEFAULT_TRANSPORT_IS_TEST_DATABASE)(
       "a send omitting `transport` uses the deployment default (test-database in E2E)",
       async () => {
