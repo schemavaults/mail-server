@@ -32,7 +32,7 @@ This is a **Next.js 16 App Router** mail server application in the SchemaVaults 
 - **@schemavaults/auth-server-sdk** — JWT-based authentication with admin role guards
 
 ### API Routes (`src/app/api/`)
-- `POST /api/send` — send emails (admin JWT or API key; supports react-email templates or raw HTML/text; optional `transport` property selects a configured transport; optional base64 `attachments`, delivered by every transport)
+- `POST /api/send` — send emails (admin JWT or API key; supports react-email templates or raw HTML/text; optional `from` and `replyTo`, each a bare address or `Display Name <address>` (grammar owned by the package's `emailSenderSchema`/`emailReplyToSchema`); optional `transport` property selects a configured transport; optional base64 `attachments`, delivered by every transport)
 - `GET /api/mailing-lists` — list mailing lists (public)
 - `POST /api/mailing-lists` — create mailing list (admin only)
 - `POST /api/mailing-lists/join` — subscribe to a mailing list

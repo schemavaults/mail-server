@@ -43,12 +43,14 @@ export const sendEmailRequestBodySchema = withOpenApi(
     }),
     from: withOpenApi(shape.from, {
       description:
-        "Sender address. Defaults to the server's configured MAIL_FROM sender.",
-      example: "noreply@example.com",
+        'Sender: a bare address, or a display name followed by the address in angle brackets. A display name containing any of `( ) [ ] : ; @ ,` must be wrapped in double quotes (`"Example, Inc." <noreply@example.com>`). Defaults to the server\'s configured MAIL_FROM sender.',
+      example: "Example <noreply@example.com>",
     }),
     subject: withOpenApi(shape.subject, { example: "Welcome!" }),
     replyTo: withOpenApi(shape.replyTo, {
-      description: "Reply-to address.",
+      description:
+        "Reply-to address, in the same forms as `from`: a bare address, or a display name followed by the address in angle brackets.",
+      example: "Example Support <support@example.com>",
     }),
     dryRun: withOpenApi(shape.dryRun, {
       description:

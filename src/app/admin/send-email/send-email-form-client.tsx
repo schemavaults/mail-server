@@ -26,23 +26,40 @@ import {
   type ISchemaVaultsAuthClient,
 } from "@schemavaults/auth-react-provider";
 import { useMailAppId } from "@/contexts/MailAppIdContext";
-import type { SendEmailRequestBody } from "@schemavaults/send-email";
+import {
+  emailReplyToSchema,
+  emailSenderSchema,
+  type SendEmailRequestBody,
+} from "@schemavaults/send-email";
 import sendEmail from "@/lib/client-mail-db-actions/sendEmail";
 import JsonCodeEditor from "./JsonCodeEditor";
 
-const emailOrEmpty = z
-  .string()
-  .optional()
-  .refine(
-    (v) => !v || z.string().email().safeParse(v).success,
-    "Must be a valid email address",
-  );
+// An optional address or "Display Name <address>" field, checked as
+// submitted (trimmed) with the package's own message, e.g. that a display
+// name containing a comma needs double quotes.
+function mailboxOrEmpty(mailboxSchema: z.ZodType<string>) {
+  return z
+    .string()
+    .optional()
+    .superRefine((v, ctx) => {
+      const mailbox = v?.trim();
+      if (!mailbox) return;
+      const parsed = mailboxSchema.safeParse(mailbox);
+      if (!parsed.success) {
+        ctx.addIssue({
+          code: "custom",
+          message:
+            parsed.error.issues[0]?.message ?? "Must be a valid email address",
+        });
+      }
+    });
+}
 
 const formSchema = z
   .object({
-    from: emailOrEmpty,
+    from: mailboxOrEmpty(emailSenderSchema),
     to: z.string().nonempty("Please provide at least one recipient."),
-    replyTo: emailOrEmpty,
+    replyTo: mailboxOrEmpty(emailReplyToSchema),
     cc: z.string().optional(),
     bcc: z.string().optional(),
     subject: z.string().nonempty("Please provide a subject."),
@@ -402,8 +419,8 @@ export default function SendEmailFormClient({
             <Label htmlFor="from">From</Label>
             <Input
               id="from"
-              type="email"
-              placeholder="Defaults to the configured sender if blank"
+              type="text"
+              placeholder="Example <noreply@example.com> — defaults to the configured sender if blank"
               {...register("from")}
             />
             {errors.from && (
@@ -429,8 +446,8 @@ export default function SendEmailFormClient({
             <Label htmlFor="replyTo">Reply-To</Label>
             <Input
               id="replyTo"
-              type="email"
-              placeholder="optional"
+              type="text"
+              placeholder="optional — Example Support <support@example.com>"
               {...register("replyTo")}
             />
             {errors.replyTo && (

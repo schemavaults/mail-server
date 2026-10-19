@@ -95,6 +95,45 @@ describe.skipIf(!E2E_ENABLED)(
       expect(email.text ?? "").toContain(name);
     });
 
+    test("display-name sender and reply-to are captured verbatim", async () => {
+      const subject = uniqueSubject("display-name-sender");
+      const from = '"E2E Sender, Inc." <e2e-sender@example.com>';
+      const replyTo = "E2E Support <e2e-reply-to@example.com>";
+
+      const sendResponse = await sendEmail({
+        to: "e2e-recipient@example.com",
+        from,
+        replyTo,
+        subject,
+        message: { html: `<p>${subject}</p>`, text: subject },
+        transport: TEST_TRANSPORT_ID,
+      });
+      expect(sendResponse.status).toBe(200);
+
+      const listed = await findTestEmailBySubject(subject);
+      expect(listed).not.toBeNull();
+      const email = await getTestEmail(listed!.test_email_id);
+      expect(email.from_address).toBe(from);
+      expect(email.reply_to_addresses).toEqual([replyTo]);
+    });
+
+    test.each([
+      ["from", { from: "E2E Sender, Inc. <e2e-sender@example.com>" }],
+      ["replyTo", { replyTo: "E2E Support, Inc. <e2e-reply-to@example.com>" }],
+    ])(
+      "an unquoted display name containing a comma in %s is rejected with 400",
+      async (_field, mailbox) => {
+        const sendResponse = await sendEmail({
+          to: "e2e-recipient@example.com",
+          ...mailbox,
+          subject: uniqueSubject("bad-display-name"),
+          message: { html: "<p>x</p>", text: "x" },
+          transport: TEST_TRANSPORT_ID,
+        });
+        expect(sendResponse.status).toBe(400);
+      },
+    );
+
     test.skipIf(!DEFAULT_TRANSPORT_IS_TEST_DATABASE)(
       "a send omitting `transport` uses the deployment default (test-database in E2E)",
       async () => {

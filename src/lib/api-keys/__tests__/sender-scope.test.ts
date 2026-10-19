@@ -38,6 +38,16 @@ describe("extractEmailAddress", () => {
       "noreply@schemavaults.com",
     );
   });
+
+  test("checks the bracketed address, not an address-like display name", () => {
+    const from = '"claude@schemavaults.com" <attacker@example.com>';
+    expect(extractEmailAddress(from)).toBe("attacker@example.com");
+    expect(
+      senderMatchesAllowlist(extractEmailAddress(from), [
+        "claude@schemavaults.com",
+      ]),
+    ).toBe(false);
+  });
 });
 
 describe("senderMatchesAllowlist", () => {
