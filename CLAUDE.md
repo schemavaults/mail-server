@@ -51,6 +51,7 @@ This is a **Next.js 16 App Router** mail server application in the SchemaVaults 
 - `GET|POST|DELETE /api/admin/api-keys/[api_key_id]/allowlist|senders|recipients|transports` — manage one API key's scope entries (admin only; managed at `/admin/keys`)
 - `GET /api/openapi.json` — the generated OpenAPI 3.1 document (public)
 - `GET /docs` and `GET /docs/[slug]` — self-hosted API reference: an index of every operation plus one page per operation (public; server-rendered from the same OpenAPI document, no external CDN)
+- `GET /.well-known/oauth-protected-resource` (and its RFC 9728 §3.1 path-suffixed forms) — OAuth 2.0 Protected Resource Metadata (public, `Access-Control-Allow-Origin: *`): the `resource` (`SCHEMAVAULTS_RESOURCE_URL`), the authorization server (`SCHEMAVAULTS_AUTH_SERVER_URL`) and a link to `/docs`. Served by `createOAuthProtectedResourceMetadataRoute()` from `@schemavaults/auth-server-sdk/oauth-protected-resource` in `src/app/.well-known/oauth-protected-resource/[[...path]]/route.ts`; answers 404 while `SCHEMAVAULTS_RESOURCE_URL` is unset. Not an operation, so it is outside `/api` and the catalogue (its test lives in `src/lib/api/__tests__/` because bun's test discovery skips dot-directories)
 
 ### Key Patterns
 - **Operations, one route file per path**: every API route folder keeps an `operations.ts` exporting its `defineOperation(...)` definitions (from `@/lib/api/define-operation`: method, OpenAPI-style path with `{param}` placeholders, `request.params/query/body` zod schemas, `responses`, `auth`, and the `handler`) beside a thin `route.ts` — `export const { GET, POST } = serveOperations({ GET: listX, POST: createX })` from `@/lib/api/app` (keyed by method so exports and operations can't drift; `{ cors: true }` applies the CORS allowlist and adds OPTIONS). There is deliberately NO catch-all `/api/[[...route]]` app. The runtime (`createOperationsAppFactory`) resolves auth, validates params/query/body BEFORE the handler (400 `validation_error` with `issues`; 415 for a wrong body media type — JSON bodies set `lenientContentType: true` so unlabelled browser `fetch` bodies still parse), and answers every error with the `{ success: false, error, message }` OperationError envelope. Handlers get typed `ctx.params/query/body/auth`, respond with `ctx.json(status, body)` (type-checked against the declared `responses`) or a raw `Response`, and fail with `throw badRequest(...)`/`notFound(...)`/... from `@/lib/api/errors`. Every operation must also be listed in the catalogue `src/lib/api/operations.ts`; `src/lib/api/__tests__/routes.test.ts` (`checkNextAppRouterRoutes`) fails when operation files, route files and the catalogue disagree, and `document.test.ts` pins the expected paths. The four API-key scope routes share one factory (`scope-operations.ts` under the `[api_key_id]` folder). Shared building blocks live in `src/lib/api/`: response envelopes + `errorResponses()` (`responses.ts`), `uuidParam()`, tags, auth schemes/resolvers
@@ -79,6 +80,7 @@ Copy `.env.example` to `.env.local`. Key variables:
 - `TEST_DATABASE_MAIL_TRANSPORT_ENABLED` — set to `true` to make the fake-send `test-database-transport` available (leave unset in production)
 - `SCHEMAVAULTS_CLIENT_APP_ID` — this app's client ID, read by the generated auth session routes (`/auth/session/*`); without it, sign-in and token refresh fail. Must match the ID `<AuthProvider>` uses (`getAppId()`: `SCHEMAVAULTS_API_SERVER_ID`, default `schemavaults-mail`), or the token route refuses the SDK's requests as `invalid_client`
 - `SCHEMAVAULTS_AUTH_JWKS_ACCESS_PRIVATE_KEY` — JWT private key for auth
+- `SCHEMAVAULTS_RESOURCE_URL` — optional RFC 8707 resource URL of this server (usually its public origin); published by `/.well-known/oauth-protected-resource` and accepted by the access-token resolvers as a token audience alongside the API server ID. Its origin must be registered as one of the API server's domains on the auth server
 - `SCHEMAVAULTS_GITHUB_PACKAGE_REGISTRY_TOKEN` — required for installing `@schemavaults/*` packages from GitHub npm registry
 
 ## Database
@@ -100,3 +102,13 @@ Schema is managed via migrations (see `src/lib/mail-db/migrations/`). Type defin
 - **MAIL_TRANSPORT_SETTINGS** — admin-managed runtime transport settings; currently the enable/disable kill switch for the `test-database-transport`
 - **DEPLOYMENT_SETTINGS** — single row (id 1) of admin-managed deployment-wide settings; currently `default_time_zone` (managed at `/admin/settings`)
 - **EMAIL_SEND_LOG** — one row per outbound send attempt: status (`delivered`/`failed`), transport, attempted/delivered timestamps, error message, provider message ID, requesting API key. Never message content (shown at `/admin/email-send-log`)
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
