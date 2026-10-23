@@ -75,5 +75,6 @@ export default async function AdminApiKeysPage(): Promise<ReactElement> {
         />
       );
     },
+    { next_href: "/admin/keys" },
   );
 }

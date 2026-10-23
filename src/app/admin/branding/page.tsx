@@ -27,5 +27,6 @@ export default async function AdminBrandingPage(): Promise<ReactElement> {
 
       return <BrandingClientView initialAssets={assets} />;
     },
+    { next_href: "/admin/branding" },
   );
 }

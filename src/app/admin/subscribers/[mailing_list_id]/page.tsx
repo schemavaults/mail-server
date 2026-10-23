@@ -46,5 +46,6 @@ export default async function SubscribersPage({
         />
       );
     },
+    { next_href: `/admin/subscribers/${encodeURIComponent(mailing_list_id)}` },
   );
 }
