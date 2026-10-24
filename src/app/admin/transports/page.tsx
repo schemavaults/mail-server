@@ -41,5 +41,6 @@ export default async function AdminTransportsPage(): Promise<ReactElement> {
         />
       );
     },
+    { next_href: "/admin/transports" },
   );
 }

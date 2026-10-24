@@ -39,5 +39,6 @@ export default async function AdminEmailSendLogPage(): Promise<ReactElement> {
         />
       );
     },
+    { next_href: "/admin/email-send-log" },
   );
 }

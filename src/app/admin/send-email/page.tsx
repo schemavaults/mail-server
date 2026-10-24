@@ -39,5 +39,6 @@ export default async function SendEmailPage(): Promise<ReactElement> {
         <SendEmailFormClient templates={templates} transports={transports} />
       );
     },
+    { next_href: "/admin/send-email" },
   );
 }

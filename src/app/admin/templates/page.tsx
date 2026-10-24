@@ -13,5 +13,6 @@ export default async function TemplatesPage(): Promise<ReactElement> {
       const templateIds = Object.keys(EmailTemplatesCatalog);
       return <TemplatesBrowserClient templateIds={templateIds} />;
     },
+    { next_href: "/admin/templates" },
   );
 }

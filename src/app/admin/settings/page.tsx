@@ -33,5 +33,6 @@ export default async function AdminSettingsPage(): Promise<ReactElement> {
         <SettingsClientView initialSettings={settings} loadError={loadError} />
       );
     },
+    { next_href: "/admin/settings" },
   );
 }

@@ -24,5 +24,6 @@ export default async function AdminCorsOriginsPage(): Promise<ReactElement> {
 
       return <CorsOriginsClientView initialOrigins={origins} />;
     },
+    { next_href: "/admin/cors" },
   );
 }

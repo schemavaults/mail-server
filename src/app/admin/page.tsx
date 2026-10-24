@@ -19,5 +19,7 @@ async function AdminLandingPage(): Promise<ReactElement> {
 
 export default async function AdminPage() {
   await connection();
-  return await withAdminServerComponentRouteGuard(AdminLandingPage);
+  return await withAdminServerComponentRouteGuard(AdminLandingPage, {
+    next_href: "/admin",
+  });
 }

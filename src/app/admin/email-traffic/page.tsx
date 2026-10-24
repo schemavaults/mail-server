@@ -40,5 +40,6 @@ export default async function AdminEmailTrafficPage(): Promise<ReactElement> {
         />
       );
     },
+    { next_href: "/admin/email-traffic" },
   );
 }
