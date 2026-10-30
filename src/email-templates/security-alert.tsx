@@ -13,13 +13,35 @@ import {
 import type { ReactElement } from "react";
 import { getEmailBrand } from "./brand";
 
+/** The security events this email reports. */
+export const SECURITY_ALERT_EVENT_TYPES = [
+  "new-sign-in",
+  "password-changed",
+  "new-api-key",
+  "new-device",
+  "mfa-enabled",
+  "mfa-removed",
+  "mfa-reset-by-admin",
+  "mfa-recovery-codes-regenerated",
+] as const;
+
+export type SecurityAlertEventType = (typeof SECURITY_ALERT_EVENT_TYPES)[number];
+
+export const DEFAULT_SECURITY_ALERT_EVENT_TYPE: SecurityAlertEventType =
+  "new-sign-in";
+
+export function isSecurityAlertEventType(
+  val: unknown,
+): val is SecurityAlertEventType {
+  return (
+    typeof val === "string" &&
+    (SECURITY_ALERT_EVENT_TYPES as readonly string[]).includes(val)
+  );
+}
+
 export interface SecurityAlertEmailProps {
   name: string;
-  eventType?:
-    | "new-sign-in"
-    | "password-changed"
-    | "new-api-key"
-    | "new-device";
+  eventType?: SecurityAlertEventType;
   device?: string;
   browser?: string;
   location?: string;
@@ -42,16 +64,27 @@ const PAGE_BG = "#f8fafc";
 const ALERT_BG = "#fef2f2";
 const ALERT_BORDER = "#fecaca";
 
-interface EventCopy {
+export interface SecurityAlertEventCopy {
   preview: (name: string, product: string) => string;
   heading: string;
   lede: (product: string) => string;
   primaryLabel: string;
+  /** The red callout; events the recipient did not trigger themselves override it. */
+  alertTitle?: string;
+  alertBody?: string;
 }
 
-const EVENT_COPY: Record<
-  NonNullable<SecurityAlertEmailProps["eventType"]>,
-  EventCopy
+export const DEFAULT_SECURITY_ALERT_TITLE = "Didn't recognize this?";
+export const DEFAULT_SECURITY_ALERT_BODY =
+  "Secure your account immediately — change your password and revoke any sessions you don't recognize.";
+
+/**
+ * Per-event copy. Exported so the catalog entry's plain-text renderer uses
+ * exactly the same wording as the HTML version.
+ */
+export const SECURITY_ALERT_EVENT_COPY: Record<
+  SecurityAlertEventType,
+  SecurityAlertEventCopy
 > = {
   "new-sign-in": {
     preview: (name, product) =>
@@ -85,6 +118,41 @@ const EVENT_COPY: Record<
       `A device we haven't seen before just signed in to your ${product} account. If this was you, no action is needed.`,
     primaryLabel: "Review devices",
   },
+  "mfa-enabled": {
+    preview: (name, product) =>
+      `${name}, multi-factor authentication was enabled on your ${product} account.`,
+    heading: "Multi-factor authentication enabled",
+    lede: (product) =>
+      `Multi-factor authentication was just enabled on your ${product} account. If this was you, no action is needed.`,
+    primaryLabel: "Review security settings",
+  },
+  "mfa-removed": {
+    preview: (name, product) =>
+      `${name}, multi-factor authentication was removed from your ${product} account.`,
+    heading: "Multi-factor authentication removed",
+    lede: (product) =>
+      `Multi-factor authentication was just removed from your ${product} account. If this was you, no action is needed, but your account is now protected by your password alone.`,
+    primaryLabel: "Review security settings",
+  },
+  "mfa-reset-by-admin": {
+    preview: (name, product) =>
+      `${name}, an administrator reset multi-factor authentication on your ${product} account.`,
+    heading: "Your multi-factor authentication was reset",
+    lede: (product) =>
+      `An administrator reset multi-factor authentication on your ${product} account, removing your authenticator apps, passkeys and recovery codes. Set it up again to keep your account protected.`,
+    primaryLabel: "Set up multi-factor authentication",
+    alertTitle: "Didn't ask for this?",
+    alertBody:
+      "Contact your administrator right away, change your password and revoke any sessions you don't recognize.",
+  },
+  "mfa-recovery-codes-regenerated": {
+    preview: (name, product) =>
+      `${name}, new MFA recovery codes were generated for your ${product} account.`,
+    heading: "New recovery codes were generated",
+    lede: (product) =>
+      `New multi-factor authentication recovery codes were just generated for your ${product} account. Your previous codes no longer work. If this was you, no action is needed.`,
+    primaryLabel: "Review security settings",
+  },
 };
 
 export default function SecurityAlertEmail(
@@ -111,9 +179,12 @@ export default function SecurityAlertEmail(
     props.secureAccountUrl.length > 0
       ? props.secureAccountUrl
       : `${brand.url}/account/security`;
-  const eventType: NonNullable<SecurityAlertEmailProps["eventType"]> =
-    props.eventType ?? "new-sign-in";
-  const copy: EventCopy = EVENT_COPY[eventType];
+  const eventType: SecurityAlertEventType = isSecurityAlertEventType(
+    props.eventType,
+  )
+    ? props.eventType
+    : DEFAULT_SECURITY_ALERT_EVENT_TYPE;
+  const copy: SecurityAlertEventCopy = SECURITY_ALERT_EVENT_COPY[eventType];
 
   const metaRows: Array<[string, string]> = [];
   if (typeof props.eventTime === "string" && props.eventTime.length > 0) {
@@ -277,7 +348,7 @@ export default function SecurityAlertEmail(
                   textTransform: "uppercase",
                 }}
               >
-                Didn't recognize this?
+                {copy.alertTitle ?? DEFAULT_SECURITY_ALERT_TITLE}
               </Text>
               <Text
                 style={{
@@ -287,8 +358,7 @@ export default function SecurityAlertEmail(
                   margin: 0,
                 }}
               >
-                Secure your account immediately — change your password and
-                revoke any sessions you don't recognize.
+                {copy.alertBody ?? DEFAULT_SECURITY_ALERT_BODY}
               </Text>
             </div>
           </Section>
