@@ -14,6 +14,10 @@ export const EmailTemplatesCatalog = {
     ),
   "my-test-email": async () =>
     import("./email-template-refs/MyTestEmail").then((m) => m.default),
+  "organization-mfa-required": async () =>
+    import("./email-template-refs/OrganizationMfaRequired").then(
+      (m) => m.default,
+    ),
   "password-reset": async () =>
     import("./email-template-refs/PasswordReset").then((m) => m.default),
   "payment-failed": async () =>
