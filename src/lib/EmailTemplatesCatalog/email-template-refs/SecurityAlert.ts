@@ -2,20 +2,24 @@ import type { FC } from "react";
 import { EmailTemplatesCatalogEntry } from "../EmailTemplatesCatalogEntry";
 import BadEmailTemplatePropsError from "@/lib/error/BadEmailTemplatePropsError";
 import { getEmailBrand } from "@/email-templates/brand";
-import type { SecurityAlertEmailProps } from "@/email-templates/security-alert";
-
-const VALID_EVENT_TYPES: readonly string[] = [
-  "new-sign-in",
-  "password-changed",
-  "new-api-key",
-  "new-device",
-];
+import {
+  DEFAULT_SECURITY_ALERT_BODY,
+  DEFAULT_SECURITY_ALERT_EVENT_TYPE,
+  DEFAULT_SECURITY_ALERT_TITLE,
+  isSecurityAlertEventType,
+  SECURITY_ALERT_EVENT_COPY,
+  SECURITY_ALERT_EVENT_TYPES,
+} from "@/email-templates/security-alert";
+import type {
+  SecurityAlertEmailProps,
+  SecurityAlertEventType,
+} from "@/email-templates/security-alert";
 
 export class SecurityAlert extends EmailTemplatesCatalogEntry<SecurityAlertEmailProps> {
   public id = "security-alert" as const satisfies string;
 
   public description =
-    "Security notification email (new sign-in, new device, password change, or new API key). Styled with the configured brand colors: gradient header, red-accented call-to-action and alert strip. Props: { name: string, eventType?: 'new-sign-in' | 'password-changed' | 'new-api-key' | 'new-device', device?: string, browser?: string, location?: string, ipAddress?: string, eventTime?: string, secureAccountUrl?: string, productName?: string, supportEmail?: string }" as const satisfies string;
+    "Security notification email (new sign-in, new device, password change, new API key, or a multi-factor authentication change: MFA enabled, removed, reset by an administrator, or recovery codes regenerated). Styled with the configured brand colors: gradient header, red-accented call-to-action and alert strip. Props: { name: string, eventType?: 'new-sign-in' | 'password-changed' | 'new-api-key' | 'new-device' | 'mfa-enabled' | 'mfa-removed' | 'mfa-reset-by-admin' | 'mfa-recovery-codes-regenerated', device?: string, browser?: string, location?: string, ipAddress?: string, eventTime?: string, secureAccountUrl?: string, productName?: string, supportEmail?: string }" as const satisfies string;
 
   public validateProps(val: unknown): val is SecurityAlertEmailProps {
     if (typeof val !== "object" || !val) {
@@ -39,9 +43,9 @@ export class SecurityAlert extends EmailTemplatesCatalogEntry<SecurityAlertEmail
           `Template '${this.id}' expected optional prop 'eventType' to be a string when provided, but got ${typeof val.eventType}.`,
         );
       }
-      if (!VALID_EVENT_TYPES.includes(val.eventType)) {
+      if (!isSecurityAlertEventType(val.eventType)) {
         throw new BadEmailTemplatePropsError(
-          `Template '${this.id}' received invalid 'eventType' value '${val.eventType}'. Allowed values: ${VALID_EVENT_TYPES.join(", ")}.`,
+          `Template '${this.id}' received invalid 'eventType' value '${val.eventType}'. Allowed values: ${SECURITY_ALERT_EVENT_TYPES.join(", ")}.`,
         );
       }
     }
@@ -93,27 +97,12 @@ export class SecurityAlert extends EmailTemplatesCatalogEntry<SecurityAlertEmail
       props.secureAccountUrl.length > 0
         ? props.secureAccountUrl
         : `${brand.url}/account/security`;
-    const eventType: NonNullable<SecurityAlertEmailProps["eventType"]> =
-      props.eventType ?? "new-sign-in";
-
-    const headings: Record<typeof eventType, string> = {
-      "new-sign-in": "New sign-in detected",
-      "password-changed": "Your password was changed",
-      "new-api-key": "A new API key was issued",
-      "new-device": "New device signed in",
-    };
-    const ledes: Record<typeof eventType, string> = {
-      "new-sign-in": `We noticed a new sign-in to your ${productName} account. If this was you, no action is needed.`,
-      "password-changed": `The password on your ${productName} account was just changed. If this was you, no action is needed.`,
-      "new-api-key": `A new API key was just issued on your ${productName} account. If this was you, no action is needed.`,
-      "new-device": `A device we haven't seen before just signed in to your ${productName} account. If this was you, no action is needed.`,
-    };
-    const ctaLabels: Record<typeof eventType, string> = {
-      "new-sign-in": "Review account activity",
-      "password-changed": "Secure your account",
-      "new-api-key": "Manage API keys",
-      "new-device": "Review devices",
-    };
+    const eventType: SecurityAlertEventType = isSecurityAlertEventType(
+      props.eventType,
+    )
+      ? props.eventType
+      : DEFAULT_SECURITY_ALERT_EVENT_TYPE;
+    const copy = SECURITY_ALERT_EVENT_COPY[eventType];
 
     const metaLines: string[] = [];
     if (typeof props.eventTime === "string" && props.eventTime.length > 0) {
@@ -133,20 +122,20 @@ export class SecurityAlert extends EmailTemplatesCatalogEntry<SecurityAlertEmail
     }
 
     const lines: string[] = [
-      `${productName} Security — ${headings[eventType]}`,
+      `${productName} Security — ${copy.heading}`,
       "",
       `Hi ${props.name},`,
       "",
-      ledes[eventType],
+      copy.lede(productName),
     ];
     if (metaLines.length > 0) {
       lines.push("", ...metaLines);
     }
     lines.push(
       "",
-      "Didn't recognize this? Secure your account immediately — change your password and revoke any sessions you don't recognize.",
+      `${copy.alertTitle ?? DEFAULT_SECURITY_ALERT_TITLE} ${copy.alertBody ?? DEFAULT_SECURITY_ALERT_BODY}`,
       "",
-      `${ctaLabels[eventType]}: ${secureAccountUrl}`,
+      `${copy.primaryLabel}: ${secureAccountUrl}`,
       "",
       `Questions? Reach us at ${supportEmail}. We'll never ask for your password over email.`,
     );
