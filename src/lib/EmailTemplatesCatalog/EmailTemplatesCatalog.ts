@@ -2,6 +2,10 @@ import type { IEmailTemplatesCatalogEntry } from "./EmailTemplatesCatalogEntry";
 import type EmailTemplatesCatalogEntry from "./EmailTemplatesCatalogEntry";
 
 export const EmailTemplatesCatalog = {
+  "account-deletion-scheduled": async () =>
+    import("./email-template-refs/AccountDeletionScheduled").then(
+      (m) => m.default,
+    ),
   "api-key-created": async () =>
     import("./email-template-refs/ApiKeyCreated").then((m) => m.default),
   "data-export-ready": async () =>

@@ -1,3 +1,4 @@
+import AccountDeletionScheduledEmail from "@/email-templates/account-deletion-scheduled";
 import ApiKeyCreatedEmail from "@/email-templates/api-key-created";
 import DataExportReadyEmail from "@/email-templates/data-export-ready";
 import FollowUpSurveyEmail from "@/email-templates/follow-up-survey";
@@ -32,6 +33,7 @@ import type { EmailTemplateId } from "./EmailTemplatesCatalog";
  * on its component (or omitting the entry here) is a type error.
  */
 export const sampleEmailTemplateProps = {
+  "account-deletion-scheduled": AccountDeletionScheduledEmail.PreviewProps,
   "api-key-created": ApiKeyCreatedEmail.PreviewProps,
   "data-export-ready": DataExportReadyEmail.PreviewProps,
   "follow-up-survey": FollowUpSurveyEmail.PreviewProps,
